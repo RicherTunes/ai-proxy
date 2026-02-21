@@ -17,7 +17,8 @@ const { test: baseTest, expect } = require('./fixtures');
 // Skip heavy perf tests in CI unless explicitly enabled
 const isCI = process.env.CI === 'true';
 const runHeavyPerf = process.env.RUN_HEAVY_PERF === '1';
-const test = (isCI && !runHeavyPerf) ? baseTest.skip : baseTest;
+const skipHeavy = isCI && !runHeavyPerf;
+const test = baseTest;
 
 // Performance factor for CI runners (slower VMs need higher thresholds)
 const PERF_FACTOR = parseFloat(process.env.PERF_FACTOR || '1');
@@ -34,6 +35,10 @@ const THRESHOLDS = {
 };
 
 test.describe('Dashboard - Performance (G4)', () => {
+  test.beforeEach(async () => {
+    test.skip(skipHeavy, 'Heavy perf tests skipped in CI unless RUN_HEAVY_PERF=1');
+  });
+
   test('initial render with 500 events completes under threshold', async ({ page, proxyServer }) => {
     // Navigate and wait for connection
     await page.goto(proxyServer.url + '/dashboard?debug=1', { waitUntil: 'domcontentloaded' });
