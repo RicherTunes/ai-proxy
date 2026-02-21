@@ -205,7 +205,7 @@ describe('RequestQueue', () => {
 
             expect(result.success).toBe(false);
             expect(result.reason).toBe('queue_timeout');
-            expect(elapsed).toBeGreaterThanOrEqual(50);
+            expect(elapsed).toBeGreaterThanOrEqual(45); // Relaxed from 50 — setTimeout(50) can fire 1-2ms early on CI
             expect(elapsed).toBeLessThan(1000);
         });
 
@@ -426,7 +426,7 @@ describe('RequestQueue', () => {
             queue.cancel('cancel-req');
             const result = await promise;
 
-            expect(result.waitTime).toBeGreaterThanOrEqual(50);
+            expect(result.waitTime).toBeGreaterThanOrEqual(45); // Relaxed from 50 — setTimeout(50) can fire 1-2ms early on CI
         });
     });
 
