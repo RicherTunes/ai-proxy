@@ -52,6 +52,8 @@ This downloads everything the proxy needs. It may take 1-2 minutes.
 4. Copy each key (they look like: `key_abc123.secret_xyz789`)
 
 > **Tip:** Having multiple keys lets the proxy spread requests across them, giving you higher rate limits.
+>
+> **Need help choosing a subscription?** See [Z.ai Coding Subscription Reference](../reference/zai-coding-subscription.md) for tier comparisons, limits, and pricing.
 
 ### Step 4: Create Your Configuration File
 

@@ -57,6 +57,7 @@ API reference and metrics documentation.
 | Document | Description |
 |----------|-------------|
 | [Metrics](./reference/metrics.md) | Month 1 metrics and performance data |
+| [Z.ai Coding Subscription](./reference/zai-coding-subscription.md) | Complete reference for Z.ai GLM Coding Plan tiers, limits, and API configuration |
 
 ### Milestones
 Historical documentation of completed milestones.

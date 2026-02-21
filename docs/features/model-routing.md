@@ -4,6 +4,8 @@ Complexity-aware routing layer that sits above the legacy `ModelMappingManager`.
 
 When `enabled: false` (default), the router is constructed but `selectModel()` returns `null`. All traffic falls through to the legacy `ModelMappingManager`. You can configure the router while disabled and toggle on without restart.
 
+> **See Also:** [Z.ai Coding Subscription Reference](../reference/zai-coding-subscription.md) for GLM model specifications, tier limits, and pricing.
+
 ## Dashboard Visualization
 
 Configure routing through the dashboard's Model Routing page:
