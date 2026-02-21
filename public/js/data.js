@@ -2343,9 +2343,35 @@
     }
 
     function fetchProcessHealth() {
-        return fetchJSON('/health/deep').then(function(data) {
-            if (!data || data.error) return false;
+        // /health/deep requires auth - pass requireAuth flag
+        return fetchJSON('/health/deep', { requireAuth: true }).then(function(data) {
             var el;
+
+            // Handle error responses (auth failures, network errors)
+            if (data && data.__error) {
+                el = document.getElementById('processHealthStatus');
+                if (el) {
+                    if (data.status === 401 || data.status === 403) {
+                        el.textContent = 'Auth Required';
+                        el.className = 'badge text-xs warning';
+                    } else {
+                        el.textContent = 'Error';
+                        el.className = 'badge text-xs error';
+                    }
+                }
+                // Set error state for all fields
+                el = document.getElementById('phHeapUsed'); if (el) el.textContent = '-';
+                el = document.getElementById('phHeapTotal'); if (el) el.textContent = '-';
+                el = document.getElementById('phMemPercent'); if (el) { el.textContent = '-'; el.style.color = ''; }
+                el = document.getElementById('phRss'); if (el) el.textContent = '-';
+                el = document.getElementById('phPid'); if (el) el.textContent = '-';
+                el = document.getElementById('phNodeVersion'); if (el) el.textContent = '-';
+                el = document.getElementById('phTracesStored'); if (el) el.textContent = '-';
+                el = document.getElementById('phTraceCapacity'); if (el) el.textContent = '-';
+                return false;
+            }
+
+            if (!data || data.error) return false;
             var checks = data.checks || {};
             var mem = checks.memory || {};
             var traces = checks.traces || {};
@@ -2378,8 +2404,29 @@
 
     function fetchScheduler() {
         return fetchJSON('/stats/scheduler').then(function(data) {
-            if (!data || data.error) return false;
             var el;
+
+            // Handle error responses
+            if (data && data.__error) {
+                el = document.getElementById('schedulerPoolState');
+                if (el) {
+                    if (data.status === 401 || data.status === 403) {
+                        el.textContent = 'Auth Required';
+                        el.className = 'badge text-xs warning';
+                    } else {
+                        el.textContent = 'Error';
+                        el.className = 'badge text-xs error';
+                    }
+                }
+                // Set error state for all fields
+                el = document.getElementById('schedFairness'); if (el) { el.textContent = '-'; el.style.color = ''; }
+                el = document.getElementById('schedAvgLatency'); if (el) el.textContent = '-';
+                el = document.getElementById('schedWeighted'); if (el) el.textContent = '-';
+                el = document.getElementById('schedRoundRobin'); if (el) el.textContent = '-';
+                return false;
+            }
+
+            if (!data || data.error) return false;
             var pool = data.poolState || {};
             var sched = data.scheduler || {};
             var decisions = sched.decisions || {};

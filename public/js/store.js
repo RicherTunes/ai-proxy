@@ -281,20 +281,47 @@
         try { return JSON.parse(str); } catch (e) { return fallback; }
     }
 
+    // Helper to get admin auth token from storage
+    function getAdminToken() {
+        return sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken') || null;
+    }
+
     // fetchJSON - Consolidated fetch utility with error handling and timeout
+    // Options:
+    //   - timeout: Request timeout in ms (default 10000)
+    //   - requireAuth: If true, include admin auth token header
+    //   - headers: Additional headers to include
     async function fetchJSON(url, options) {
         options = options || {};
         var timeout = options.timeout || 10000;
+        var requireAuth = options.requireAuth || false;
         delete options.timeout;
+        delete options.requireAuth;
+
         var controller = new AbortController();
         var timeoutId = setTimeout(function() { controller.abort(); }, timeout);
 
+        // Build headers object
+        var headers = Object.assign({}, options.headers || {});
+
+        // Add auth token if required and available
+        if (requireAuth) {
+            var token = getAdminToken();
+            if (token) {
+                headers['x-admin-token'] = token;
+            }
+        }
+
         try {
-            var res = await fetch(url, Object.assign({}, options, { signal: controller.signal }));
+            var res = await fetch(url, Object.assign({}, options, {
+                signal: controller.signal,
+                headers: headers
+            }));
             clearTimeout(timeoutId);
             if (!res.ok) {
+                var errorResult = { __error: true, status: res.status, url: url };
                 console.warn('fetchJSON: ' + url + ' returned ' + res.status);
-                return null;
+                return errorResult;
             }
             return await res.json();
         } catch (e) {
@@ -303,7 +330,7 @@
             } else {
                 console.warn('fetchJSON: ' + url + ' failed:', e);
             }
-            return null;
+            return { __error: true, error: e.message || 'fetch_failed', url: url };
         }
     }
 
@@ -363,6 +390,7 @@
         capitalize: capitalize,
         safeParseJson: safeParseJson,
         fetchJSON: fetchJSON,
+        getAdminToken: getAdminToken,
         debugEnabled: debugEnabled
     };
 

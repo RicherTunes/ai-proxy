@@ -8,11 +8,13 @@ Built for [Z.AI](https://z.ai) subscriptions but compatible with any Anthropic-c
 
 - **Multi-Key Load Balancing** — Health-aware distribution across multiple API keys with weighted scoring
 - **Circuit Breaker** — Automatic key isolation on failures with half-open recovery testing
-- **Adaptive Concurrency (AIMD)** — Dynamically adjusts concurrency limits based on observed latency and errors
+- **Adaptive Concurrency (AIMD)** — Dynamically adjusts per-model concurrency limits based on 429 feedback
 - **Rate Limiting** — Per-key token bucket with burst support
 - **Request Queue** — Backpressure-aware queueing when all keys are busy, with configurable timeout
 - **Retry with Backoff** — Exponential backoff with jitter on transient failures
-- **Model Routing** — Tiered model mapping with per-key overrides
+- **Model Routing** — Complexity-aware tiered model mapping with per-key overrides and cost tracking
+- **Key Scheduler** — Intelligent key selection with health-weighted scoring and drift detection
+- **Cost Tracking** — Per-model cost tracking with external pricing configuration
 - **Token Tracking** — Real-time input/output token counting with cost estimation
 - **Hot Reload** — Update API keys without restart
 - **Clustering** — Multi-worker process support for high throughput
@@ -102,6 +104,44 @@ client = anthropic.Anthropic(base_url="http://127.0.0.1:18765")
 | `GLM_RATE_LIMIT` | `60` | Requests per minute per key (0=disabled) |
 | `GLM_REQUEST_TIMEOUT` | `300000` | Request timeout (ms) |
 | `GLM_LOG_LEVEL` | `INFO` | Log level (DEBUG, INFO, WARN, ERROR) |
+
+### Adaptive Concurrency (AIMD)
+
+Dynamically adjusts per-model concurrency limits based on 429 feedback:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `adaptiveConcurrency.enabled` | `true` | Enable adaptive concurrency |
+| `adaptiveConcurrency.mode` | `observe_only` | 'observe_only' or 'enforce' |
+| `adaptiveConcurrency.tickIntervalMs` | `2000` | Adjustment interval |
+| `adaptiveConcurrency.decreaseFactor` | `0.5` | Multiplicative decrease on 429 |
+| `adaptiveConcurrency.recoveryDelayMs` | `5000` | Wait after last 429 before growth |
+
+Configured via the `adaptiveConcurrency` object in config file.
+
+### Model Routing
+
+Complexity-aware routing with three tiers:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `modelRouting.enabled` | `true` | Enable model routing |
+| `modelRouting.tiers.light.models` | `glm-4.5-air`, `glm-4.5-flash`, `glm-4.7-flash` | Light tier models |
+| `modelRouting.tiers.medium.models` | `glm-4.5` | Medium tier models |
+| `modelRouting.tiers.heavy.models` | `glm-5`, `glm-4.7`, `glm-4.6` | Heavy tier models |
+
+See [Model Routing](./docs/features/model-routing.md) for full details.
+
+### Key Selection
+
+Intelligent health-score weighted key selection:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `keySelection.useWeightedSelection` | `true` | Use health scores vs round-robin |
+| `keySelection.healthScoreWeights.latency` | `40` | Latency weight (0-40) |
+| `keySelection.healthScoreWeights.successRate` | `40` | Success rate weight (0-40) |
+| `keySelection.healthScoreWeights.errorRecency` | `20` | Error recency weight (0-20) |
 
 ### api-keys.json Format
 
@@ -217,22 +257,35 @@ npm run load:heavy    # 5min at 50 rps
 ```
 proxy.js                  # Entry point
 lib/
+  index.js                # Module exports
   config.js               # Configuration with env var overrides
+  logger.js               # Structured logging
   proxy-server.js         # HTTP server, routing, admin endpoints
   request-handler.js      # Proxy logic with retry and streaming
   key-manager.js          # Key rotation, selection, health scoring
-  model-router.js         # Tiered model routing with overrides
+  key-scheduler.js        # Intelligent key selection with health weighting
+  model-router.js         # Complexity-aware tiered model routing
+  cost-tracker.js         # Per-model cost tracking with pricing.json
   circuit-breaker.js      # Per-key circuit breaker state machine
   rate-limiter.js         # Token bucket rate limiter
+  adaptive-concurrency.js # AIMD-based per-model concurrency control
+  ring-buffer.js          # O(1) latency tracking for memory efficiency
   stats-aggregator.js     # Metrics collection and aggregation
-  cost-tracker.js         # Token counting and cost estimation
-  dashboard.js            # Dashboard HTML/CSS generation
-  logger.js               # Structured logging
+  dashboard.js            # Dashboard generation
+  pricing-loader.js       # Pricing configuration loader
+  proxy/
+    router.js             # Route registry and dispatch
+    controllers/          # 15 controller files (health, auth, etc.)
+  stats/
+    persistence.js        # File I/O for stats storage
 public/
   js/                     # Dashboard frontend modules
   css/                    # Dashboard stylesheets
+config/
+  pricing.json            # Model pricing data (30+ models)
+  route-policies.json     # Routing policies
+  performance-baseline.json # Performance targets
 test/                     # Jest + Playwright test suite
-config/                   # Route policies, pricing, baselines
 docs/                     # Documentation
 ```
 

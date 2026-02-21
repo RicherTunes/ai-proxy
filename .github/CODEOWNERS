@@ -1,0 +1,8 @@
+# Code owners for review routing
+
+* @RicherTunes
+
+lib/proxy/controllers/ @RicherTunes
+lib/dashboard.js @RicherTunes
+test/ @RicherTunes
+docs/ @RicherTunes
