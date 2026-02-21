@@ -76,19 +76,25 @@
         st.nextAllowedAt = Date.now() + delay;
     }
 
+    var pollInFlight = {};
+
     function runPolledFetch(name, fetchFn) {
         if (pollingPaused || document.hidden) return Promise.resolve(false);
+        if (pollInFlight[name]) return Promise.resolve(false);
         var st = getPollState(name);
         if (st.nextAllowedAt > Date.now()) return Promise.resolve(false);
 
+        pollInFlight[name] = true;
         return Promise.resolve()
             .then(fetchFn)
             .then(function(ok) {
+                pollInFlight[name] = false;
                 var succeeded = ok !== false;
                 applyPollBackoff(name, succeeded);
                 return succeeded;
             })
             .catch(function() {
+                pollInFlight[name] = false;
                 applyPollBackoff(name, false);
                 return false;
             });
@@ -132,8 +138,8 @@
             { name: 'histogram',   ms: 10000, cb: pollHistogram },
             { name: 'cost',        ms: 10000, cb: pollCostStats },
             { name: 'comparison',  ms: 15000, cb: pollComparison },
-            { name: 'persistent',  ms: 30000, cb: function() { runPolledFetch('persistentStats', fetchRefs.fetchPersistentStats); } },
-            { name: 'predictions', ms: 30000, cb: function() { runPolledFetch('predictions', fetchRefs.fetchPredictions); } },
+            { name: 'persistent',  ms: 30000, cb: function() { return runPolledFetch('persistentStats', fetchRefs.fetchPersistentStats); } },
+            { name: 'predictions', ms: 30000, cb: function() { return runPolledFetch('predictions', fetchRefs.fetchPredictions); } },
             { name: 'circuit',     ms: 30000, cb: function() { return fetchRefs.fetchCircuitHistory(); } },
             { name: 'process',     ms: 30000, cb: function() { return fetchRefs.fetchProcessHealth(); } },
             { name: 'scheduler',   ms: 30000, cb: function() { return fetchRefs.fetchScheduler(); } },
