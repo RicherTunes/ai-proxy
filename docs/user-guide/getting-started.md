@@ -119,6 +119,19 @@ Go to http://127.0.0.1:18765/dashboard in your browser. You should see your keys
 
 ![Dashboard Overview](../screenshots/overview.png)
 
+The dashboard shows your keys' health status using a color-coded heatmap:
+
+![Keys Heatmap](../screenshots/components/keys-heatmap.png)
+
+- **Green** = Healthy key
+- **Yellow** = Warning (some issues)
+- **Red** = Failing or circuit-broken
+
+You can also see real-time connection status and control the proxy:
+
+![Connection Status](../screenshots/components/connection-status.png)
+![Pause Button](../screenshots/components/pause-button.png)
+
 > See the [Dashboard Guide](./dashboard.md) for a complete visual tour of all dashboard features.
 
 ### Step 7: Connect Your Application

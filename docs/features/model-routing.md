@@ -10,11 +10,34 @@ When `enabled: false` (default), the router is constructed but `selectModel()` r
 
 ## Dashboard Visualization
 
-Configure routing through the dashboard's Model Routing page:
+### Accessing the Routing Page
+
+Navigate to the Model Routing page using the page navigation tabs:
+
+![Page Navigation Tabs](../screenshots/components/page-nav-tabs.png)
+
+### Model List View
+
+The routing page displays all configured models with their tier assignments, pricing, and concurrency limits:
+
+![Model List](../screenshots/components/model-list.png)
+
+Each model card shows:
+- Model name and tier assignment
+- Input/output token pricing
+- Current and maximum concurrency
+- Add/remove controls for tier management
+
+### Tier Builder
+
+Configure routing tiers using the drag-and-drop interface:
 
 ![Tier Builder](../screenshots/routing/tier-builder.png)
 
-The drag-and-drop interface lets you assign models to tiers (light, medium, heavy) and configure fallback chains.
+The tier builder lets you:
+- Assign models to tiers (light, medium, heavy)
+- Configure fallback chains for each tier
+- Set routing strategies (balanced, quality, throughput)
 
 ## Quick Start
 

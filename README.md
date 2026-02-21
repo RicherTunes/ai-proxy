@@ -114,12 +114,31 @@ That's it! Your requests now go through the proxy automatically.
 
 ## Dashboard
 
-After starting the proxy, open **http://127.0.0.1:18765/dashboard** in your browser to see:
+After starting the proxy, open **http://127.0.0.1:18765/dashboard** in your browser to see the real-time monitoring dashboard.
 
-- **Overview** — Total requests, success rate, current costs
-- **Keys** — Health status of each API key, how many requests each has handled
-- **Requests** — Live feed of requests going through
-- **Routing** — Which AI models are being used
+![Dashboard Overview](docs/screenshots/overview.png)
+
+### What You'll See
+
+| Section | Description |
+|---------|-------------|
+| **Overview** | Total requests, success rate, current costs, key health heatmap |
+| **Requests** | Live feed of requests, traces, logs, queue status |
+| **Routing** | Model routing configuration and tier management |
+| **System** | Error breakdown, retry analytics, health score |
+
+The dashboard provides:
+
+- **Real-time updates** via Server-Sent Events (no refresh needed)
+- **Visual health indicators** for each API key
+- **Cost tracking** to monitor API spending
+- **Pause/Resume** control for maintenance
+- **Theme switching** (dark/light mode)
+- **Keyboard shortcuts** for power users
+
+![Dashboard Navigation](docs/screenshots/components/page-nav-tabs.png)
+
+> **For a complete dashboard walkthrough**, see the [Dashboard Guide](./docs/user-guide/dashboard.md).
 
 ## Having Problems?
 

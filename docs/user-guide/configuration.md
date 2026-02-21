@@ -56,7 +56,11 @@ The `api-keys.json` file contains your API credentials:
 
 > **Note:** For circuit breaker architecture diagrams, see [Architecture](../developer-guide/architecture.md#circuit-breaker).
 
-The circuit breaker protects against failing API keys:
+The circuit breaker protects against failing API keys. Monitor circuit breaker states in the dashboard's System page:
+
+![Circuit Breaker Indicators](../screenshots/components/circuit-indicators.png)
+
+### States
 
 | State | Description |
 |-------|-------------|
