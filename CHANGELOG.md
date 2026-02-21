@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Documentation restructure with organized sections
+- Automated release workflow with semantic versioning
+- Release drafter for automated PR changelogs
+- Commitlint for conventional commit enforcement
+- Pre-commit hooks for test validation
+- Version check script for version consistency
+
+### Changed
+- CI/CD improvements for automated releases
 
 ## [2.4.0] - 2026-02-13 (Operational Maturity)
 
