@@ -117,8 +117,8 @@ describe('_createAgent', () => {
         const rh = createHandler();
         rh.agent.emit('error', new Error('socket error'));
         expect(rh.logger.error).toHaveBeenCalledWith(
-            'HTTPS agent error',
-            expect.objectContaining({ error: 'socket error' })
+            'Upstream agent error',
+            expect.objectContaining({ error: 'socket error', protocol: 'https:' })
         );
     });
 });

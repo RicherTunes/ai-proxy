@@ -68,8 +68,15 @@ jobs:
 
       - name: Start proxy server (single-process, fixed config)
         run: |
-          GLM_NO_CLUSTER=1 GLM_PORT=3000 GLM_LOG_LEVEL=warn node proxy.js &
+          GLM_NO_CLUSTER=1 GLM_PORT=3000 GLM_LOG_LEVEL=info node proxy.js &
           sleep 3
+
+      - name: Verify proxy is listening
+        run: |
+          echo "Checking proxy health endpoint..."
+          curl -s http://localhost:3000/health | head -20 || echo "Health check failed"
+          curl -sf http://localhost:3000/health > /dev/null || { echo "::error::Proxy failed to start on port 3000"; exit 1; }
+          echo "Proxy is healthy and listening on port 3000"
 
       - name: Run smoke load test (60s)
         run: |
