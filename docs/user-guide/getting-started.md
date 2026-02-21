@@ -175,3 +175,10 @@ If successful, you'll see a response from the AI model.
 2. Look at the dashboard for error messages
 3. Check the terminal output for logs
 4. Open a GitHub issue with your error message
+
+## See Also
+
+- **[Configuration Guide](./configuration.md)** — Complete environment variable reference
+- **[Monitoring Guide](./monitoring.md)** — Health checks, stats, and metrics
+- **[Dashboard Guide](./dashboard.md)** — Visual tour of dashboard features
+- **[README.md](../../README.md)** — Project overview and features

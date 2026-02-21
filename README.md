@@ -70,6 +70,8 @@ Create a file called `api-keys.json` in the project folder:
 ```
 
 > **Where do I get API keys?** Sign up at [Z.AI](https://z.ai) and create API keys in your dashboard.
+>
+> **Need help choosing a subscription?** See [Z.ai Documentation](./docs/reference/zai-coding-subscription.md) for tier comparisons, limits, and pricing.
 
 ### 3. Start the Proxy
 
@@ -136,7 +138,10 @@ After starting the proxy, open **http://127.0.0.1:18765/dashboard** in your brow
 - Check the dashboard to see if keys show as "healthy"
 - Look at the terminal output for error messages
 
-For more help, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md).
+For more help, see:
+- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
+- [Documentation](./docs/) — Complete documentation with guides and references
+- [Z.ai Knowledge Base](./docs/reference/zai-knowledge-base.md) — Comprehensive Z.ai provider information
 
 ## Features
 

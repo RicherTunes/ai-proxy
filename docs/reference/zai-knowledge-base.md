@@ -1,8 +1,10 @@
 # Z.ai (Zhipu AI) - Complete Knowledge Base
 
-> **Last Updated:** February 21, 2026
+> **Last Updated:** February 21, 2026 @ 16:30 EST
 > **Provider:** Zhipu AI (Z.ai / BigModel.cn)
 > **Purpose:** Comprehensive brain dump of all Z.ai knowledge for integration and reference
+>
+> **See Also:** [Z.ai Coding Subscription Quick Reference](./zai-coding-subscription.md)
 
 ---
 
@@ -884,3 +886,455 @@ This document aggregates information from:
 - User reports and testimonials
 
 For the most current information, always check official sources at z.ai or open.bigmodel.cn.
+
+---
+
+## Expanded Competitive Analysis (2026 Research)
+
+### Chinese AI Coding Assistants - Detailed Comparison
+
+#### Alibaba Qwen (通义千问)
+
+| Product | Price | Key Features |
+|---------|-------|--------------|
+| **Qwen3-Coder-Next** | Free (Apache 2.0) | 80B MoE (3B active), 262K→1M context |
+| **Tongyi Lingma** | ¥59/m enterprise | 50+ languages, cloud service integration |
+| **API Pricing** | ¥4/1M input, ¥16/1M output | 50-60% cheaper than Claude |
+
+**Strengths:**
+- Largest context window (1M tokens expandable)
+- 370+ programming language support
+- "Agentic training" with 800K verified coding tasks
+- Outperforms GPT-4.1 on SWE-Bench
+
+#### ByteDance (Doubao 豆包)
+
+| Product | Price | Key Features |
+|---------|-------|--------------|
+| **Trae Solo 2.0** | Competitive | Full-stack dev (PRD→deployment) |
+| **Doubao Programming** | ¥1.20/1M input, ¥8/1M output | Lowest pricing in China |
+| **General Pro** | ¥0.0008/1K tokens | 62.7% cost reduction |
+
+**Strengths:**
+- Figma-to-code conversion
+- Context engineering for requirements
+- Multi-modal interaction
+- Agent capabilities for autonomous delivery
+
+#### Market Comparison Table
+
+| Provider | Model | Price (USD/1M tokens) | Context | Open Source |
+|----------|-------|----------------------|---------|-------------|
+| **DeepSeek V3** | V3 | $0.27 input / $1.10 output | 128K | Yes |
+| **Alibaba Qwen** | Qwen3-Coder | ~$0.60 input / ~$2.40 output | 1M | Yes (Apache 2.0) |
+| **Zhipu GLM** | GLM-4.7 | $0.60 input / $2.20 output | 200K | Yes |
+| **Baidu Qianfan** | Qwen3-Coder | ¥4 input / ¥16 output | 1M | Partial |
+| **Claude Sonnet** | 4.6 | $3 input / $15 output | 200K | No |
+
+**Key Finding:** Chinese models are **5-53x cheaper** than Western competitors while maintaining competitive performance.
+
+---
+
+## Step-by-Step Integration Guides
+
+### Cursor IDE - Complete Setup
+
+#### Prerequisites
+- Cursor IDE installed
+- Z.ai GLM Coding Plan subscription
+- API Key (format: `sk-sp-xxxxx` for Coding Plan)
+
+#### Step 1: Get Your API Key
+
+1. Visit https://z.ai or https://www.bigmodel.cn/glm-coding
+2. Go to **Personal Center** → **API Keys**
+3. Create a new API Key
+4. **Important:** Use the **Coding Plan专属 API Key** (format: `sk-sp-xxxxx`)
+5. Do NOT use the general API Key (format: `sk-xxxxx`)
+
+#### Step 2: Configure Cursor
+
+1. Open Cursor IDE
+2. Go to **Settings** → **Models** (or press Ctrl+,)
+3. Under **API Providers**, select **Custom** or **OpenAI Compatible**
+4. Configure as follows:
+
+```
+OpenAI API Key: [Your sk-sp-xxxxx key]
+Base URL: https://open.bigmodel.cn/api/anthropic
+Model: glm-4.7 (or glm-5 for Pro/Max subscribers)
+```
+
+#### Step 3: Verify Configuration
+
+Test with a simple prompt:
+```
+Can you write a Python function to calculate fibonacci numbers?
+```
+
+If successful, you should see GLM-4.7 responding.
+
+#### Troubleshooting
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| "Your Coding Plan might not include GLM-4.7" | Wrong API key or tier | Use `sk-sp-xxxxx` key, verify subscription |
+| "Invalid API key" | Wrong key format | Ensure Coding Plan key, not general API key |
+| "Rate limit exceeded" | Quota exhausted | Wait for 5-hour window recovery |
+
+---
+
+### Cline (VS Code Extension) - Complete Setup
+
+#### Prerequisites
+- VS Code installed
+- GLM Coding Plan subscription
+- API Key from Zhipu AI console
+
+#### Step 1: Install Cline
+
+1. Open VS Code
+2. Press **Ctrl+Shift+X** to open Extensions
+3. Search for **"cline"**
+4. Click **Install**
+
+#### Step 2: Configure Cline
+
+1. Click the **Cline icon** in the sidebar (or press Ctrl+Shift+A)
+2. Click the **Settings (gear icon)**
+3. Select **"Use your own API Key"**
+4. Configure as follows:
+
+| Setting | Value |
+|---------|-------|
+| **API Provider** | OpenAI Compatible |
+| **Base URL** | `https://open.bigmodel.cn/api/coding/paas/v4` |
+| **API Key** | Your Zhipu API Key (`sk-sp-xxxxx`) |
+| **Model ID** | `glm-4.7` (custom) |
+| **Context Window Size** | `204800` |
+| **Support Images** | Disable for text-only tasks |
+
+#### Step 3: Advanced Configuration
+
+For optimal performance with Cline:
+
+```json
+{
+  "apiProvider": "openai",
+  "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4",
+  "apiKey": "your-key-here",
+  "modelId": "glm-4.7",
+  "contextLength": 204800,
+  "temperature": 0.7,
+  "maxTokens": 8192
+}
+```
+
+---
+
+### Roo Code - Complete Setup
+
+#### Prerequisites
+- Roo Code VS Code extension installed
+- Z.ai GLM Coding Plan subscription
+
+#### Step 1: Configure Roo Code
+
+1. Open VS Code with Roo Code installed
+2. Open **Settings** → search for "Roo Code"
+3. Configure API settings:
+
+```json
+{
+  "rooCode.apiProvider": "openai",
+  "rooCode.apiKey": "your-sk-sp-xxxxx-key",
+  "rooCode.baseUrl": "https://api.z.ai/api/paas/v4/",
+  "rooCode.model": "glm-4.7"
+}
+```
+
+#### Step 2: Alternative Method (Environment Variables)
+
+```bash
+# Set environment variables
+export OPENAI_API_KEY="your-sk-sp-xxxxx-key"
+export OPENAI_BASE_URL="https://api.z.ai/api/paas/v4/"
+
+# Restart VS Code for changes to take effect
+```
+
+---
+
+### Claude Code - Automated Setup
+
+#### Using the Setup Helper
+
+Z.ai provides an automated configuration tool:
+
+```bash
+npx @z_ai/coding-helper
+```
+
+Follow the prompts:
+1. Select **Coding Plan**: China version (中国版)
+2. Enter your **API Key** (`sk-sp-xxxxx`)
+3. Select **Coding Tool**: Claude Code / Roo Code / Cursor / Cline
+4. Select **MCP Config**: Select all or specific tools
+
+#### Manual Configuration
+
+For **Windows** (`C:\Users\<username>\.claude\settings.json`):
+
+```json
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "your_zhipu_api_key",
+    "ANTHROPIC_BASE_URL": "https://open.bigmodel.cn/api/anthropic",
+    "API_TIMEOUT_MS": "3000000",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1,
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-4.7",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-4.5-air"
+  }
+}
+```
+
+For **macOS/Linux** (`~/.claude/settings.json`):
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://open.bigmodel.cn/api/anthropic",
+    "ANTHROPIC_API_KEY": "your_zhipu_api_key"
+  }
+}
+```
+
+---
+
+## Data Privacy & Security
+
+### Privacy Policy Information
+
+#### Z.ai (International Platform)
+
+| Aspect | Details |
+|--------|---------|
+| **Location** | Singapore-based services |
+| **Data Storage** | Claims no content storage for API users |
+| **Data Processing** | Real-time processing, no server saving |
+| **Enterprise** | Separate Data Processing Addendum applies |
+
+**Key Statement from Z.ai:**
+> "We do not store content users provide or generate while using our services, including text prompts, images, or other input data."
+
+#### BigModel.cn (China Platform)
+
+| Aspect | Details |
+|--------|---------|
+| **Privacy Policy** | https://bigmodel.cn/dev/howuse/privacypolicy |
+| **Provider** | Beijing Zhipu Huazhang Technology Co., Ltd. |
+| **Effective Date** | May 20, 2025 |
+| **Data Categories** | Essential Information vs Optional Information |
+
+**Data Types Collected:**
+- **Essential Information:** Required for basic functionality
+- **Optional Information:** For enhanced features
+
+**User Rights:**
+- Access and manage personal information
+- Delete account and data
+- Opt-out of optional data collection
+- Minor protection measures
+
+### Data Retention (Unknown/Undocumented)
+
+| Information Type | Status | Notes |
+|-----------------|--------|-------|
+| **API Request Data Retention** | ❌ Undocumented | No official statement found |
+| **Training Data Usage** | ❌ Undocumented | Unclear if API data trains models |
+| **Data Deletion Policy** | ⚠️ Partial | Available via privacy policy |
+| **Zero Data Retention (ZDR)** | ❌ Not specified | No ZDR option explicitly documented |
+
+### Recommendations for Privacy-Conscious Users
+
+1. **Review Privacy Policy Directly:** https://bigmodel.cn/dev/howuse/privacypolicy
+2. **Contact Enterprise Sales:** For formal Data Processing Addendum
+3. **Check Data Residency:** China-based vs Singapore-based options
+4. **Consider Local Deployment:** For sensitive data (CodeGeeX offers this)
+
+---
+
+## Reliability & SLA Information
+
+### SLA Status
+
+| Aspect | Status | Details |
+|--------|--------|---------|
+| **Public SLA Document** | ❌ Not Found | No official SLA published |
+| **Enterprise SLA** | ⚠️ Contact Required | Available for enterprise customers |
+| **Uptime Metrics** | ❌ Not Published | No public availability stats |
+| **Status Page** | ❌ Not Found | No official status page located |
+
+### Known Reliability Issues
+
+#### Peak Hour Performance
+
+| Time Period | Issue | Severity |
+|-------------|-------|----------|
+| **Weekdays 15:00-18:00** | Slowdowns, rate limiting | Medium-High |
+| **High demand periods** | Concurrent request errors | Medium |
+
+#### API Error Handling
+
+The Z.ai Python SDK documents these error types:
+
+| Error Code | Error Type | Description |
+|------------|-----------|-------------|
+| **400** | InvalidRequestError | Invalid request parameters |
+| **401** | AuthenticationError | Authentication failures |
+| **429** | APIReachLimitError | Rate limit exceeded |
+| **500** | APIInternalError | Internal server errors |
+| **503** | APIServerFlowExceedError | Server overload |
+
+#### Incident History (2025-2026)
+
+| Date | Incident | Resolution |
+|------|----------|------------|
+| **No major incidents documented** | - | - |
+
+**Note:** Unlike OpenAI and Google Gemini (which had major outages in Dec 2025/Jan 2026), no specific Zhipu AI service-wide outages were documented in the search results.
+
+### Reliability Best Practices
+
+1. **Implement Retry Logic:** Use exponential backoff for 429/500 errors
+2. **Monitor Quota:** Track 5-hour window usage to avoid exhaustion
+3. **Off-Peak Scheduling:** Schedule heavy work outside 15:00-18:00
+4. **Max Tier for Production:** Consider upgrading for priority access
+5. **Fallback Models:** Implement model fallback chains
+
+---
+
+## Daily Purchase & Availability Guide
+
+### Current Availability Status (2026)
+
+| Metric | Status | Details |
+|--------|--------|---------|
+| **Daily Sales** | 20% of capacity | Since January 23, 2026 |
+| **Refresh Time** | 10:00 AM daily | Quota replenishment |
+| **Auto-Renewal** | Unaffected | Bypasses daily limits |
+| **Availability** | Limited | "需求火爆" (High demand) |
+
+### Purchase Strategy
+
+#### Best Times to Purchase
+
+1. **Early morning (10:00 AM sharp)** - Daily quota refresh
+2. **Mid-week (Tuesday-Thursday)** - Lower competition
+3. **Avoid:** Weekends, month-start, Monday mornings
+
+#### Securing Your Subscription
+
+| Strategy | How |
+|----------|-----|
+| **Enable Auto-Renewal** | Bypasses daily 20% limit |
+| **Buy Quarterly/Yearly** | Lock in pricing, avoid renewal hassles |
+| **Existing Subscriber** | Grandfathered at old pricing (pre-Feb 12) |
+
+### "Sold Out" (售罄) Information
+
+When subscriptions show as "sold out":
+- **Wait until 10:00 AM next day** for quota refresh
+- **Check availability throughout the day** - cancellations may open spots
+- **Consider auto-renewal** - guaranteed renewal
+
+---
+
+## Automated Setup Tool
+
+### Using `@z_ai/coding-helper`
+
+Z.ai provides an official setup helper:
+
+```bash
+npx @z_ai/coding-helper
+```
+
+#### Interactive Prompts
+
+| Prompt | Options | Recommendation |
+|--------|---------|----------------|
+| **Select Coding Plan** | China version (中国版) | International | China version |
+| **API Key** | Enter `sk-sp-xxxxx` key | Required |
+| **Coding Tool** | Claude Code / Cursor / Cline / Roo Code | Select your tool |
+| **MCP Config** | All / Selective | Select all for full features |
+
+#### What the Tool Configures
+
+- Environment variables
+- API endpoints
+- Model mappings
+- MCP tool connections
+- Context window settings
+
+---
+
+## Updated Quick Reference Card
+
+### All Endpoints Summary
+
+| Use Case | Base URL | Notes |
+|----------|----------|-------|
+| **Claude Code (Anthropic-compatible)** | `https://open.bigmodel.cn/api/anthropic` | Recommended |
+| **OpenAI Compatible (Cursor/Cline)** | `https://api.z.ai/api/paas/v4/` | Most tools |
+| **Coding Plan Specific** | `/api/coding/paas/v4` | For subscription users |
+| **China Standard** | `https://open.bigmodel.cn/api/paas/v4/` | Chinese platform |
+
+### API Key Formats
+
+| Format | Purpose | Platform |
+|--------|---------|----------|
+| `sk-sp-xxxxx` | **Coding Plan** | Use this for coding assistants |
+| `sk-xxxxx` | Standard API | General API use |
+
+### Model Mapping by Task
+
+| Task | Model | Tier | Notes |
+|------|-------|------|-------|
+| **Simple completion** | `glm-4.5-air` | All | Cheapest |
+| **Standard coding** | `glm-4.7` | All | Best value |
+| **Complex reasoning** | `glm-4.7` | All | Good balance |
+| **Very complex** | `glm-5` | Pro/Max | Best performance |
+| **Code specialist** | `glm-5-code` | Pro/Max | Coding optimized |
+| **Fast/free** | `glm-4.7-flash` | Free tier | 1 concurrent only |
+
+---
+
+*Last comprehensive update: February 21, 2026 @ 16:30 EST*
+
+---
+
+## Sources (Expanded List)
+
+This document aggregates information from:
+
+- Official Z.ai documentation (docs.z.ai)
+- Official BigModel documentation (docs.bigmodel.cn)
+- GitHub issue reports and community discussions
+- CSDN technical blogs and tutorials
+- Chinese tech news (Sohu, QQ News, 51CTO, Sina)
+- Third-party provider documentation (SophNet, UCloud, Qiniu, PPIO)
+- Community tools and repositories
+- User reports and testimonials
+- Hacker News discussions on Z.ai services
+- Industry analysis on Chinese AI coding assistants
+
+### Specific Sources Referenced
+
+- **Cline + GLM Tutorial:** [CSDN Article](https://blog.csdn.net/2301_77717148/article/details/156147372) (Dec 22, 2025)
+- **Cline API Configuration:** [CSDN Guide](https://m.blog.csdn.net/Tan3851/article/details/155824733) (Dec 11, 2025)
+- **Claude Code + GLM Setup:** [CSDN Tutorial](https://blog.csdn.net/2603_95241649/article/details/158124858) (Feb 15, 2026)
+- **Chinese AI Comparison:** Multiple sources on 通义灵码, 豆包编程, CodeGeeX
+- **DeepSeek V3 Pricing:** Industry comparison articles (2026)
+- **Privacy Policy:** https://bigmodel.cn/dev/howuse/privacypolicy
