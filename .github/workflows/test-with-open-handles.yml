@@ -9,15 +9,19 @@ jobs:
   test-with-open-handles:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Create test-results directory
+        run: mkdir -p test-results
 
       - name: Run tests with open handles detection
         run: npm run test -- --detectOpenHandles --no-coverage 2>&1 | tee test-results/detect-open-handles.log
@@ -25,12 +29,12 @@ jobs:
 
       - name: Check for new open handles
         run: node scripts/check-open-handles.js \
-          test-results/open-handles-baseline.json \
+          scripts/open-handles-baseline.json \
           test-results/open-handles-report.json
 
       - name: Upload open handles report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: open-handles-report
           path: test-results/open-handles-report.json

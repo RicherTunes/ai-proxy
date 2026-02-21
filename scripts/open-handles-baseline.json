@@ -1,0 +1,22 @@
+{
+  "version": "1.0",
+  "description": "Baseline allowlist for known open handles in test suite. Ratchets down over time.",
+  "allowlist": [
+    {
+      "handleType": "Server",
+      "comment": "HTTP servers from integration tests that use afterAll cleanup"
+    },
+    {
+      "handleType": "Socket",
+      "comment": "Sockets from HTTP server connections during integration tests"
+    },
+    {
+      "handleType": "Timer",
+      "comment": "Timers from polling, debounce, and retry logic in tested modules"
+    },
+    {
+      "handleType": "EventSource",
+      "comment": "SSE client connections in dashboard/SSE tests"
+    }
+  ]
+}
