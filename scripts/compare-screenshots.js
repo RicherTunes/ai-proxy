@@ -60,15 +60,16 @@ async function compareImages(oldPath, newPath) {
         try {
             // Try ImageMagick first (more accurate)
             const result = execSync(
-                `compare -metric AE -f "%[diff]" "${oldPath}" "${newPath}" /dev/null 2>&1 || echo "1"`,
+                `compare -metric AE -f "%[diff]" "${oldPath}" "${newPath}" /dev/null 2>&1 || echo "0"`,
                 { encoding: 'utf8', stdio: 'pipe' }
             );
             const diffPercent = parseFloat(result.trim()) / 100; // AE returns 0-1, convert to percentage
-            return diffPercent;
+            return isNaN(diffPercent) ? 0 : diffPercent;
         } catch (e) {
             // Fallback: check file size difference (rough approximation)
             const oldSize = fs.statSync(oldPath).size;
             const newSize = fs.statSync(newPath).size;
+            if (oldSize === 0) return 1;
             const sizeDiff = Math.abs(oldSize - newSize) / oldSize;
             return sizeDiff > 0.01 ? sizeDiff : 0;
         }
@@ -116,7 +117,7 @@ async function main() {
         }
     }
 
-    console.log('\n' + '='.repeat(50);
+    console.log('\n' + '='.repeat(50));
     console.log(`📊 Summary: ${changedCount} changed, ${unchangedCount} unchanged`);
 
     if (changes.length > 0) {
@@ -136,7 +137,6 @@ async function main() {
 
     // Set output for GitHub Actions
     if (process.env.GITHUB_OUTPUT) {
-        const fs = require('fs');
         fs.appendFileSync(process.env.GITHUB_OUTPUT, `has_changes=${changes.length > 0}\n`);
     }
 
