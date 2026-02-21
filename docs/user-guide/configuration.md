@@ -1,6 +1,6 @@
 # Configuration
 
-Complete reference for GLM Proxy configuration options.
+Complete reference for AI Proxy configuration options.
 
 For a quick start guide, see [Getting Started](./getting-started.md).
 
@@ -98,12 +98,29 @@ When queue is full or timeout expires, clients receive:
 ### Single Process Mode
 
 ```bash
+# Mac/Linux
 NO_CLUSTER=1 npm start
+```
+
+```powershell
+# Windows PowerShell
+$env:NO_CLUSTER="1"; npm start
+```
+
+```cmd
+# Windows Command Prompt
+set NO_CLUSTER=1 && npm start
 ```
 
 ### With PM2
 
 ```bash
+# Mac/Linux
+pm2 start proxy.js --name glm-proxy
+```
+
+```powershell
+# Windows PowerShell
 pm2 start proxy.js --name glm-proxy
 ```
 
@@ -111,7 +128,7 @@ pm2 start proxy.js --name glm-proxy
 
 ```ini
 [Unit]
-Description=GLM Proxy
+Description=AI Proxy
 After=network.target
 
 [Service]
@@ -131,5 +148,11 @@ WantedBy=multi-user.target
 Reload API keys without restart:
 
 ```bash
+# Mac/Linux
 curl -X POST http://127.0.0.1:18765/reload
+```
+
+```powershell
+# Windows PowerShell
+Invoke-WebRequest -Uri http://127.0.0.1:18765/reload -Method POST
 ```

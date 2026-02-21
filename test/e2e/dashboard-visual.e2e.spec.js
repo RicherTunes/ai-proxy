@@ -87,14 +87,14 @@ test.describe('Dashboard Visual Regression', () => {
     });
 
     test('overview page screenshot', async ({ page, proxyServer }) => {
-        await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+        await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
         await page.waitForTimeout(1000);
         await expect(page).toHaveScreenshot('overview.png', { fullPage: true });
     });
 
     test('routing page screenshot', async ({ page, proxyServer }) => {
-        await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+        await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
         await page.waitForTimeout(500);
         await page.click('.page-nav-btn[data-page="routing"]');
@@ -103,7 +103,7 @@ test.describe('Dashboard Visual Regression', () => {
     });
 
     test('dark theme screenshot', async ({ page, proxyServer }) => {
-        await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+        await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
         await page.waitForTimeout(500);
         // Dashboard defaults to dark theme
@@ -118,7 +118,7 @@ test.describe('Dashboard Visual Regression', () => {
     });
 
     test('light theme screenshot', async ({ page, proxyServer }) => {
-        await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+        await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
         await page.waitForTimeout(500);
         const trigger = page.locator('#overflowMenuTrigger');
@@ -129,7 +129,7 @@ test.describe('Dashboard Visual Regression', () => {
     });
 
     test('compact density screenshot', async ({ page, proxyServer }) => {
-        await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+        await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
         await page.waitForTimeout(500);
         const trigger = page.locator('#overflowMenuTrigger');
@@ -140,7 +140,7 @@ test.describe('Dashboard Visual Regression', () => {
     });
 
     test('traces tab screenshot', async ({ page, proxyServer }) => {
-        await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+        await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
         await page.waitForTimeout(500);
         await page.keyboard.press('l');
@@ -151,7 +151,7 @@ test.describe('Dashboard Visual Regression', () => {
     });
 
     test('logs tab screenshot', async ({ page, proxyServer }) => {
-        await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+        await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
         await page.waitForTimeout(500);
         await page.keyboard.press('l');

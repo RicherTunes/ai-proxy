@@ -1,6 +1,6 @@
 # Dashboard Guide
 
-The GLM Proxy includes a comprehensive real-time dashboard for monitoring requests, managing routing, and diagnosing issues.
+The AI Proxy includes a comprehensive real-time dashboard for monitoring requests, managing routing, and diagnosing issues.
 
 ## Accessing the Dashboard
 

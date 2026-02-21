@@ -165,9 +165,48 @@ New to proxies? Here are some terms you might see:
 | **Endpoint** | A specific URL you can make requests to |
 | **Upstream** | The API service you're connecting to (like Z.AI) |
 
+## Advanced Features
+
+Beyond the basics, AI Proxy includes these powerful features for production use:
+
+### Webhook Notifications
+Get alerted instantly when something needs attention. Configure a webhook URL to receive notifications for circuit trips, rate limit warnings, and budget alerts.
+
+**Enable it:** Set `GLM_WEBHOOK_URL` to your endpoint
+```bash
+export GLM_WEBHOOK_URL=https://your-domain.com/alerts
+```
+
+### Request Replay
+Failed requests are automatically stored and can be replayed with a single click. No more lost requests due to transient failures or temporary outages.
+
+**Access it:** Visit `/history` in the dashboard to view and replay failed requests
+
+### Multi-Tenant Support
+Run one proxy instance for multiple teams or applications. Keys are isolated per tenant, and requests are routed based on a custom header.
+
+**Enable it:** Add `X-Tenant-ID` header to your requests
+```bash
+curl -H "X-Tenant-ID: team-a" http://127.0.0.1:18765/v1/messages
+```
+
+### Admin Authentication
+Protect sensitive endpoints (like stats and configuration) with token-based authentication. Perfect for shared environments.
+
+**Enable it:** Set `GLM_ADMIN_AUTH_ENABLED=true` and provide tokens via `GLM_ADMIN_TOKENS`
+
+### Adaptive Timeouts
+Timeouts automatically adjust based on recent P95 latency. Slow models get more time, fast models fail faster.
+
+**Configure it:** Set `GLM_TIMEOUT_MODE=adaptive` (default is `fixed`)
+
+> **Want more options?** Over 50 environment variables are available for fine-tuning. See the [Configuration Guide](./docs/user-guide/configuration.md) for the complete list.
+
 ## Configuration
 
-### Environment Variables
+> **Note:** This is a subset of the most common configuration options. AI Proxy supports over 50 environment variables for advanced tuning. See [Configuration Guide](./docs/user-guide/configuration.md) for the complete reference.
+
+### Environment Variables (Common)
 
 | Variable | Default | Description |
 |----------|---------|-------------|

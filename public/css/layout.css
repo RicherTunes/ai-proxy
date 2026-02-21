@@ -742,6 +742,28 @@
             transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
         }
         .bottom-drawer .drawer-toggle:hover { background: var(--surface-overlay-hover); color: var(--text-primary); }
+        body.screenshot-mode .bottom-drawer {
+            position: static;
+            left: auto;
+            right: auto;
+            bottom: auto;
+            z-index: auto;
+        }
+        body.screenshot-mode .bottom-drawer,
+        body.screenshot-mode .bottom-drawer .drawer-content {
+            transition: none;
+        }
+        body.screenshot-mode .bottom-drawer .drawer-resize-handle {
+            display: none;
+        }
+        body.screenshot-mode .main-content {
+            padding-bottom: var(--spacing-lg);
+        }
+        body.screenshot-mode .shortcuts-help-btn,
+        body.screenshot-mode .toast-container,
+        body.screenshot-mode .context-menu {
+            display: none !important;
+        }
         .request-count-badge {
             background: var(--accent); color: #fff; border-radius: 10px;
             padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px); font-size: var(--font-xs); min-width: 18px; text-align: center;

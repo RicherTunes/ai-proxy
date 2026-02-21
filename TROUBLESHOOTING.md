@@ -6,7 +6,7 @@ Having problems? This guide covers the most common issues and how to fix them.
 
 Before diving into specific problems, run these quick checks:
 
-1. **Is the proxy running?** Look for output in your terminal
+1. **Is the AI Proxy running?** Look for output in your terminal
 2. **Can you access the dashboard?** Go to http://127.0.0.1:18765/dashboard
 3. **Are your keys valid?** Check the Keys tab in the dashboard
 
@@ -21,6 +21,7 @@ Before diving into specific problems, run these quick checks:
 2. Clear npm cache: `npm cache clean --force`
 3. Delete `node_modules` folder and try again:
    ```bash
+   # Mac/Linux
    rm -rf node_modules
    npm install
    ```
@@ -72,7 +73,9 @@ Before diving into specific problems, run these quick checks:
    ```bash
    # Mac/Linux
    lsof -i :18765
+   ```
 
+   ```bash
    # Windows
    netstat -ano | findstr :18765
    ```
@@ -89,7 +92,18 @@ Before diving into specific problems, run these quick checks:
 1. Stop the other program using that port
 2. Or use a different port:
    ```bash
+   # Mac/Linux
    GLM_PORT=8080 npm start
+   ```
+
+   ```powershell
+   # Windows PowerShell
+   $env:GLM_PORT="8080"; npm start
+   ```
+
+   ```cmd
+   # Windows Command Prompt
+   set GLM_PORT=8080 && npm start
    ```
 
 ## API Key Problems
@@ -98,7 +112,7 @@ Before diving into specific problems, run these quick checks:
 
 **Symptoms:** Dashboard shows all keys as unhealthy, requests fail
 
-**What this means:** The proxy tried your keys multiple times and they all failed
+**Description:** The AI Proxy tried your keys multiple times and they all failed
 
 **Solutions:**
 1. **Check if keys are valid** — Log into Z.AI and verify keys exist
@@ -107,14 +121,20 @@ Before diving into specific problems, run these quick checks:
 4. **Wait and retry** — Keys might be temporarily rate-limited (wait 60 seconds)
 5. **Reload keys** after fixing:
    ```bash
+   # Mac/Linux
    curl -X POST http://127.0.0.1:18765/reload
+   ```
+
+   ```powershell
+   # Windows PowerShell
+   Invoke-WebRequest -Uri http://127.0.0.1:18765/reload -Method POST
    ```
 
 ### Keys show as "OPEN" in dashboard
 
 **Symptoms:** Circuit breaker state shows "OPEN"
 
-**What this means:** That specific key failed too many times and was disabled temporarily
+**Description:** That specific key failed too many times and was disabled temporarily
 
 **Solutions:**
 1. Wait 60 seconds for the cooldown period
@@ -137,7 +157,7 @@ Before diving into specific problems, run these quick checks:
 
 **Symptoms:** Getting 429 errors
 
-**What this means:** You're sending requests faster than your API keys allow
+**Description:** You're sending requests faster than your API keys allow
 
 **Solutions:**
 1. **Add more API keys** — More keys = higher total rate limit
@@ -153,7 +173,18 @@ Before diving into specific problems, run these quick checks:
 2. The upstream API might be slow — wait and retry
 3. Increase timeout (advanced):
    ```bash
+   # Mac/Linux
    GLM_REQUEST_TIMEOUT=600000 npm start
+   ```
+
+   ```powershell
+   # Windows PowerShell
+   $env:GLM_REQUEST_TIMEOUT="600000"; npm start
+   ```
+
+   ```cmd
+   # Windows Command Prompt
+   set GLM_REQUEST_TIMEOUT=600000 && npm start
    ```
 
 ### "Connection refused"
@@ -193,7 +224,7 @@ Before diving into specific problems, run these quick checks:
 
 **Symptoms:** Diagnostics tab shows authentication message
 
-**What this means:** You have admin authentication enabled but aren't logged in
+**Description:** You have admin authentication enabled but aren't logged in
 
 **Solutions:**
 1. Log in to the admin panel (if you set up admin auth)
@@ -225,7 +256,7 @@ curl http://127.0.0.1:18765/health
 ```
 
 This tells you:
-- If the proxy is running
+- If the AI Proxy is running
 - How many keys are healthy
 - Overall system status
 

@@ -189,14 +189,14 @@ test.describe('Dashboard Documentation Screenshots', () => {
 
     test.describe('Main Views', () => {
         test('docs - overview page', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(1000);
             await expect(page).toHaveScreenshot('docs/01-overview.png', { fullPage: true });
         });
 
         test('docs - routing page', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.click('.page-nav-btn[data-page="routing"]');
@@ -205,7 +205,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - requests page', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.click('.page-nav-btn[data-page="requests"]');
@@ -214,7 +214,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - system page', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.click('.page-nav-btn[data-page="system"]');
@@ -227,7 +227,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
 
     test.describe('Theme Variations', () => {
         test('docs - dark theme', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             // Ensure dark theme is active (default)
@@ -240,7 +240,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - light theme', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             // Toggle to light theme using the toolbar button
@@ -254,7 +254,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
 
     test.describe('Density Modes', () => {
         test('docs - compact density', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.click('.density-btn[data-density="compact"]');
@@ -263,7 +263,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - comfortable density (default)', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.click('.density-btn[data-density="comfortable"]');
@@ -276,7 +276,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
 
     test.describe('Overview Sections', () => {
         test('docs - health ribbon', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             const ribbon = page.locator('.health-ribbon');
@@ -284,7 +284,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - keys heatmap', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(1000);
             const heatmap = page.locator('#keysHeatmap');
@@ -292,7 +292,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - cost panel', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             // Toggle cost panel if not visible
@@ -306,7 +306,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - charts overview', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(1000);
             const charts = page.locator('#requestChartContainer').locator('..');
@@ -318,7 +318,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
 
     test.describe('Live Stream Panel', () => {
         test('docs - live stream collapsed', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.keyboard.press('l');
@@ -328,7 +328,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - live stream expanded', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.keyboard.press('l');
@@ -340,7 +340,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - live tab content', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             // Open drawer
@@ -362,7 +362,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
 
     test.describe('Dock Tabs', () => {
         test('docs - traces tab', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.keyboard.press('l');
@@ -376,7 +376,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - logs tab', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.keyboard.press('l');
@@ -390,7 +390,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - queue tab', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.keyboard.press('l');
@@ -404,7 +404,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - circuit tab', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.keyboard.press('l');
@@ -422,7 +422,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
 
     test.describe('Model Routing', () => {
         test('docs - routing tier builder', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.click('.page-nav-btn[data-page="routing"]');
@@ -455,7 +455,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
 
     test.describe('Modals', () => {
         test('docs - keyboard shortcuts modal', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.keyboard.press('?');
@@ -469,7 +469,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
 
     test.describe('System Page Sections', () => {
         test('docs - error breakdown card', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.click('.page-nav-btn[data-page="system"]');
@@ -479,7 +479,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - retry analytics card', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.click('.page-nav-btn[data-page="system"]');
@@ -489,7 +489,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - health score card', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.click('.page-nav-btn[data-page="system"]');
@@ -503,7 +503,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
 
     test.describe('Progressive Disclosure', () => {
         test('docs - advanced stats collapsed', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.click('.page-nav-btn[data-page="system"]');
@@ -513,7 +513,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - advanced stats expanded', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.click('.page-nav-btn[data-page="system"]');
@@ -525,7 +525,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - process health collapsed', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.click('.page-nav-btn[data-page="system"]');
@@ -535,7 +535,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
         });
 
         test('docs - process health expanded', async ({ page, proxyServer }) => {
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(500);
             await page.click('.page-nav-btn[data-page="system"]');
@@ -564,7 +564,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
     test.describe('Responsive Layouts', () => {
         test('docs - mobile view (375px)', async ({ page, proxyServer }) => {
             await page.setViewportSize({ width: 375, height: 667 });
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(1000);
             await expect(page).toHaveScreenshot('docs/responsive/mobile-375px.png', { fullPage: true });
@@ -572,7 +572,7 @@ test.describe('Dashboard Documentation Screenshots', () => {
 
         test('docs - tablet view (768px)', async ({ page, proxyServer }) => {
             await page.setViewportSize({ width: 768, height: 1024 });
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(1000);
             await expect(page).toHaveScreenshot('docs/responsive/tablet-768px.png', { fullPage: true });
@@ -580,10 +580,206 @@ test.describe('Dashboard Documentation Screenshots', () => {
 
         test('docs - desktop view (1920px)', async ({ page, proxyServer }) => {
             await page.setViewportSize({ width: 1920, height: 1080 });
-            await page.goto(proxyServer.url + '/dashboard', { waitUntil: 'domcontentloaded' });
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
             await page.waitForTimeout(1000);
             await expect(page).toHaveScreenshot('docs/responsive/desktop-1920px.png', { fullPage: true });
+        });
+    });
+
+    // ========== HEADER COMPONENTS (Focused Element Screenshots) ==========
+
+    test.describe('Header Components', () => {
+        test('docs - page navigation tabs', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('[data-testid="page-nav"]', { timeout: 10000 });
+            await page.waitForTimeout(500);
+            const nav = page.locator('[data-testid="page-nav"]');
+            await expect(nav).toHaveScreenshot('docs/components/page-nav-tabs.png');
+        });
+
+        test('docs - theme toggle button', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('[data-testid="theme-toggle"]', { timeout: 10000 });
+            await page.waitForTimeout(500);
+            const toggle = page.locator('[data-testid="theme-toggle"]');
+            await expect(toggle).toHaveScreenshot('docs/components/theme-toggle.png');
+        });
+
+        test('docs - density selector', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('[data-testid="density-toggle"]', { timeout: 10000 });
+            await page.waitForTimeout(500);
+            const density = page.locator('[data-testid="density-toggle"]');
+            await expect(density).toHaveScreenshot('docs/components/density-selector.png');
+        });
+
+        test('docs - time range selector', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('[data-testid="time-range"]', { timeout: 10000 });
+            await page.waitForTimeout(500);
+            const selector = page.locator('[data-testid="time-range"]');
+            await expect(selector).toHaveScreenshot('docs/components/time-range-selector.png');
+        });
+
+        test('docs - connection status indicator', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('[data-testid="connection-dot"]', { timeout: 10000 });
+            await page.waitForTimeout(500);
+            const status = page.locator('#connectionStatus');
+            await expect(status).toHaveScreenshot('docs/components/connection-status.png');
+        });
+
+        test('docs - pause/resume button', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('[data-testid="pause-btn"]', { timeout: 10000 });
+            await page.waitForTimeout(500);
+            const pauseBtn = page.locator('#pauseBtn');
+            await expect(pauseBtn).toHaveScreenshot('docs/components/pause-button.png');
+        });
+    });
+
+    // ========== KEY MANAGEMENT COMPONENTS ==========
+
+    test.describe('Key Management Components', () => {
+        test('docs - single key card', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('.key-card', { timeout: 10000 });
+            await page.waitForTimeout(1000);
+            const firstKey = page.locator('.key-card').first();
+            await expect(firstKey).toHaveScreenshot('docs/components/key-card.png');
+        });
+
+        test('docs - key card with circuit breaker closed', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('.key-card', { timeout: 10000 });
+            await page.waitForTimeout(1000);
+            // First key should be CLOSED
+            const closedKey = page.locator('.key-card').filter({ hasText: /CLOSED/ }).first();
+            await expect(closedKey).toHaveScreenshot('docs/components/key-card-closed.png');
+        });
+
+        test('docs - key card with circuit breaker half-open', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('.key-card', { timeout: 10000 });
+            await page.waitForTimeout(1000);
+            // Third key should be HALF_OPEN
+            const halfOpenKey = page.locator('.key-card').filter({ hasText: /HALF_OPEN/ }).first();
+            await expect(halfOpenKey).toHaveScreenshot('docs/components/key-card-half-open.png');
+        });
+    });
+
+    // ========== MODEL ROUTING COMPONENTS ==========
+
+    test.describe('Model Routing Components', () => {
+        test('docs - tier card (heavy)', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
+            await page.waitForTimeout(500);
+            await page.click('.page-nav-btn[data-page="routing"]');
+            await page.waitForTimeout(1000);
+            const heavyTier = page.locator('.tier-card').filter({ hasText: /heavy/i }).first();
+            await expect(heavyTier).toHaveScreenshot('docs/components/tier-card-heavy.png');
+        });
+
+        test('docs - tier card (medium)', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
+            await page.waitForTimeout(500);
+            await page.click('.page-nav-btn[data-page="routing"]');
+            await page.waitForTimeout(1000);
+            const mediumTier = page.locator('.tier-card').filter({ hasText: /medium/i }).first();
+            await expect(mediumTier).toHaveScreenshot('docs/components/tier-card-medium.png');
+        });
+
+        test('docs - tier card (light)', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
+            await page.waitForTimeout(500);
+            await page.click('.page-nav-btn[data-page="routing"]');
+            await page.waitForTimeout(1000);
+            const lightTier = page.locator('.tier-card').filter({ hasText: /light/i }).first();
+            await expect(lightTier).toHaveScreenshot('docs/components/tier-card-light.png');
+        });
+
+        test('docs - model list item', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
+            await page.waitForTimeout(500);
+            await page.click('.page-nav-btn[data-page="routing"]');
+            await page.waitForTimeout(1000);
+            const modelItem = page.locator('.model-list-item').first();
+            await expect(modelItem).toHaveScreenshot('docs/components/model-list-item.png');
+        });
+    });
+
+    // ========== REQUEST LIST COMPONENTS ==========
+
+    test.describe('Request List Components', () => {
+        test('docs - trace table row', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
+            await page.waitForTimeout(500);
+            await page.click('.page-nav-btn[data-page="requests"]');
+            await page.waitForTimeout(1000);
+            await page.keyboard.press('l');
+            await page.waitForTimeout(300);
+            await page.click('[data-testid="drawer-toggle"]');
+            await page.waitForTimeout(300);
+            await page.click('[data-testid="tab-traces"]');
+            await page.waitForTimeout(500);
+            const traceRow = page.locator('.trace-row').first();
+            await expect(traceRow).toHaveScreenshot('docs/components/trace-row.png');
+        });
+
+        test('docs - log entry', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
+            await page.waitForTimeout(500);
+            await page.click('.page-nav-btn[data-page="requests"]');
+            await page.waitForTimeout(1000);
+            await page.keyboard.press('l');
+            await page.waitForTimeout(300);
+            await page.click('[data-testid="drawer-toggle"]');
+            await page.waitForTimeout(300);
+            await page.click('[data-testid="tab-logs"]');
+            await page.waitForTimeout(500);
+            const logEntry = page.locator('.log-entry').first();
+            await expect(logEntry).toHaveScreenshot('docs/components/log-entry.png');
+        });
+    });
+
+    // ========== SYSTEM PAGE COMPONENTS ==========
+
+    test.describe('System Page Components', () => {
+        test('docs - circuit breaker status indicator', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
+            await page.waitForTimeout(500);
+            await page.click('.page-nav-btn[data-page="system"]');
+            await page.waitForTimeout(1000);
+            const indicator = page.locator('.circuit-status').first();
+            await expect(indicator).toHaveScreenshot('docs/components/circuit-status-indicator.png');
+        });
+    });
+
+    // ========== CHART COMPONENTS ==========
+
+    test.describe('Chart Components', () => {
+        test('docs - request rate chart', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
+            await page.waitForTimeout(1500);
+            const chart = page.locator('#requestRateChart');
+            await expect(chart).toHaveScreenshot('docs/components/request-rate-chart.png');
+        });
+
+        test('docs - latency chart', async ({ page, proxyServer }) => {
+            await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
+            await page.waitForTimeout(1500);
+            const chart = page.locator('#latencyChart');
+            await expect(chart).toHaveScreenshot('docs/components/latency-chart.png');
         });
     });
 });

@@ -31,6 +31,7 @@
     var LIVE_PANEL_SCOPE_KEY = 'dashboard-live-panel-scope';
     var LIVE_PANEL_HEIGHT_KEY = 'dashboard-live-panel-height';
     var LIVE_PANEL_COMPACT_KEY = 'dashboard-live-panel-compact';
+    var SCREENSHOT_QUERY_PARAM = 'screenshot';
 
     function formatDetailNumber(value) {
         var num = Number(value);
@@ -196,6 +197,14 @@
         if (range && VALID_RANGES.includes(range)) setTimeRange(range, false);
     }
 
+    function loadScreenshotModeFromUrl() {
+        var urlParams = new URLSearchParams(window.location.search);
+        var value = (urlParams.get(SCREENSHOT_QUERY_PARAM) || '').toLowerCase();
+        var enabled = value === '1' || value === 'true' || value === 'docs' || value === 'full';
+        STATE.settings.screenshotMode = enabled;
+        document.body.classList.toggle('screenshot-mode', enabled);
+    }
+
     // ========== TABBED INTERFACE ==========
     function switchDockTab(tabName) {
         STATE.settings.activeTab = tabName;
@@ -316,6 +325,7 @@
     }
 
     function isDrawerVisibleOnPage(pageName) {
+        if (STATE.settings.screenshotMode) return true;
         return getDrawerScope() === 'all_pages' || pageName === 'requests';
     }
 
@@ -1977,6 +1987,7 @@
 
         loadTheme();
         loadDensity();
+        loadScreenshotModeFromUrl();
         loadTabOrdering();
         initDrawerPreferences();
         loadActiveTab();

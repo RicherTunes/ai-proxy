@@ -447,6 +447,12 @@ describe('Hash routing contracts', () => {
     test('HASH_ROUTES maps bare requests hash to table sub-tab', () => {
         expect(initSource).toMatch(/'requests':\s*\{\s*page:\s*'requests',\s*subPage:\s*'table'\s*\}/);
     });
+
+    test('screenshot mode reads query param and toggles body class', () => {
+        expect(initSource).toMatch(/SCREENSHOT_QUERY_PARAM\s*=\s*'screenshot'/);
+        expect(initSource).toMatch(/\.get\(SCREENSHOT_QUERY_PARAM\)/);
+        expect(initSource).toMatch(/document\.body\.classList\.toggle\('screenshot-mode', enabled\)/);
+    });
 });
 
 // ── CSS Visibility Contracts ─────────────────────────────────────────────
@@ -489,16 +495,22 @@ describe('CSS visibility contracts', () => {
         const match = layoutCSS.match(/\.bottom-drawer\s*\{[^}]*display:\s*none\s*!important/);
         expect(match).toBeNull();
     });
+
+    test('screenshot mode renders drawer in document flow for full-page capture', () => {
+        expect(layoutCSS).toMatch(/body\.screenshot-mode\s+\.bottom-drawer\s*\{[^}]*position:\s*static/);
+    });
 });
 
 // ── CSS Component Contracts ──────────────────────────────────────────────
 
 describe('CSS component contracts', () => {
     let componentsCSS;
+    let layoutCSS;
 
     beforeAll(() => {
         const cssDir = path.join(__dirname, '..', 'public', 'css');
         componentsCSS = fs.readFileSync(path.join(cssDir, 'components.css'), 'utf8');
+        layoutCSS = fs.readFileSync(path.join(cssDir, 'layout.css'), 'utf8');
     });
 
     const TIER_BADGE_VARIANTS = ['heavy', 'medium', 'light', 'free', 'unknown'];
@@ -518,6 +530,12 @@ describe('CSS component contracts', () => {
         const utilitiesCSS = fs.readFileSync(path.join(cssDir, 'utilities.css'), 'utf8');
         // .visible { display: block !important } would break flex modals
         expect(utilitiesCSS).not.toMatch(/\.visible\s*\{\s*display:\s*block\s*!important/);
+    });
+
+    test('screenshot mode hides floating overlays', () => {
+        expect(layoutCSS).toMatch(/body\.screenshot-mode\s+\.shortcuts-help-btn[^}]*display:\s*none/);
+        expect(layoutCSS).toMatch(/body\.screenshot-mode\s+\.toast-container[^}]*display:\s*none/);
+        expect(layoutCSS).toMatch(/body\.screenshot-mode\s+\.context-menu[^}]*display:\s*none/);
     });
 });
 
