@@ -52,7 +52,8 @@
     "soak:smoke": "node scripts/soak.js --duration=60 --warmup=30 --rps=10",
     "soak:short": "node scripts/soak.js --duration=300 --warmup=60 --rps=20",
     "soak:medium": "node scripts/soak.js --duration=1800 --warmup=300 --rps=20",
-    "soak:long": "node scripts/soak.js --duration=7200 --warmup=600 --rps=20"
+    "soak:long": "node scripts/soak.js --duration=7200 --warmup=600 --rps=20",
+    "version": "node scripts/version.js"
   },
   "keywords": [
     "proxy",
