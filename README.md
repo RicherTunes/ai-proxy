@@ -16,6 +16,18 @@ Built for [Z.AI](https://z.ai) subscriptions but compatible with any Anthropic-c
 - **See what's happening** — Real-time dashboard shows requests, costs, and health
 - **Works with your existing tools** — Just change one setting in your app
 
+## What's New in v2.4
+
+The latest release includes major improvements:
+
+- **Adaptive Concurrency** — Automatically slows down when hitting rate limits, speeds up when clear
+- **Key Scheduler** — Smarter key selection that considers health and performance
+- **Model Routing** — Automatically routes requests to appropriate AI models based on complexity
+- **Diagnostics Tab Fix** — Dashboard now properly shows auth requirements for sensitive data
+- **Improved Dashboard** — Better visual feedback and error states
+
+See [CHANGELOG.md](./CHANGELOG.md) for full details.
+
 ## Prerequisites
 
 Before you start, make sure you have:
