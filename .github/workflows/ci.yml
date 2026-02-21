@@ -62,14 +62,14 @@ jobs:
           sleep 2
           curl -s http://localhost:3001/_stub/health | grep -q "ok"
 
+      - name: Create stub API keys config
+        run: |
+          echo '{"keys":["stub-key-1.stub-secret-1","stub-key-2.stub-secret-2"],"baseUrl":"http://localhost:3001"}' > api-keys.json
+
       - name: Start proxy server (single-process, fixed config)
         run: |
-          NO_CLUSTER=1 node proxy.js &
+          GLM_NO_CLUSTER=1 GLM_PORT=3000 GLM_LOG_LEVEL=warn node proxy.js &
           sleep 3
-        env:
-          PORT: 3000
-          UPSTREAM_URL: http://localhost:3001
-          LOG_LEVEL: warn
 
       - name: Run smoke load test (60s)
         run: |

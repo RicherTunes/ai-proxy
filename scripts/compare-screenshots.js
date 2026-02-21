@@ -52,6 +52,25 @@ const SCREENSHOT_MAPPING = {
     'docs-responsive-mobile-375px': { target: 'mobile-375px.png', category: 'responsive' },
     'docs-responsive-tablet-768px': { target: 'tablet-768px.png', category: 'responsive' },
     'docs-responsive-desktop-1920px': { target: 'desktop-1920px.png', category: 'responsive' },
+    // Components (Focused Element Screenshots)
+    'docs-components-page-nav-tabs': { target: 'page-nav-tabs.png', category: 'components' },
+    'docs-components-theme-toggle': { target: 'theme-toggle.png', category: 'components' },
+    'docs-components-density-selector': { target: 'density-selector.png', category: 'components' },
+    'docs-components-time-range-selector': { target: 'time-range-selector.png', category: 'components' },
+    'docs-components-connection-status': { target: 'connection-status.png', category: 'components' },
+    'docs-components-pause-button': { target: 'pause-button.png', category: 'components' },
+    'docs-components-key-card': { target: 'key-card.png', category: 'components' },
+    'docs-components-key-card-closed': { target: 'key-card-closed.png', category: 'components' },
+    'docs-components-key-card-half-open': { target: 'key-card-half-open.png', category: 'components' },
+    'docs-components-tier-card-heavy': { target: 'tier-card-heavy.png', category: 'components' },
+    'docs-components-tier-card-medium': { target: 'tier-card-medium.png', category: 'components' },
+    'docs-components-tier-card-light': { target: 'tier-card-light.png', category: 'components' },
+    'docs-components-model-list-item': { target: 'model-list-item.png', category: 'components' },
+    'docs-components-trace-row': { target: 'trace-row.png', category: 'components' },
+    'docs-components-log-entry': { target: 'log-entry.png', category: 'components' },
+    'docs-components-circuit-status-indicator': { target: 'circuit-status-indicator.png', category: 'components' },
+    'docs-components-request-rate-chart': { target: 'request-rate-chart.png', category: 'components' },
+    'docs-components-latency-chart': { target: 'latency-chart.png', category: 'components' },
 };
 
 function getImagePixelCount(imagePath) {

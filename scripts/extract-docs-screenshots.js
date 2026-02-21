@@ -73,6 +73,37 @@ const SCREENSHOT_MAPPING = {
     'docs-responsive-mobile-375px': { category: 'responsive', target: 'mobile-375px' },
     'docs-responsive-tablet-768px': { category: 'responsive', target: 'tablet-768px' },
     'docs-responsive-desktop-1920px': { category: 'responsive', target: 'desktop-1920px' },
+
+    // Components (Focused Element Screenshots)
+    // Header Components
+    'docs-components-page-nav-tabs': { category: 'components', target: 'page-nav-tabs' },
+    'docs-components-theme-toggle': { category: 'components', target: 'theme-toggle' },
+    'docs-components-density-selector': { category: 'components', target: 'density-selector' },
+    'docs-components-time-range-selector': { category: 'components', target: 'time-range-selector' },
+    'docs-components-connection-status': { category: 'components', target: 'connection-status' },
+    'docs-components-pause-button': { category: 'components', target: 'pause-button' },
+
+    // Key Management Components
+    'docs-components-key-card': { category: 'components', target: 'key-card' },
+    'docs-components-key-card-closed': { category: 'components', target: 'key-card-closed' },
+    'docs-components-key-card-half-open': { category: 'components', target: 'key-card-half-open' },
+
+    // Model Routing Components
+    'docs-components-tier-card-heavy': { category: 'components', target: 'tier-card-heavy' },
+    'docs-components-tier-card-medium': { category: 'components', target: 'tier-card-medium' },
+    'docs-components-tier-card-light': { category: 'components', target: 'tier-card-light' },
+    'docs-components-model-list-item': { category: 'components', target: 'model-list-item' },
+
+    // Request List Components
+    'docs-components-trace-row': { category: 'components', target: 'trace-row' },
+    'docs-components-log-entry': { category: 'components', target: 'log-entry' },
+
+    // System Components
+    'docs-components-circuit-status-indicator': { category: 'components', target: 'circuit-status-indicator' },
+
+    // Chart Components
+    'docs-components-request-rate-chart': { category: 'components', target: 'request-rate-chart' },
+    'docs-components-latency-chart': { category: 'components', target: 'latency-chart' },
 };
 
 function ensureDir(dir) {
@@ -94,6 +125,7 @@ function generateMarkdownIndex() {
         'system': { title: 'System Page', screenshots: [] },
         'progressive': { title: 'Progressive Disclosure', screenshots: [] },
         'responsive': { title: 'Responsive Layouts', screenshots: [] },
+        'components': { title: 'UI Components (Focused)', screenshots: [] },
     };
 
     // Group screenshots by category
