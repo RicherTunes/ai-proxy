@@ -2,6 +2,8 @@
 
 This guide helps you use Claude Code (Anthropic's AI CLI) effectively with this project.
 
+> **Using Z.ai (GLM Coding Plan)?** See [Z.ai Knowledge Base](../reference/zai-knowledge-base.md#claude-code-integration) for specific setup instructions with GLM models.
+
 ## Project Context
 
 AI Proxy is a high-performance API proxy written in Node.js using **CommonJS** (not ESM).

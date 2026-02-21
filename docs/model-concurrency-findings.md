@@ -5,6 +5,9 @@
 **Base URL:** https://api.z.ai/api/anthropic
 **Total Keys:** 20
 
+> **Related:** See [Z.ai Knowledge Base](../reference/zai-knowledge-base.md) for complete documentation on tiers, pricing, and API configuration.
+> **Quick Reference:** See [Z.ai Coding Subscription](../reference/zai-coding-subscription.md) for tier limits and quotas.
+
 ## Key Finding: Concurrency is PER-ACCOUNT, not per-key
 
 Multi-key tests on `glm-4.7` and `glm-4.5-air` both confirm:

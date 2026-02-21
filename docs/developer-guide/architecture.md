@@ -2,6 +2,8 @@
 
 System architecture overview for GLM Proxy.
 
+> **Provider Context:** This proxy is designed for [Z.ai (GLM Coding Plan)](../reference/zai-coding-subscription.md). See [Z.ai Knowledge Base](../reference/zai-knowledge-base.md) for model specifications and API details.
+
 ## Overview
 
 GLM Proxy is a Node.js-based HTTP proxy that provides intelligent request routing, load balancing, and fault tolerance for API requests to the Z.AI GLM service.

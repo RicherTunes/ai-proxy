@@ -2,6 +2,8 @@
 
 Having problems? This guide covers the most common issues and how to fix them.
 
+> **Using Z.ai (GLM Coding Plan)?** See [Z.ai Documentation](./docs/reference/zai-coding-subscription.md) for tier limits, quotas, and known issues.
+
 ## Quick Diagnostics
 
 Before diving into specific problems, run these quick checks:

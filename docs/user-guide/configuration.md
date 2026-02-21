@@ -45,12 +45,16 @@ The `api-keys.json` file contains your API credentials:
 }
 ```
 
+> **Need API keys?** Sign up at [z.ai](https://z.ai) and create API keys in your dashboard. See [Z.ai Documentation](../reference/zai-coding-subscription.md) for tier comparisons and pricing.
+
 ### Fields
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `keys` | array | Yes | List of API keys (format: `key-id.secret`) |
 | `baseUrl` | string | No | Target API base URL |
+
+> **Note:** Z.ai uses the format `sk-sp-xxxxx` for Coding Plan subscriptions. See [Z.ai Knowledge Base](../reference/zai-knowledge-base.md#api-reference) for endpoint details.
 
 ## Circuit Breaker
 

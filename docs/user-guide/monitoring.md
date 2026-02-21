@@ -2,6 +2,37 @@
 
 Guide for monitoring GLM Proxy health and performance.
 
+> **New to Z.ai?** See [Z.ai Documentation](../reference/zai-coding-subscription.md) for understanding quotas, rate limits, and tier capabilities.
+
+## Dashboard Monitoring
+
+The dashboard provides real-time visual monitoring of all proxy metrics. Open it at `http://127.0.0.1:18765/dashboard`.
+
+![Dashboard Overview](../screenshots/overview.png)
+
+### Key Monitoring Sections
+
+**Connection Status** - See if the proxy is connected to the upstream API:
+
+![Connection Status](../screenshots/components/connection-status.png)
+
+**Keys Heatmap** - Monitor the health of all your API keys at a glance:
+
+![Keys Heatmap](../screenshots/components/keys-heatmap.png)
+
+- Green cells = healthy keys
+- Yellow/Red cells = degraded or failing keys
+- Pulsing cells = active requests
+
+**Request Charts** - Track request rate and latency over time:
+
+![Request Rate Chart](../screenshots/components/request-rate-chart.png)
+![Latency Chart](../screenshots/components/latency-chart.png)
+
+**Circuit Breaker Status** - Monitor circuit breaker states for all keys:
+
+![Circuit Indicators](../screenshots/components/circuit-indicators.png)
+
 ## API Endpoints
 
 | Endpoint | Description |
