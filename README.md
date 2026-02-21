@@ -1,66 +1,63 @@
 # AI Proxy
 
-High-performance API proxy for AI providers with multi-key load balancing, circuit breaker protection, adaptive concurrency control, and a real-time monitoring dashboard.
+**A smart middleman between your applications and AI services.**
+
+If you have multiple API keys and want to use them efficiently without hitting rate limits, this tool automatically distributes your requests across all your keys, handles errors gracefully, and shows you exactly what's happening in real-time.
 
 Built for [Z.AI](https://z.ai) subscriptions but compatible with any Anthropic-compatible API endpoint.
 
-## Features
+## What Does This Do?
 
-- **Multi-Key Load Balancing** — Health-aware distribution across multiple API keys with weighted scoring
-- **Circuit Breaker** — Automatic key isolation on failures with half-open recovery testing
-- **Adaptive Concurrency (AIMD)** — Dynamically adjusts per-model concurrency limits based on 429 feedback
-- **Rate Limiting** — Per-key token bucket with burst support
-- **Request Queue** — Backpressure-aware queueing when all keys are busy, with configurable timeout
-- **Retry with Backoff** — Exponential backoff with jitter on transient failures
-- **Model Routing** — Complexity-aware tiered model mapping with per-key overrides and cost tracking
-- **Key Scheduler** — Intelligent key selection with health-weighted scoring and drift detection
-- **Cost Tracking** — Per-model cost tracking with external pricing configuration
-- **Token Tracking** — Real-time input/output token counting with cost estimation
-- **Hot Reload** — Update API keys without restart
-- **Clustering** — Multi-worker process support for high throughput
-- **Real-Time Dashboard** — Full monitoring UI with charts, traces, and controls
-- **SSE Streaming** — Full support for streaming responses with proper backpressure
+**In simple terms:** Imagine you have 5 API keys. Instead of using just one until it hits a limit, this tool spreads your requests across all 5 keys automatically. If one key fails, it automatically switches to another. You get a dashboard to see everything happening in real-time.
 
-## Dashboard
+**Key benefits:**
+- **Never hit rate limits** — Spreads requests across multiple API keys
+- **Automatic failover** — If one key fails, switches to another instantly
+- **See what's happening** — Real-time dashboard shows requests, costs, and health
+- **Works with your existing tools** — Just change one setting in your app
 
-The built-in dashboard provides real-time visibility into proxy health, request flow, and key status:
+## Prerequisites
 
-- Live request/response monitoring with trace inspection
-- Per-key health scores, circuit breaker states, and latency heatmaps
-- Historical charts for throughput, latency, and error rates
-- Model routing configuration with per-key override management
-- Cost tracking and usage monitoring
-- Process health, scheduler status, and replay queue visibility
+Before you start, make sure you have:
 
-Access it at `http://127.0.0.1:18765/dashboard` after starting the proxy.
+- **Node.js** (version 18 or higher) — [Download here](https://nodejs.org/)
+- **API keys** from [Z.AI](https://z.ai) or another Anthropic-compatible provider
+- A terminal/command prompt
+
+**To check if Node.js is installed:**
+```bash
+node --version
+```
+You should see something like `v20.x.x`. If not, install Node.js first.
 
 ## Quick Start
 
-### 1. Install Dependencies
+### 1. Download and Install
 
 ```bash
+# Clone or download this project
+git clone https://github.com/RicherTunes/ai-proxy.git
+cd ai-proxy
+
+# Install dependencies (this may take a minute)
 npm install
 ```
 
-### 2. Configure API Keys
+### 2. Add Your API Keys
 
-Copy the example and add your keys:
-
-```bash
-cp api-keys.json.example api-keys.json
-```
-
-Edit `api-keys.json`:
+Create a file called `api-keys.json` in the project folder:
 
 ```json
 {
   "keys": [
-    "your-key-id-1.your-secret-1",
-    "your-key-id-2.your-secret-2"
+    "your-first-api-key.here",
+    "your-second-api-key.here"
   ],
   "baseUrl": "https://api.z.ai/api/anthropic"
 }
 ```
+
+> **Where do I get API keys?** Sign up at [Z.AI](https://z.ai) and create API keys in your dashboard.
 
 ### 3. Start the Proxy
 
@@ -68,19 +65,80 @@ Edit `api-keys.json`:
 npm start
 ```
 
-The proxy will start on `http://127.0.0.1:18765` by default.
+You should see something like:
+```
+[INFO] GLM Proxy starting...
+[INFO] Loaded 2 API keys
+[INFO] Server listening on http://127.0.0.1:18765
+```
 
-### 4. Configure Your Client
+### 4. Check It's Working
 
-Point your Anthropic/Claude client to the proxy:
+Open your browser and go to: **http://127.0.0.1:18765/dashboard**
 
+You should see the dashboard with your keys listed.
+
+### 5. Connect Your Application
+
+Change your application to use the proxy instead of connecting directly:
+
+**For Claude Code CLI:**
 ```bash
-# Claude Code CLI
 export ANTHROPIC_BASE_URL=http://127.0.0.1:18765
+```
 
-# Python SDK
+**For Python (Anthropic SDK):**
+```python
+import anthropic
 client = anthropic.Anthropic(base_url="http://127.0.0.1:18765")
 ```
+
+**For any application using Anthropic API:**
+Just change the API endpoint from `https://api.anthropic.com` to `http://127.0.0.1:18765`
+
+That's it! Your requests now go through the proxy automatically.
+
+## Dashboard
+
+After starting the proxy, open **http://127.0.0.1:18765/dashboard** in your browser to see:
+
+- **Overview** — Total requests, success rate, current costs
+- **Keys** — Health status of each API key, how many requests each has handled
+- **Requests** — Live feed of requests going through
+- **Routing** — Which AI models are being used
+
+## Having Problems?
+
+**Proxy won't start?**
+- Make sure you ran `npm install` first
+- Check that `api-keys.json` exists and has valid JSON format
+- Verify your API keys are correct
+
+**Dashboard shows errors?**
+- Make sure the proxy is running (you should see log output in your terminal)
+- Try refreshing the page
+- Check your browser's developer console (F12) for error messages
+
+**Requests failing?**
+- Verify your API keys are valid and not expired
+- Check the dashboard to see if keys show as "healthy"
+- Look at the terminal output for error messages
+
+For more help, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md).
+
+## Features
+
+For advanced users, here's the full feature list:
+
+- **Multi-Key Load Balancing** — Distributes requests across keys based on health
+- **Automatic Failover** — If a key fails, switches to healthy ones
+- **Rate Limit Handling** — Slows down when hitting limits, speeds up when clear
+- **Cost Tracking** — See exactly how much each request costs
+- **Real-Time Dashboard** — Monitor everything visually
+- **Streaming Support** — Works with streaming responses
+- **Hot Reload** — Add new keys without restarting
+
+## Configuration
 
 ## Configuration
 

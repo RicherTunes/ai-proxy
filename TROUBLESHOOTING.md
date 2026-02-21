@@ -1,104 +1,239 @@
-# Troubleshooting
+# Troubleshooting Guide
 
-## Common Issues
+Having problems? This guide covers the most common issues and how to fix them.
+
+## Quick Diagnostics
+
+Before diving into specific problems, run these quick checks:
+
+1. **Is the proxy running?** Look for output in your terminal
+2. **Can you access the dashboard?** Go to http://127.0.0.1:18765/dashboard
+3. **Are your keys valid?** Check the Keys tab in the dashboard
+
+## Installation Problems
+
+### "npm install" fails
+
+**Symptoms:** Error messages during installation, missing modules
+
+**Solutions:**
+1. Make sure Node.js 18+ is installed: `node --version`
+2. Clear npm cache: `npm cache clean --force`
+3. Delete `node_modules` folder and try again:
+   ```bash
+   rm -rf node_modules
+   npm install
+   ```
+4. Check your internet connection
+
+### "Cannot find module" error
+
+**Symptoms:** Error when running `npm start`
+
+**Solutions:**
+1. You skipped installation. Run: `npm install`
+2. Installation was incomplete. Delete `node_modules` and reinstall
+
+### JSON parse errors
+
+**Symptoms:** "Unexpected token" or "JSON parse error" when starting
+
+**Solutions:**
+1. Check `api-keys.json` for syntax errors
+2. Make sure you're using double quotes `"` not single quotes `'`
+3. Ensure no trailing commas (comma after the last item)
+4. Use a JSON validator like [jsonlint.com](https://jsonlint.com/)
+
+**Common JSON mistakes:**
+```json
+// ❌ WRONG - trailing comma
+{
+  "keys": [
+    "key1.secret1",
+  ]
+}
+
+// ✅ CORRECT
+{
+  "keys": [
+    "key1.secret1"
+  ]
+}
+```
+
+## Startup Problems
+
+### Proxy won't start
+
+**Symptoms:** Nothing happens or immediate crash
+
+**Check these:**
+1. Is port 18765 already in use?
+   ```bash
+   # Mac/Linux
+   lsof -i :18765
+
+   # Windows
+   netstat -ano | findstr :18765
+   ```
+2. Does `api-keys.json` exist in the project folder?
+3. Does the JSON file have at least one key?
+
+### "EADDRINUSE" error
+
+**Symptoms:** "address already in use" error
+
+**Meaning:** Something else is using port 18765
+
+**Solutions:**
+1. Stop the other program using that port
+2. Or use a different port:
+   ```bash
+   GLM_PORT=8080 npm start
+   ```
+
+## API Key Problems
 
 ### "All keys are unhealthy"
 
-The circuit breaker has opened due to repeated failures.
+**Symptoms:** Dashboard shows all keys as unhealthy, requests fail
+
+**What this means:** The proxy tried your keys multiple times and they all failed
 
 **Solutions:**
+1. **Check if keys are valid** — Log into Z.AI and verify keys exist
+2. **Check if keys are expired** — Some keys have expiration dates
+3. **Check your account status** — Make sure your account is active
+4. **Wait and retry** — Keys might be temporarily rate-limited (wait 60 seconds)
+5. **Reload keys** after fixing:
+   ```bash
+   curl -X POST http://127.0.0.1:18765/reload
+   ```
 
-1. Check if API keys are valid
-2. Verify target API is reachable (`api.z.ai`)
-3. Wait for cooldown period (default 60s)
-4. Use `POST /reload` to reload keys after fixing
+### Keys show as "OPEN" in dashboard
+
+**Symptoms:** Circuit breaker state shows "OPEN"
+
+**What this means:** That specific key failed too many times and was disabled temporarily
+
+**Solutions:**
+1. Wait 60 seconds for the cooldown period
+2. The key will automatically try again (state changes to "HALF_OPEN")
+3. If it works, state returns to "CLOSED"
+4. If it fails again, state goes back to "OPEN"
+
+### Invalid API key error
+
+**Symptoms:** "Invalid API key" or authentication errors
+
+**Solutions:**
+1. Double-check the key format — should be `keyId.secret`
+2. Make sure there are no extra spaces or line breaks
+3. Verify the key works directly (without the proxy)
+
+## Request Problems
 
 ### "Rate limit exceeded"
 
-The proxy is hitting per-key rate limits.
+**Symptoms:** Getting 429 errors
+
+**What this means:** You're sending requests faster than your API keys allow
 
 **Solutions:**
+1. **Add more API keys** — More keys = higher total rate limit
+2. **Slow down your requests** — Reduce how often you call the API
+3. **Check if it's account-level** — Sometimes the limit is on your whole account, not per key
 
-1. Add more API keys to `api-keys.json`
-2. Increase `rateLimitPerMinute` in config
-3. Check if account-level limit is hit (not per-key)
+### Requests timing out
+
+**Symptoms:** "Timeout" or "ETIMEDOUT" errors
+
+**Solutions:**
+1. Check your internet connection
+2. The upstream API might be slow — wait and retry
+3. Increase timeout (advanced):
+   ```bash
+   GLM_REQUEST_TIMEOUT=600000 npm start
+   ```
+
+### "Connection refused"
+
+**Symptoms:** Can't connect to the proxy
+
+**Solutions:**
+1. Make sure the proxy is running
+2. Check you're using the correct URL: `http://127.0.0.1:18765`
+3. Try `localhost` instead of `127.0.0.1` (or vice versa)
+
+## Dashboard Problems
 
 ### Dashboard not loading
 
-The dashboard HTML/CSS/JS fails to generate.
+**Symptoms:** Blank page or "can't connect"
 
 **Solutions:**
+1. Make sure the proxy is running (check terminal output)
+2. Go to: http://127.0.0.1:18765/dashboard
+3. Try a different browser
+4. Check if browser is blocking the connection
 
-1. Check browser console for errors
-2. Verify port 18765 is accessible
-3. Try `http://127.0.0.1:18765/dashboard` (not localhost on some systems)
-4. Check logLevel: DEBUG for generation errors
+### Dashboard shows zeros everywhere
 
-### Diagnostics tab shows all zeros
+**Symptoms:** All metrics show "0"
 
-The Diagnostics tab displays zeros for all metrics (memory, process health, scheduler).
+**This is normal if:**
+- You just started (no requests yet)
+- No requests have been sent through the proxy
 
-**Cause:** The `/health/deep` endpoint requires admin authentication but the dashboard doesn't send auth tokens.
+**If you've sent requests:**
+- Check the Keys tab — are your keys healthy?
+- Check the terminal for error messages
 
-**Solutions:**
+### Diagnostics tab shows "Auth Required"
 
-1. Log in to the admin panel first (if admin auth is enabled)
-2. Check browser console for 401 errors from `/health/deep`
-3. Verify `/stats/scheduler` endpoint is accessible
-4. If you don't need auth, remove `/health/deep` from `debugEndpoints` in config
+**Symptoms:** Diagnostics tab shows authentication message
 
-**Quick fix:** Set `adminAuth.enabled: false` in config or add `/health/deep` to allowed unauthenticated routes.
-
-### Model routing not working
-
-Requests not being routed to expected models.
+**What this means:** You have admin authentication enabled but aren't logged in
 
 **Solutions:**
+1. Log in to the admin panel (if you set up admin auth)
+2. Or disable admin auth if you don't need it (local network only)
 
-1. Check `modelRouting.enabled: true` in config
-2. Verify rules match your model patterns
-3. Check `/model-routing` endpoint for current state
-4. Review decision logs with `logDecisions: true`
+## Getting More Help
 
-### High memory usage
+### Enable Debug Logging
 
-Memory grows over time.
-
-**Solutions:**
-
-1. Check statsSaveInterval (default 60s)
-2. Verify histogram.maxDataPoints (default 10000)
-3. Reduce maxTotalConcurrency if needed
-4. Check for memory leaks with `npm run test:stress`
-
-### 429 errors from upstream
-
-Getting 429s despite having multiple keys.
-
-**Solutions:**
-
-1. Check if it's account-level (not per-key) with `accountLevelDetection.enabled`
-2. Enable `adaptiveConcurrency` in `enforce` mode
-3. Reduce concurrency per model
-4. Check `poolCooldown` settings
-
-## Getting Logs
-
-Enable debug logging:
+See exactly what's happening:
 
 ```bash
+# Mac/Linux
 LOG_LEVEL=DEBUG npm start
+
+# Windows PowerShell
+$env:LOG_LEVEL="DEBUG"; npm start
+
+# Windows Command Prompt
+set LOG_LEVEL=DEBUG && npm start
 ```
 
-Check specific log files:
+This shows detailed logs that help identify problems.
 
-- Application logs: stdout/stderr
-- PM2 logs: `pm2 logs glm-proxy`
-- Journalctl (systemd): `journalctl -u ai-proxy`
+### Check the Health Endpoint
 
-## Still Having Issues?
+```bash
+curl http://127.0.0.1:18765/health
+```
 
-1. Check `/health` endpoint for system status
-2. Check `/stats` for key health and metrics
-3. Enable `LOG_LEVEL=DEBUG` and reproduce
-4. Open a GitHub issue with logs and details
+This tells you:
+- If the proxy is running
+- How many keys are healthy
+- Overall system status
+
+### Still Stuck?
+
+1. **Search existing issues:** [GitHub Issues](https://github.com/RicherTunes/ai-proxy/issues)
+2. **Open a new issue** with:
+   - What you were trying to do
+   - What happened (error messages)
+   - Your setup (Node.js version, OS)
+   - Relevant log output (use `LOG_LEVEL=DEBUG`)
