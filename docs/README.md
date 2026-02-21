@@ -3,7 +3,9 @@
 ## Quick Links
 
 - [Getting Started](./user-guide/getting-started.md) - Installation and quick start
+- [Dashboard Guide](./user-guide/dashboard.md) - Visual guide to the monitoring dashboard
 - [Configuration](./user-guide/configuration.md) - All configuration options
+- [Monitoring](./user-guide/monitoring.md) - Health checks and statistics
 - [Troubleshooting](../TROUBLESHOOTING.md) - Common issues and solutions
 - [Glossary](../README.md#glossary) - Technical terms explained
 
@@ -17,6 +19,7 @@ Documentation for running and monitoring GLM Proxy.
 | Document | Description |
 |----------|-------------|
 | [Getting Started](./user-guide/getting-started.md) | Installation and quick start guide |
+| [Dashboard Guide](./user-guide/dashboard.md) | Visual tour of the monitoring dashboard with screenshots |
 | [Configuration](./user-guide/configuration.md) | Environment variables and api-keys.json options |
 | [Monitoring](./user-guide/monitoring.md) | Health checks, stats, and backpressure endpoints |
 

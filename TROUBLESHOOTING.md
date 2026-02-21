@@ -207,13 +207,13 @@ See exactly what's happening:
 
 ```bash
 # Mac/Linux
-LOG_LEVEL=DEBUG npm start
+GLM_LOG_LEVEL=DEBUG npm start
 
 # Windows PowerShell
-$env:LOG_LEVEL="DEBUG"; npm start
+$env:GLM_LOG_LEVEL="DEBUG"; npm start
 
 # Windows Command Prompt
-set LOG_LEVEL=DEBUG && npm start
+set GLM_LOG_LEVEL=DEBUG && npm start
 ```
 
 This shows detailed logs that help identify problems.
@@ -236,4 +236,4 @@ This tells you:
    - What you were trying to do
    - What happened (error messages)
    - Your setup (Node.js version, OS)
-   - Relevant log output (use `LOG_LEVEL=DEBUG`)
+   - Relevant log output (use `GLM_LOG_LEVEL=DEBUG`)

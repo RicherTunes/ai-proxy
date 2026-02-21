@@ -91,7 +91,7 @@ npm start
 
 **You should see:**
 ```
-[INFO] GLM Proxy v2.4.0 starting...
+[INFO] GLM Proxy starting...
 [INFO] Loaded 2 API keys from api-keys.json
 [INFO] Dashboard available at http://127.0.0.1:18765/dashboard
 [INFO] Server listening on http://127.0.0.1:18765

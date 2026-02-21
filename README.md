@@ -168,7 +168,7 @@ New to proxies? Here are some terms you might see:
 | `GLM_CIRCUIT_THRESHOLD` | `5` | Failures before circuit opens |
 | `GLM_CIRCUIT_WINDOW` | `30000` | Failure window (ms) |
 | `GLM_CIRCUIT_COOLDOWN` | `60000` | Circuit cooldown period (ms) |
-| `GLM_MAX_CONCURRENCY_PER_KEY` | `3` | Max concurrent requests per key |
+| `GLM_MAX_CONCURRENCY_PER_KEY` | `5` | Max concurrent requests per key |
 | `GLM_MAX_TOTAL_CONCURRENCY` | `200` | Max total concurrent requests |
 | `GLM_QUEUE_SIZE` | `100` | Max requests to queue when keys busy |
 | `GLM_QUEUE_TIMEOUT` | `30000` | Max queue wait time (ms) |
@@ -183,14 +183,14 @@ New to proxies? Here are some terms you might see:
 | `GLM_USE_WEIGHTED_SELECTION` | `true` | Health-weighted key selection vs round-robin |
 | `GLM_SLOW_KEY_THRESHOLD` | `2.0` | Latency multiplier for slow key detection |
 | `GLM_MAX_CONSECUTIVE_HANGUPS` | `5` | Max consecutive hangups before recreation |
-| `GLM_POOL_COOLDOWN_MAX` | `30000` | Max pool cooldown (ms) |
+| `GLM_POOL_COOLDOWN_MAX` | `10000` | Max pool cooldown (ms) |
 | `GLM_HISTOGRAM_ENABLED` | `true` | Enable latency histogram |
 | `GLM_COST_ENABLED` | `true` | Enable cost tracking |
 | `GLM_TRACE_ENABLED` | `true` | Enable request tracing |
-| `GLM_ADMIN_AUTH_ENABLED` | `true` | Enable admin authentication |
+| `GLM_ADMIN_AUTH_ENABLED` | `false` | Enable admin authentication |
 | `GLM_MAX_429_ATTEMPTS` | `3` | Max 429 retry attempts per request |
-| `GLM_ALLOW_TIER_DOWNGRADE` | `true` | Allow tier downgrade on 429 |
-| `GLM_GLM5_ENABLED` | `true` | Enable GLM-5 shadow mode |
+| `GLM_ALLOW_TIER_DOWNGRADE` | `false` | Allow tier downgrade on 429 |
+| `GLM_GLM5_ENABLED` | `true` | Enable GLM-5 routing (shadow-only at 0% preference by default) |
 
 ### Adaptive Concurrency (AIMD)
 

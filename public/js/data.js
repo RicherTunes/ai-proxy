@@ -2035,7 +2035,7 @@
     // ========== HISTOGRAM & COST ==========
     function fetchHistogram() {
         return fetchJSON('/stats/latency-histogram?range=' + currentHistogramRange).then(function(data) {
-            if (data) {
+            if (data && !data.__error) {
                 updateHistogram(data);
                 return true;
             }
@@ -2192,7 +2192,8 @@
         ]).then(function(results) {
             var data = results[0];
             var fullReport = results[1];
-            if (!data) return false;
+            if (!data || data.__error) return false;
+            if (fullReport && fullReport.__error) fullReport = null;
             var costPanel = document.getElementById('costPanel');
             if (costPanel) costPanel.style.display = 'block';
             var setEl = function(id, val) { var e = document.getElementById(id); if (e) e.textContent = val; };
@@ -2241,7 +2242,7 @@
     // ========== PERSISTENT STATS ==========
     function fetchPersistentStats() {
         return fetchJSON('/persistent-stats').then(function(data) {
-            if (!data) return false;
+            if (!data || data.__error) return false;
             var setEl = function(id, val) { var e = document.getElementById(id); if (e) e.textContent = val; };
             if (data.tracking) {
                 var since = new Date(data.tracking.since);
@@ -2296,7 +2297,7 @@
     // ========== PREDICTIONS ==========
     function fetchPredictions() {
         return fetchJSON('/predictions').then(function(data) {
-            if (!data) return false;
+            if (!data || data.__error) return false;
             var setEl = function(id, val) { var e = document.getElementById(id); if (e) e.textContent = val; };
             setEl('predCriticalKeys', (data.criticalKeys || []).length);
             var trend = data.scaling && data.scaling.trend ? data.scaling.trend.direction || 'stable' : 'stable';
@@ -2320,7 +2321,7 @@
 
     function fetchCircuitHistory() {
         return fetchJSON('/circuit-history').then(function(data) {
-            if (!data) return false;
+            if (!data || data.__error) return false;
             var el = document.getElementById('circuitTimeline');
             if (!el) return false;
 
@@ -2412,7 +2413,7 @@
     }
 
     function fetchScheduler() {
-        return fetchJSON('/stats/scheduler').then(function(data) {
+        return fetchJSON('/stats/scheduler', { requireAuth: true }).then(function(data) {
             var el;
 
             // Handle error responses
@@ -2471,7 +2472,7 @@
 
     function fetchReplayQueue() {
         return fetchJSON('/replay-queue/stats').then(function(data) {
-            if (!data || data.error) return false;
+            if (!data || data.__error || data.error) return false;
             var section = document.getElementById('replayQueueSection');
             if (section) section.style.display = '';
 

@@ -8,7 +8,7 @@ Currently supported: v2.4.x
 
 Please report security issues privately:
 
-- Email: security@example.com (update with your contact)
+- Open a [GitHub Security Advisory](https://github.com/RicherTunes/ai-proxy/security/advisories/new)
 - Do not create public GitHub issues
 
 Include:

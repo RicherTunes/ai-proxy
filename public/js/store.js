@@ -325,6 +325,7 @@
             }
             return await res.json();
         } catch (e) {
+            clearTimeout(timeoutId);
             if (e.name === 'AbortError') {
                 console.warn('fetchJSON: ' + url + ' timed out after ' + timeout + 'ms');
             } else {
