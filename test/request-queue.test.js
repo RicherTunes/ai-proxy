@@ -272,7 +272,7 @@ describe('RequestQueue', () => {
 
             const result = await promise;
             expect(result.success).toBe(true);
-            expect(result.waitTime).toBeGreaterThanOrEqual(50);
+            expect(result.waitTime).toBeGreaterThanOrEqual(45); // Relaxed from 50 — setTimeout(50) can fire 1-2ms early on CI
         });
 
         test('should track totalDequeued metric', async () => {

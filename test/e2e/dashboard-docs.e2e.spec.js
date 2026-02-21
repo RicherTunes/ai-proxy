@@ -107,6 +107,21 @@ const MOCK_MODELS = {
 };
 
 async function setupDocumentationRoutes(page) {
+    // Register specific /stats/* routes BEFORE the general /stats route
+    // (Playwright matches routes in registration order)
+    await page.route('**/stats/cost', route => route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify(MOCK_STATS.cost)
+    }));
+    await page.route('**/stats/comparison*', route => route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({
+            keys: [
+                { keyId: 'key-0', successRate: 96, avgLatency: 162 },
+                { keyId: 'key-1', successRate: 100, avgLatency: 120 }
+            ]
+        })
+    }));
     await page.route('**/stats', route => route.fulfill({
         status: 200, contentType: 'application/json',
         body: JSON.stringify(MOCK_STATS)
@@ -114,10 +129,6 @@ async function setupDocumentationRoutes(page) {
     await page.route('**/history*', route => route.fulfill({
         status: 200, contentType: 'application/json',
         body: JSON.stringify(MOCK_HISTORY)
-    }));
-    await page.route('**/stats/cost', route => route.fulfill({
-        status: 200, contentType: 'application/json',
-        body: JSON.stringify(MOCK_STATS.cost)
     }));
     await page.route('**/logs*', route => route.fulfill({
         status: 200, contentType: 'application/json',
@@ -137,15 +148,6 @@ async function setupDocumentationRoutes(page) {
             { range: '200-500ms', count: 20 },
             { range: '500ms+', count: 10 }
         ]})
-    }));
-    await page.route('**/stats/comparison*', route => route.fulfill({
-        status: 200, contentType: 'application/json',
-        body: JSON.stringify({
-            keys: [
-                { keyId: 'key-0', successRate: 96, avgLatency: 162 },
-                { keyId: 'key-1', successRate: 100, avgLatency: 120 }
-            ]
-        })
     }));
     await page.route('**/model-routing', route => route.fulfill({
         status: 200, contentType: 'application/json',

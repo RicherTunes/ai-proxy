@@ -54,27 +54,59 @@ const SCREENSHOT_MAPPING = {
     'docs-responsive-desktop-1920px': { target: 'desktop-1920px.png', category: 'responsive' },
 };
 
-async function compareImages(oldPath, newPath) {
-    // Use ImageMagick compare if available
-    if (fs.existsSync(oldPath) && fs.existsSync(newPath)) {
-        try {
-            // Try ImageMagick first (more accurate)
-            const result = execSync(
-                `compare -metric AE -f "%[diff]" "${oldPath}" "${newPath}" /dev/null 2>&1 || echo "0"`,
-                { encoding: 'utf8', stdio: 'pipe' }
-            );
-            const diffPercent = parseFloat(result.trim()) / 100; // AE returns 0-1, convert to percentage
-            return isNaN(diffPercent) ? 0 : diffPercent;
-        } catch (e) {
-            // Fallback: check file size difference (rough approximation)
-            const oldSize = fs.statSync(oldPath).size;
-            const newSize = fs.statSync(newPath).size;
-            if (oldSize === 0) return 1;
-            const sizeDiff = Math.abs(oldSize - newSize) / oldSize;
-            return sizeDiff > 0.01 ? sizeDiff : 0;
-        }
+function getImagePixelCount(imagePath) {
+    try {
+        const info = execSync(
+            `identify -format "%w %h" "${imagePath}"`,
+            { encoding: 'utf8', stdio: 'pipe' }
+        ).trim();
+        const [w, h] = info.split(' ').map(Number);
+        return (w && h) ? w * h : 0;
+    } catch (e) {
+        return 0;
     }
-    return 1; // No old file, consider it changed
+}
+
+async function compareImages(oldPath, newPath) {
+    if (!fs.existsSync(oldPath) || !fs.existsSync(newPath)) {
+        return 1; // Missing file, consider it changed
+    }
+
+    try {
+        // ImageMagick compare: AE metric returns absolute pixel count on stderr
+        const result = execSync(
+            `compare -metric AE "${oldPath}" "${newPath}" null: 2>&1`,
+            { encoding: 'utf8', stdio: 'pipe' }
+        );
+        const diffPixels = parseInt(result.trim(), 10);
+        if (isNaN(diffPixels)) return 0;
+
+        // If below absolute threshold, skip percentage calc
+        if (diffPixels <= MAX_DIFF_PIXELS) return 0;
+
+        // Convert to percentage using actual image dimensions
+        const totalPixels = getImagePixelCount(oldPath);
+        if (totalPixels === 0) return diffPixels > 0 ? 1 : 0;
+        return diffPixels / totalPixels;
+    } catch (e) {
+        // ImageMagick compare exits non-zero when images differ.
+        // The diff count is still on stderr (captured via 2>&1 in the command).
+        const stderr = (e.stdout || e.stderr || '').toString().trim();
+        const diffPixels = parseInt(stderr, 10);
+        if (!isNaN(diffPixels)) {
+            if (diffPixels <= MAX_DIFF_PIXELS) return 0;
+            const totalPixels = getImagePixelCount(oldPath);
+            if (totalPixels === 0) return diffPixels > 0 ? 1 : 0;
+            return diffPixels / totalPixels;
+        }
+
+        // Fallback: file size comparison (rough approximation)
+        const oldSize = fs.statSync(oldPath).size;
+        const newSize = fs.statSync(newPath).size;
+        if (oldSize === 0) return 1;
+        const sizeDiff = Math.abs(oldSize - newSize) / oldSize;
+        return sizeDiff > 0.01 ? sizeDiff : 0;
+    }
 }
 
 async function main() {
@@ -84,8 +116,9 @@ async function main() {
     let unchangedCount = 0;
     const changes = [];
 
-    // Get platform suffix
-    const platform = 'chromium-win32'; // TODO: detect platform
+    // Detect platform suffix from Playwright snapshot naming convention
+    const platformMap = { win32: 'chromium-win32', linux: 'chromium-linux', darwin: 'chromium-darwin' };
+    const platform = platformMap[process.platform] || `chromium-${process.platform}`;
     const suffix = `-${platform}.png`;
 
     for (const [source, info] of Object.entries(SCREENSHOT_MAPPING)) {
@@ -125,8 +158,8 @@ async function main() {
         changes.forEach(f => console.log(`   ${f}`));
     }
 
-    // Write changes file for GitHub Action
-    const changesFile = path.join(__dirname, '.screenshot-changes.txt');
+    // Write changes file for GitHub Action (at repo root, where the workflow reads it)
+    const changesFile = path.join(__dirname, '..', '.screenshot-changes.txt');
     if (changes.length > 0) {
         fs.writeFileSync(changesFile, changes.join('\n'));
         console.log(`\n📄 Changes written to ${changesFile}`);
