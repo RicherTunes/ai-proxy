@@ -1,0 +1,31 @@
+# GitHub Pages Configuration for AI Proxy
+# Source: docs/ directory
+# Theme: None (using custom index.html)
+
+# GitHub Pages settings
+theme: null
+plugins: []
+
+# Markdown settings
+markdown: kramdown
+highlighter: rouge
+
+# Site settings
+title: AI Proxy
+description: Intelligent AI Request Router with Smart Monitoring
+baseurl: "/ai-proxy"
+url: "https://richtunes.github.io"
+
+# Exclude files from processing
+exclude:
+  - node_modules/
+  - package.json
+  - package-lock.json
+  - .git/
+  - .gitignore
+  - "*.log"
+
+# Sass/SCSS settings
+sass:
+  sass_dir: _sass
+  style: compressed
