@@ -71,21 +71,13 @@ Create a file named `api-keys.json` in the project folder:
 }
 ```
 
+> **For API keys configuration format and advanced options**, see [Configuration Guide - api-keys.json Format](./configuration.md#api-keysjson-format).
+
 **Common mistakes:**
 - ❌ Missing comma between keys
 - ❌ Extra comma after the last key
 - ❌ Using the wrong quotes (must be `"` not `'`)
 - ❌ Forgetting to include the `baseUrl`
-
-**Correct format example:**
-```json
-{
-  "keys": [
-    "abc123.xyz789"
-  ],
-  "baseUrl": "https://api.z.ai/api/anthropic"
-}
-```
 
 ### Step 5: Start the Proxy
 

@@ -83,3 +83,22 @@ npm run screenshots:extract
 - [tablet-768px](./responsive/tablet-768px.png)
 - [desktop-1920px](./responsive/desktop-1920px.png)
 
+### UI Components (Focused)
+
+- [page-nav-tabs](./components/page-nav-tabs.png)
+- [theme-toggle](./components/theme-toggle.png)
+- [density-selector](./components/density-selector.png)
+- [time-range-selector](./components/time-range-selector.png)
+- [connection-status](./components/connection-status.png)
+- [pause-button](./components/pause-button.png)
+- [keys-heatmap](./components/keys-heatmap.png)
+- [key-cell-healthy](./components/key-cell-healthy.png)
+- [key-cell-warning](./components/key-cell-warning.png)
+- [model-card](./components/model-card.png)
+- [model-list](./components/model-list.png)
+- [trace-table](./components/trace-table.png)
+- [log-entries](./components/log-entries.png)
+- [circuit-indicators](./components/circuit-indicators.png)
+- [request-rate-chart](./components/request-rate-chart.png)
+- [latency-chart](./components/latency-chart.png)
+

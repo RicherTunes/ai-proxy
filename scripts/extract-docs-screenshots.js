@@ -84,22 +84,20 @@ const SCREENSHOT_MAPPING = {
     'docs-components-pause-button': { category: 'components', target: 'pause-button' },
 
     // Key Management Components
-    'docs-components-key-card': { category: 'components', target: 'key-card' },
-    'docs-components-key-card-closed': { category: 'components', target: 'key-card-closed' },
-    'docs-components-key-card-half-open': { category: 'components', target: 'key-card-half-open' },
+    'docs-components-keys-heatmap': { category: 'components', target: 'keys-heatmap' },
+    'docs-components-key-cell-healthy': { category: 'components', target: 'key-cell-healthy' },
+    'docs-components-key-cell-warning': { category: 'components', target: 'key-cell-warning' },
 
     // Model Routing Components
-    'docs-components-tier-card-heavy': { category: 'components', target: 'tier-card-heavy' },
-    'docs-components-tier-card-medium': { category: 'components', target: 'tier-card-medium' },
-    'docs-components-tier-card-light': { category: 'components', target: 'tier-card-light' },
-    'docs-components-model-list-item': { category: 'components', target: 'model-list-item' },
+    'docs-components-model-card': { category: 'components', target: 'model-card' },
+    'docs-components-model-list': { category: 'components', target: 'model-list' },
 
     // Request List Components
-    'docs-components-trace-row': { category: 'components', target: 'trace-row' },
-    'docs-components-log-entry': { category: 'components', target: 'log-entry' },
+    'docs-components-trace-table': { category: 'components', target: 'trace-table' },
+    'docs-components-log-entries': { category: 'components', target: 'log-entries' },
 
     // System Components
-    'docs-components-circuit-status-indicator': { category: 'components', target: 'circuit-status-indicator' },
+    'docs-components-circuit-indicators': { category: 'components', target: 'circuit-indicators' },
 
     // Chart Components
     'docs-components-request-rate-chart': { category: 'components', target: 'request-rate-chart' },

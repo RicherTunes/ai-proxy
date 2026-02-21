@@ -204,44 +204,13 @@ Timeouts automatically adjust based on recent P95 latency. Slow models get more 
 
 ## Configuration
 
-> **Note:** This is a subset of the most common configuration options. AI Proxy supports over 50 environment variables for advanced tuning. See [Configuration Guide](./docs/user-guide/configuration.md) for the complete reference.
+AI Proxy supports over 50 environment variables for advanced tuning. See [Configuration Guide](./docs/user-guide/configuration.md) for the complete reference including:
 
-### Environment Variables (Common)
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `GLM_PORT` | `18765` | Proxy listen port |
-| `GLM_HOST` | `127.0.0.1` | Proxy listen address |
-| `GLM_TARGET_HOST` | `api.z.ai` | Target API host |
-| `GLM_MAX_WORKERS` | `4` | Maximum cluster workers |
-| `GLM_NO_CLUSTER` | `0` | Set to `1` to disable clustering |
-| `GLM_MAX_RETRIES` | `3` | Maximum retry attempts |
-| `GLM_CIRCUIT_THRESHOLD` | `5` | Failures before circuit opens |
-| `GLM_CIRCUIT_WINDOW` | `30000` | Failure window (ms) |
-| `GLM_CIRCUIT_COOLDOWN` | `60000` | Circuit cooldown period (ms) |
-| `GLM_MAX_CONCURRENCY_PER_KEY` | `5` | Max concurrent requests per key |
-| `GLM_MAX_TOTAL_CONCURRENCY` | `200` | Max total concurrent requests |
-| `GLM_QUEUE_SIZE` | `100` | Max requests to queue when keys busy |
-| `GLM_QUEUE_TIMEOUT` | `30000` | Max queue wait time (ms) |
-| `GLM_RATE_LIMIT` | `60` | Requests per minute per key (0=disabled) |
-| `GLM_REQUEST_TIMEOUT` | `300000` | Request timeout (ms) |
-| `GLM_LOG_LEVEL` | `INFO` | Log level (DEBUG, INFO, WARN, ERROR) |
-
-### Additional Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `GLM_USE_WEIGHTED_SELECTION` | `true` | Health-weighted key selection vs round-robin |
-| `GLM_SLOW_KEY_THRESHOLD` | `2.0` | Latency multiplier for slow key detection |
-| `GLM_MAX_CONSECUTIVE_HANGUPS` | `5` | Max consecutive hangups before recreation |
-| `GLM_POOL_COOLDOWN_MAX` | `10000` | Max pool cooldown (ms) |
-| `GLM_HISTOGRAM_ENABLED` | `true` | Enable latency histogram |
-| `GLM_COST_ENABLED` | `true` | Enable cost tracking |
-| `GLM_TRACE_ENABLED` | `true` | Enable request tracing |
-| `GLM_ADMIN_AUTH_ENABLED` | `false` | Enable admin authentication |
-| `GLM_MAX_429_ATTEMPTS` | `3` | Max 429 retry attempts per request |
-| `GLM_ALLOW_TIER_DOWNGRADE` | `false` | Allow tier downgrade on 429 |
-| `GLM_GLM5_ENABLED` | `true` | Enable GLM-5 routing (shadow-only at 0% preference by default) |
+- Environment variables for ports, hosts, clustering, timeouts, and logging
+- Adaptive concurrency settings (AIMD)
+- Model routing configuration
+- Key selection and health scoring
+- Rate limiting and request queue settings
 
 ### Adaptive Concurrency (AIMD)
 
@@ -293,6 +262,8 @@ Intelligent health-score weighted key selection:
 }
 ```
 
+> **See also:** [Configuration Guide - api-keys.json Format](./docs/user-guide/configuration.md#api-keysjson-format) for more details.
+
 ## API Endpoints
 
 ### Admin
@@ -318,19 +289,9 @@ All other requests are proxied to the target API with automatic key selection, r
 
 ## Circuit Breaker
 
-| State | Description |
-|-------|-------------|
-| `CLOSED` | Normal operation, requests flow through |
-| `OPEN` | Key disabled after failures, requests skip this key |
-| `HALF_OPEN` | Testing recovery with a single request |
+The circuit breaker protects against failing API keys by automatically switching to healthy keys.
 
-**Transitions:**
-- `CLOSED -> OPEN`: After threshold failures within window
-- `OPEN -> HALF_OPEN`: After cooldown period
-- `HALF_OPEN -> CLOSED`: Test request succeeds
-- `HALF_OPEN -> OPEN`: Test request fails
-
-> See [Architecture](./docs/developer-guide/architecture.md#circuit-breaker) for diagrams and [Configuration](./docs/user-guide/configuration.md#circuit-breaker) for detailed settings.
+> **See also:** [Architecture - Circuit Breaker](./docs/developer-guide/architecture.md#circuit-breaker) for diagrams and [Configuration - Circuit Breaker](./docs/user-guide/configuration.md#circuit-breaker) for detailed settings.
 
 ## Running in Production
 
