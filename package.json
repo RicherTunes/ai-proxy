@@ -55,7 +55,8 @@
     "soak:long": "node scripts/soak.js --duration=7200 --warmup=600 --rps=20",
     "version": "node scripts/version.js",
     "commitlint": "commitlint --edit",
-    "prepare": "husky"
+    "prepare": "husky",
+    "release": "node scripts/release.js"
   },
   "keywords": [
     "proxy",
