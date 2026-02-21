@@ -112,16 +112,25 @@
             return val || fallback;
         } catch (e) { return fallback; }
     }
+    function toRgba(color, alpha) {
+        if (color.charAt(0) === '#') {
+            var r = parseInt(color.slice(1, 3), 16);
+            var g = parseInt(color.slice(3, 5), 16);
+            var b = parseInt(color.slice(5, 7), 16);
+            return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+        }
+        return color.replace(')', ', ' + alpha + ')').replace('rgb(', 'rgba(');
+    }
     function getChartColors() {
         return {
             accent:    getCSSColor('--accent', '#06b6d4'),
-            accentBg:  getCSSColor('--accent', '#06b6d4').replace(')', ', 0.1)').replace('rgb(', 'rgba('),
+            accentBg:  toRgba(getCSSColor('--accent', '#06b6d4'), 0.1),
             success:   getCSSColor('--success', '#22c55e'),
-            successBg: getCSSColor('--success', '#22c55e').replace(')', ', 0.1)').replace('rgb(', 'rgba('),
+            successBg: toRgba(getCSSColor('--success', '#22c55e'), 0.1),
             error:     getCSSColor('--error', '#ef4444'),
-            errorBg:   getCSSColor('--error', '#ef4444').replace(')', ', 0.1)').replace('rgb(', 'rgba('),
+            errorBg:   toRgba(getCSSColor('--error', '#ef4444'), 0.1),
             warning:   getCSSColor('--warning', '#f59e0b'),
-            warningBg: getCSSColor('--warning', '#f59e0b').replace(')', ', 0.1)').replace('rgb(', 'rgba('),
+            warningBg: toRgba(getCSSColor('--warning', '#f59e0b'), 0.1),
             accentSecondary: getCSSColor('--accent-secondary', '#8b5cf6')
         };
     }
