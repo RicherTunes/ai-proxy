@@ -27,11 +27,20 @@ The dashboard provides real-time visual monitoring of all proxy metrics. Open it
 **Request Charts** - Track request rate and latency over time:
 
 ![Request Rate Chart](../screenshots/components/request-rate-chart.png)
+
 ![Latency Chart](../screenshots/components/latency-chart.png)
 
 **Circuit Breaker Status** - Monitor circuit breaker states for all keys:
 
 ![Circuit Indicators](../screenshots/components/circuit-indicators.png)
+
+**Health Ribbon** - Quick overview of system health at the top of the dashboard:
+
+![Health Ribbon](../screenshots/sections/health-ribbon.png)
+
+**Cost Panel** - Track token usage and costs in real-time:
+
+![Cost Panel](../screenshots/sections/cost-panel.png)
 
 ## API Endpoints
 
@@ -242,6 +251,10 @@ Per-key circuit breaker state is included in `/stats`:
 | `CLOSED` | Key is healthy and accepting requests |
 | `OPEN` | Key is disabled due to failures |
 | `HALF_OPEN` | Key is being tested for recovery |
+
+**System Page** provides detailed circuit breaker analytics:
+
+![Circuit Indicators](../screenshots/components/circuit-indicators.png)
 
 ## Alerts and Monitoring
 

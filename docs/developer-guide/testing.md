@@ -2,6 +2,23 @@
 
 Test strategy and coverage information for GLM Proxy.
 
+## E2E Testing with Screenshots
+
+The project uses Playwright for E2E testing, including automated screenshot generation for documentation:
+
+![Dashboard Overview](../screenshots/overview.png)
+
+### Screenshot Generation
+
+Generate screenshots for documentation:
+
+```bash
+npm run screenshots:generate
+npm run screenshots:extract
+```
+
+See [Screenshots Gallery](../screenshots/) for all available screenshots.
+
 ## Running Tests
 
 ### Run All Tests

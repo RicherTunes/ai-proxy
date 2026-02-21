@@ -1,5 +1,11 @@
 # Cost Tracking Admin API Quick Reference
 
+## Dashboard Visualization
+
+The Cost Panel in the dashboard provides real-time visibility into cost tracking:
+
+![Cost Panel](../screenshots/sections/cost-panel.png)
+
 ## Base URL
 
 ```

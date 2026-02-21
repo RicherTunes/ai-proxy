@@ -2,6 +2,24 @@
 
 This document describes how to run load tests and validate performance baselines for the GLM Proxy.
 
+## Dashboard Monitoring During Load Tests
+
+The dashboard provides real-time visibility into system performance during load tests. Key sections to monitor:
+
+![Dashboard Overview](../screenshots/overview.png)
+
+**Error Breakdown** - View error types during load tests:
+
+![Error Breakdown](../screenshots/system/error-breakdown.png)
+
+**Retry Analytics** - Monitor retry behavior under load:
+
+![Retry Analytics](../screenshots/system/retry-analytics.png)
+
+**Health Score** - Track overall system health:
+
+![Health Score](../screenshots/system/health-score.png)
+
 ## Quick Start
 
 ```bash

@@ -1,5 +1,15 @@
 # Model Mapping Backend Implementation
 
+## Dashboard Visualization
+
+The Model Routing page displays model mappings and configurations:
+
+![Model Routing Page](../screenshots/routing.png)
+
+**Model List** - View available models with their tier classifications:
+
+![Model List](../screenshots/components/model-list.png)
+
 ## Summary
 
 Successfully implemented the backend for live model management in the GLM Proxy. This includes:
