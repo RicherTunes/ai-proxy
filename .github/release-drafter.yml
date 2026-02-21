@@ -1,0 +1,22 @@
+categories:
+  - title: "💥 Breaking Changes"
+    label: "breaking"
+  - title: "✨ Features"
+    label: "enhancement"
+    collapse-after: 5
+  - title: "🐛 Bug Fixes"
+    label: "bug"
+    collapse-after: 5
+  - title: "🧪 Tests"
+    label: "test"
+    collapse-after: 5
+  - title: "♻️ Refactoring"
+    label: "refactor"
+  - title: "📚 Documentation"
+    label: "documentation"
+  - title: "🎨 Styling"
+    label: "style"
+  - title: "⚡ Performance"
+    label: "performance"
+  - title: "✅ Code Quality"
+    label: "code-quality"
