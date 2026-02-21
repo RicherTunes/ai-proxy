@@ -150,6 +150,37 @@ GLM Proxy is a Node.js-based HTTP proxy that provides intelligent request routin
     └─────────┘                   └─────────┘
 ```
 
+## Adaptive Concurrency (AIMD)
+
+The AIMD controller dynamically adjusts per-model concurrency limits based on 429 feedback:
+
+```
+           ┌─────────────────────────────────┐
+           │    Current Limit: N per model   │
+           └───────────────┬─────────────────┘
+                           │
+              ┌────────────┴────────────┐
+              │                         │
+         429 Received              Success
+              │                         │
+              v                         v
+     ┌─────────────────┐      ┌─────────────────┐
+     │ Multiplicative  │      │  Additive       │
+     │ Decrease        │      │  Increase       │
+     │ N = N × 0.5     │      │  N = N + 1      │
+     └─────────────────┘      └─────────────────┘
+              │                         │
+              v                         v
+     ┌─────────────────┐      ┌─────────────────┐
+     │ Start Cooldown  │      │  Respect Max    │
+     │ (5s recovery)   │      │  Limit          │
+     └─────────────────┘      └─────────────────┘
+```
+
+**Modes:**
+- `observe_only` (default): Monitors and logs adjustments without enforcing
+- `enforce`: Actively applies calculated limits to requests
+
 ## Clustering
 
 GLM Proxy supports multi-worker clustering for high throughput:

@@ -105,6 +105,22 @@ client = anthropic.Anthropic(base_url="http://127.0.0.1:18765")
 | `GLM_REQUEST_TIMEOUT` | `300000` | Request timeout (ms) |
 | `GLM_LOG_LEVEL` | `INFO` | Log level (DEBUG, INFO, WARN, ERROR) |
 
+### Additional Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GLM_USE_WEIGHTED_SELECTION` | `true` | Health-weighted key selection vs round-robin |
+| `GLM_SLOW_KEY_THRESHOLD` | `2.0` | Latency multiplier for slow key detection |
+| `GLM_MAX_CONSECUTIVE_HANGUPS` | `5` | Max consecutive hangups before recreation |
+| `GLM_POOL_COOLDOWN_MAX` | `30000` | Max pool cooldown (ms) |
+| `GLM_HISTOGRAM_ENABLED` | `true` | Enable latency histogram |
+| `GLM_COST_ENABLED` | `true` | Enable cost tracking |
+| `GLM_TRACE_ENABLED` | `true` | Enable request tracing |
+| `GLM_ADMIN_AUTH_ENABLED` | `true` | Enable admin authentication |
+| `GLM_MAX_429_ATTEMPTS` | `3` | Max 429 retry attempts per request |
+| `GLM_ALLOW_TIER_DOWNGRADE` | `true` | Allow tier downgrade on 429 |
+| `GLM_GLM5_ENABLED` | `true` | Enable GLM-5 shadow mode |
+
 ### Adaptive Concurrency (AIMD)
 
 Dynamically adjusts per-model concurrency limits based on 429 feedback:
@@ -297,6 +313,10 @@ Full documentation is available in the [`docs/`](./docs/) directory:
 - **[Configuration](./docs/user-guide/configuration.md)** — All configuration options
 - **[Monitoring](./docs/user-guide/monitoring.md)** — Health checks and statistics
 - **[Architecture](./docs/developer-guide/architecture.md)** — System design overview
+- **[Model Routing](./docs/features/model-routing.md)** — Complexity-aware routing system
+- **[Claude Code Setup](./docs/developer-guide/claude-code-setup.md)** — AI-assisted development
+- **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** — Common issues and solutions
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** — How to contribute
 
 ## License
 
