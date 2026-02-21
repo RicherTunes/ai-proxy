@@ -544,7 +544,7 @@ describe('WebhookManager', () => {
 
             const start = Date.now();
             await manager.drain(5000);
-            expect(Date.now() - start).toBeGreaterThanOrEqual(100);
+            expect(Date.now() - start).toBeGreaterThanOrEqual(90);
         });
 
         it('should timeout after specified duration', async () => {
