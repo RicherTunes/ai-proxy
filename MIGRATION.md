@@ -77,9 +77,6 @@ If you changed behavior: this PR must be labeled "behavior-change" and split fro
 
 ## References
 
-- See [God Class Refactoring Plan](./docs/REFACTORING_PLAN.md) for detailed execution strategy
-- Week 1: RequestHandler Pure Module Extraction
-- Week 2: KeyManager Pool/Model Separation
-- Week 3: ProxyServer Router Registry + Model Controller
-- Week 4: ProxyServer Auth + Health Controllers
-- Week 5: StatsAggregator Split
+- See [CHANGELOG.md](./CHANGELOG.md) for detailed execution history and completed phases
+- Major refactoring completed in v2.2.0 with modular architecture extraction
+- Controller extraction completed in v2.4.0 (14 controllers, TDD approach)
