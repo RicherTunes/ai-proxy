@@ -109,7 +109,9 @@ get-api-key.ps1
 settings.json
 
 # Screenshots (debug artifacts)
+# But keep documentation screenshots
 screenshots/
+!docs/screenshots/
 
 # Test output files
 test-output.*

@@ -4,6 +4,14 @@ Complexity-aware routing layer that sits above the legacy `ModelMappingManager`.
 
 When `enabled: false` (default), the router is constructed but `selectModel()` returns `null`. All traffic falls through to the legacy `ModelMappingManager`. You can configure the router while disabled and toggle on without restart.
 
+## Dashboard Visualization
+
+Configure routing through the dashboard's Model Routing page:
+
+![Tier Builder](../screenshots/routing/tier-builder.png)
+
+The drag-and-drop interface lets you assign models to tiers (light, medium, heavy) and configure fallback chains.
+
 ## Quick Start
 
 Minimal config to enable routing:

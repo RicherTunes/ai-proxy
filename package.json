@@ -36,6 +36,8 @@
     "test:e2e:perf-heavy": "RUN_HEAVY_PERF=1 playwright test dashboard-perf-heavy",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
+    "screenshots:generate": "playwright test test/e2e/dashboard-docs.e2e.spec.js --update-snapshots",
+    "screenshots:extract": "node scripts/extract-docs-screenshots.js",
     "stub:start": "node scripts/stub-upstream.js",
     "load": "node scripts/load.js",
     "load:smoke": "node scripts/load.js --rps=5 --duration=60 --warmup=5 --output=test-results/load-smoke.json",
