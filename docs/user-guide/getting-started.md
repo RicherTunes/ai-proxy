@@ -2,19 +2,15 @@
 
 Quick start guide for GLM Proxy.
 
+> **Note:** This guide provides detailed setup instructions. For a quick overview, see the root [README.md](../../README.md).
+
 ## What is GLM Proxy?
 
 GLM Proxy is a high-performance API proxy for [Z.AI GLM](https://z.ai) subscriptions with automatic key rotation, circuit breaker protection, and clustering support.
 
 ### Key Features
 
-- **Multi-Key Load Balancing** - Round-robin distribution across multiple API keys
-- **Circuit Breaker** - Automatic key isolation on failures with recovery testing
-- **Rate Limiting** - Per-key token bucket rate limiting with burst support
-- **Clustering** - Multi-worker process support for high throughput
-- **Retry with Backoff** - Exponential backoff with jitter on transient failures
-- **Hot Reload** - Update API keys without restart
-- **Metrics & Monitoring** - Real-time stats, health checks, and backpressure monitoring
+For a complete feature list, see [README.md](../../README.md#features).
 
 ## Installation
 
@@ -80,3 +76,4 @@ Expected response:
 
 - [Configuration](./configuration.md) - All configuration options
 - [Monitoring](./monitoring.md) - Health checks and statistics
+- [Architecture](../developer-guide/architecture.md) - System design overview

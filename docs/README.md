@@ -4,7 +4,7 @@
 
 - [Getting Started](./user-guide/getting-started.md) - Installation and quick start
 - [Configuration](./user-guide/configuration.md) - All configuration options
-- [Monitoring](./user-guide/monitoring.md) - Health checks and statistics
+- [Troubleshooting](../TROUBLESHOOTING.md) - Common issues and solutions
 
 ## Documentation Sections
 
@@ -23,6 +23,7 @@ Documentation for contributors and integrators.
 | Document | Description |
 |----------|-------------|
 | [Architecture](./developer-guide/architecture.md) | System architecture overview |
+| [Claude Code Setup](./developer-guide/claude-code-setup.md) | AI-assisted development setup |
 | [Events](./developer-guide/events.md) | Event system documentation |
 | [Testing](./developer-guide/testing.md) | Test strategy and coverage |
 
@@ -31,9 +32,9 @@ Detailed documentation for specific features.
 
 | Document | Description |
 |----------|-------------|
-| [Chaos Mode](./features/chaos-mode.md) | Chaos testing and fault injection |
 | [Model Mapping](./features/model-mapping.md) | Model name mapping configuration |
-| [Model Routing](./features/model-routing.md) | Request routing by model |
+| [Model Routing](./features/model-routing.md) | Complexity-aware request routing |
+| [Chaos Mode](./features/chaos-mode.md) | Chaos testing and fault injection |
 
 ### Operations
 Guides for deploying and operating in production.

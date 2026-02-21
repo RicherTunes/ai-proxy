@@ -2,7 +2,11 @@
 
 Complete reference for GLM Proxy configuration options.
 
+For a quick start guide, see [Getting Started](./getting-started.md).
+
 ## Environment Variables
+
+> **Note:** For a quick reference of common environment variables, see the root [README.md](../../README.md#configuration).
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -22,6 +26,21 @@ Complete reference for GLM Proxy configuration options.
 | `GLM_RATE_LIMIT` | `60` | Requests per minute per key (0=disabled) |
 | `GLM_REQUEST_TIMEOUT` | `300000` | Request timeout (ms) |
 | `GLM_LOG_LEVEL` | `INFO` | Log level (DEBUG, INFO, WARN, ERROR) |
+
+### Additional Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GLM_USE_WEIGHTED_SELECTION` | `true` | Health-weighted key selection |
+| `GLM_SLOW_KEY_THRESHOLD` | `2.0` | Latency multiplier for slow key detection |
+| `GLM_MAX_CONSECUTIVE_HANGUPS` | `5` | Max consecutive hangups before recreation |
+| `GLM_POOL_COOLDOWN_MAX` | `30000` | Max pool cooldown (ms) |
+| `GLM_HISTOGRAM_ENABLED` | `true` | Enable latency histogram |
+| `GLM_COST_ENABLED` | `true` | Enable cost tracking |
+| `GLM_TRACE_ENABLED` | `true` | Enable request tracing |
+| `GLM_ADMIN_AUTH_ENABLED` | `true` | Enable admin authentication |
+| `GLM_MAX_429_ATTEMPTS` | `3` | Max 429 retry attempts per request |
+| `GLM_ALLOW_TIER_DOWNGRADE` | `true` | Allow tier downgrade on 429 |
 
 ## api-keys.json Format
 
@@ -44,7 +63,9 @@ The `api-keys.json` file contains your API credentials:
 | `keys` | array | Yes | List of API keys (format: `key-id.secret`) |
 | `baseUrl` | string | No | Target API base URL |
 
-## Circuit Breaker Configuration
+## Circuit Breaker
+
+> **Note:** For circuit breaker architecture diagrams, see [Architecture](../developer-guide/architecture.md#circuit-breaker).
 
 The circuit breaker protects against failing API keys:
 
@@ -82,6 +103,8 @@ When queue is full or timeout expires, clients receive:
 - **Header:** `Retry-After: N` (suggested retry delay in seconds)
 
 ## Running in Production
+
+> **Note:** For production deployment details, see the root [README.md](../../README.md#running-in-production).
 
 ### Single Process Mode
 

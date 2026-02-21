@@ -208,6 +208,8 @@ All other requests are proxied to the target API with automatic key selection, r
 - `HALF_OPEN -> CLOSED`: Test request succeeds
 - `HALF_OPEN -> OPEN`: Test request fails
 
+> See [Architecture](./docs/developer-guide/architecture.md#circuit-breaker) for diagrams and [Configuration](./docs/user-guide/configuration.md#circuit-breaker) for detailed settings.
+
 ## Running in Production
 
 ### Single Process
