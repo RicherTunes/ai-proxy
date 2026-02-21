@@ -5,6 +5,9 @@
 - [Getting Started](./user-guide/getting-started.md) - Installation and quick start
 - [Configuration](./user-guide/configuration.md) - All configuration options
 - [Troubleshooting](../TROUBLESHOOTING.md) - Common issues and solutions
+- [Glossary](../README.md#glossary) - Technical terms explained
+
+> **New here?** Start with the main [README.md](../README.md) for a beginner-friendly introduction.
 
 ## Documentation Sections
 

@@ -138,7 +138,20 @@ For advanced users, here's the full feature list:
 - **Streaming Support** — Works with streaming responses
 - **Hot Reload** — Add new keys without restarting
 
-## Configuration
+## Glossary
+
+New to proxies? Here are some terms you might see:
+
+| Term | What It Means |
+|------|---------------|
+| **Proxy** | A middleman that sits between your app and the API |
+| **API Key** | A password that lets you use an API service |
+| **Rate Limit** | The maximum number of requests you can make per minute/hour |
+| **429 Error** | "Too many requests" — you hit the rate limit |
+| **Circuit Breaker** | Automatic safety switch that stops using a broken key |
+| **Dashboard** | Web page that shows what's happening in real-time |
+| **Endpoint** | A specific URL you can make requests to |
+| **Upstream** | The API service you're connecting to (like Z.AI) |
 
 ## Configuration
 
