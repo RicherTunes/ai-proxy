@@ -2714,6 +2714,24 @@ describe('Catch-All Rule Validation', () => {
         expect(result.valid).toBe(true);
     });
 
+    test('accepts config with empty-match catch-all rule { match: {} }', () => {
+        const config = {
+            version: '2.0',
+            tiers: {
+                heavy: { models: ['glm-4-plus'], strategy: 'quality' },
+                medium: { models: ['glm-4'], strategy: 'balanced' }
+            },
+            rules: [
+                { match: { model: 'claude-opus*' }, tier: 'heavy' },
+                { match: {}, tier: 'medium' }  // empty match = catch-all
+            ]
+        };
+
+        const result = ModelRouter.validateConfig(config);
+
+        expect(result.valid).toBe(true);
+    });
+
     test('accepts config with defaultModel', () => {
         const config = {
             version: '2.0',
