@@ -1,3 +1,9 @@
+name-template: '$RESOLVED_VERSION'
+tag-template: '$RESOLVED_VERSION'
+tag-prefix: ''
+change-template: '* $TITLE (#$NUMBER) @$AUTHOR'
+no-changes-template: '* No changes'
+version-template: '$MAJOR.$MINOR.$PATCH'
 categories:
   - title: "💥 Breaking Changes"
     label: "breaking"
