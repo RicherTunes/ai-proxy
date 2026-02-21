@@ -1,0 +1,296 @@
+name: Nightly
+
+on:
+  schedule:
+    # Run at 2 AM UTC every day
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      soak_duration:
+        description: 'Soak test duration in seconds'
+        required: false
+        default: '1800'
+      soak_rps:
+        description: 'Soak test requests per second'
+        required: false
+        default: '20'
+
+# Prevent concurrent nightly runs (port conflicts, resource contention)
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  quarantine:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run quarantine tests
+        id: quarantine
+        continue-on-error: true
+        run: npm run test:quarantine 2>&1 | tee test-results/quarantine-output.txt
+
+      - name: Upload quarantine results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: quarantine-results-${{ github.run_number }}
+          path: test-results/quarantine-output.txt
+          retention-days: 14
+
+      - name: Report quarantine status
+        run: |
+          if [ "${{ steps.quarantine.outcome }}" == "failure" ]; then
+            echo "::warning::Quarantine tests still failing - see test/quarantine/QUARANTINE_EXIT.md for fix plans"
+          else
+            echo "::notice::All quarantine tests passing! Consider moving them back to main test suite."
+          fi
+
+  stress:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run stress tests
+        run: |
+          mkdir -p test-results
+          npm run test:stress 2>&1 | tee test-results/stress-output.txt
+        timeout-minutes: 10
+
+      - name: Upload stress test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stress-results-${{ github.run_number }}
+          path: test-results/stress-output.txt
+          retention-days: 14
+
+  soak:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run soak test (seeded for determinism)
+        run: |
+          node scripts/soak.js \
+            --startServices \
+            --duration=${{ github.event.inputs.soak_duration || '1800' }} \
+            --warmup=300 \
+            --rps=${{ github.event.inputs.soak_rps || '20' }} \
+            --heapMaxMbPerHour=50 \
+            --scenario=mixed \
+            --outDir=test-results/soak
+        timeout-minutes: 45
+        env:
+          NODE_OPTIONS: --max-old-space-size=2048
+          # Seeded RNG for reproducible mixed scenario results
+          STUB_SEED: 42
+          # Conservative error rates for stable CI
+          STUB_429_RATE: '0.02'
+          STUB_ERROR_RATE: '0.01'
+          STUB_HANGUP_RATE: '0'
+
+      - name: Upload soak test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: soak-results-${{ github.run_number }}
+          path: |
+            test-results/soak/
+          retention-days: 30
+
+      - name: Check soak invariants
+        if: always()
+        run: |
+          RESULT_DIR=$(ls -td test-results/soak/*/ 2>/dev/null | head -1)
+          if [ -f "$RESULT_DIR/soak.json" ]; then
+            echo "=== Soak Test Results ==="
+            cat "$RESULT_DIR/soak.json" | jq '.summary'
+            echo ""
+            echo "=== Invariants ==="
+            cat "$RESULT_DIR/soak.json" | jq '.invariants'
+
+            FAILED=$(cat "$RESULT_DIR/soak.json" | jq '.invariants | to_entries | map(select(.value.passed == false)) | length')
+            if [ "$FAILED" != "0" ]; then
+              echo "::error::Soak test invariants failed ($FAILED failures) - check artifacts for details"
+              exit 1
+            fi
+          else
+            echo "::error::Soak results not found"
+            exit 1
+          fi
+
+  heavy-load:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start stub upstream server (seeded mixed scenario)
+        run: |
+          node scripts/stub-upstream.js \
+            --port=3001 \
+            --scenario=mixed \
+            --seed=12345 \
+            --rate429=0.03 \
+            --errorRate=0.01 \
+            --hangupRate=0 &
+          sleep 2
+          curl -s http://localhost:3001/_stub/health | grep -q "ok"
+
+      - name: Start proxy server
+        run: |
+          NO_CLUSTER=1 node proxy.js &
+          sleep 3
+        env:
+          PORT: 3000
+          UPSTREAM_URL: http://localhost:3001
+          LOG_LEVEL: warn
+
+      - name: Run heavy load test
+        run: |
+          node scripts/load.js \
+            --target=http://localhost:3000 \
+            --rps=50 \
+            --duration=300 \
+            --warmup=30 \
+            --output=test-results/load-heavy.json
+        timeout-minutes: 10
+
+      - name: Validate heavy load invariants
+        if: always()
+        run: |
+          RESULT="test-results/load-heavy.json"
+          if [ ! -f "$RESULT" ]; then
+            echo "::error::Heavy load results not found"
+            exit 1
+          fi
+
+          echo "=== Heavy Load Results ==="
+          cat "$RESULT" | jq '.summary'
+
+          SUCCESS_RATE=$(jq '.summary.successRate' "$RESULT")
+          P95=$(jq '.latency.p95' "$RESULT")
+          P99=$(jq '.latency.p99' "$RESULT")
+
+          echo ""
+          echo "Success rate: $SUCCESS_RATE%"
+          echo "P95 latency: ${P95}ms"
+          echo "P99 latency: ${P99}ms"
+
+          # Heavy load thresholds (looser due to 50 RPS)
+          # - Success rate >= 95% (allows for seeded 3% 429 + 1% error)
+          # - P95 < 1000ms (generous for CI runners under load)
+          FAILED=0
+          if [ "$(echo "$SUCCESS_RATE < 95" | bc -l)" -eq 1 ]; then
+            echo "::error::Success rate $SUCCESS_RATE% below 95% threshold"
+            FAILED=1
+          fi
+          if [ "$P95" -gt 1000 ]; then
+            echo "::error::P95 latency ${P95}ms exceeds 1000ms ceiling"
+            FAILED=1
+          fi
+
+          exit $FAILED
+
+      - name: Upload load test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: heavy-load-results-${{ github.run_number }}
+          path: test-results/
+          retention-days: 30
+
+  e2e-perf-heavy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run heavy performance tests
+        run: npm run test:e2e:perf-heavy
+        env:
+          CI: true
+          RUN_HEAVY_PERF: '1'
+          PERF_FACTOR: '2'
+          PERF_WARN_ONLY: '1'
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-perf-heavy-${{ github.run_number }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+  report:
+    runs-on: ubuntu-latest
+    needs: [quarantine, stress, soak, heavy-load, e2e-perf-heavy]
+    if: always()
+
+    steps:
+      - name: Create summary
+        run: |
+          echo "## Nightly Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Quarantine | ${{ needs.quarantine.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Stress | ${{ needs.stress.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Soak | ${{ needs.soak.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Heavy Load | ${{ needs.heavy-load.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| E2E Perf Heavy | ${{ needs.e2e-perf-heavy.result }} |" >> $GITHUB_STEP_SUMMARY

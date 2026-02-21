@@ -1,0 +1,8 @@
+{
+  "keys": [
+    "your-api-key-1.your-secret-1",
+    "your-api-key-2.your-secret-2",
+    "your-api-key-3.your-secret-3"
+  ],
+  "baseUrl": "https://api.z.ai/api/anthropic"
+}

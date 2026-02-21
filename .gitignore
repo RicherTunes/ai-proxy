@@ -1,0 +1,154 @@
+# API keys - NEVER commit
+api-keys.json
+
+# Node
+node_modules/
+
+# Test coverage
+coverage/
+
+# Runtime data
+persistent-stats.json
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+
+# Test artifacts
+test/worker-test-*/
+test/proxy-test-*/
+test/e2e-test-*/
+test/temp-validation-*/
+test/.tmp-*
+test/temp-test-*/
+test/model-routing-retry-*/
+test/model-routing-e2e-*/
+test/test-destroy-history.json
+test-results/
+playwright-report/
+test-output.txt
+test-results.txt
+dashboard-test-results.txt
+
+# Temporary files
+*.tmp
+nul
+proxy.out
+proxy.err
+logs_temp.json
+stats_temp.json
+stats-cache.json
+failed-requests.json
+cost-data.json
+usage-cache.json
+model-routing-overrides.json
+history.json
+history.jsonl
+test/test-history.json
+test/quarantine/test-history.json
+
+# Plugins (runtime cache with local paths)
+plugins/
+
+# Claude/AI artifacts
+.claude.json*
+.beads/
+.omc/
+cache/
+paste-cache/
+file-history/
+shell-snapshots/
+debug/
+todos/
+tasks/
+projects/
+plans/
+telemetry/
+statsig/
+commands/
+
+# Local orchestration/tooling artifacts
+.claude/
+agents/
+hooks/
+get-shit-done/
+statusline.mjs
+statusline.sh
+check-stats.js
+concurrency-test-results.json
+gsd-file-manifest.json
+sse-init.txt
+
+# Generated docs
+MILESTONE*.md
+IMPLEMENTATION_SUMMARY.md
+MODEL_MAPPING_IMPLEMENTATION.md
+TEST_PLAN.md
+verify-milestone*.js
+
+# Scripts (optional - can remove if needed)
+get-api-key.cmd
+get-api-key.ps1
+
+# Settings
+settings.json
+
+# Screenshots (debug artifacts)
+screenshots/
+
+# Test output files
+test-output.*
+
+# Backup files
+*.backup
+*.bak
+
+# Certificates and keys
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+
+# Tech debt tracking (generated)
+TECH_DEBT.md
+
+# Ephemeral analysis/debugging artifacts
+tmp-*.json
+analyze-*.js
+update-*.js
+check_*.js
+*_report.js
+*_check.js
+*_classes.txt
+scripts/analyze-*.js
+scripts/deep-log-analysis.js
+scripts/log-tail.js
+scripts/monitor.js
+scripts/analyze-live.js
+
+# Planning artifacts (internal dev only)
+.planning/
+
+# Internal dev artifacts
+FRONTEND-TECH-DEBT-PROMPT.md
+start-proxy.cmd
+
+# Session/backup data
+backups/
+session-env/

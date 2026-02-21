@@ -1,0 +1,176 @@
+name: Check Pricing
+
+on:
+  schedule:
+    # Run every Sunday at 00:00 UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+    # Allow manual trigger
+    inputs:
+      create_issue:
+        description: 'Create GitHub issue if pricing changes detected'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+  check-pricing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check pricing configuration
+        id: check-pricing
+        run: |
+          echo "Running pricing check..."
+          node scripts/check-pricing.js --check --json > pricing-result.json
+          cat pricing-result.json
+          echo ""
+
+          # Extract values for GitHub Actions
+          HASH=$(jq -r '.hash' pricing-result.json)
+          VERSION=$(jq -r '.version' pricing-result.json)
+          MODELS=$(jq -r '.modelCount' pricing-result.json)
+          LAST_VERIFIED=$(jq -r '.lastVerifiedAt' pricing-result.json)
+
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "models=$MODELS" >> $GITHUB_OUTPUT
+          echo "last_verified=$LAST_VERIFIED" >> $GITHUB_OUTPUT
+
+      - name: Fetch current pricing page for comparison
+        id: fetch-pricing
+        run: |
+          echo "Fetching pricing page from docs.z.ai..."
+
+          # Fetch the pricing page HTML
+          curl -s -L "https://docs.z.ai/guides/overview/pricing" -o pricing-page.html || true
+
+          # Create a hash of the page content for change detection
+          if [ -f pricing-page.html ]; then
+            PAGE_HASH=$(sha256sum pricing-page.html | cut -d' ' -f1)
+            echo "page_hash=$PAGE_HASH" >> $GITHUB_OUTPUT
+            echo "Page hash: $PAGE_HASH"
+          else
+            echo "page_hash=unknown" >> $GITHUB_OUTPUT
+            echo "Warning: Could not fetch pricing page"
+          fi
+
+      - name: Check for pricing page changes
+        id: detect-changes
+        run: |
+          # Load stored page hash if exists (from previous run)
+          STORED_HASH=""
+          if [ -f .github/workflows/.pricing-page-hash ]; then
+            STORED_HASH=$(cat .github/workflows/.pricing-page-hash)
+          fi
+
+          CURRENT_HASH="${{ steps.fetch-pricing.outputs.page_hash }}"
+
+          echo "Stored hash: $STORED_HASH"
+          echo "Current hash: $CURRENT_HASH"
+
+          if [ -n "$STORED_HASH" ] && [ "$STORED_HASH" != "$CURRENT_HASH" ] && [ "$CURRENT_HASH" != "unknown" ]; then
+            echo "changes_detected=true" >> $GITHUB_OUTPUT
+            echo "### :warning: Pricing Page Change Detected" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The pricing page at docs.z.ai has changed since the last check." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Previous hash:** \`${STORED_HASH}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Current hash:** \`${CURRENT_HASH}\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "changes_detected=false" >> $GITHUB_OUTPUT
+            echo "### :white_check_mark: No Pricing Changes Detected" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The pricing configuration is up to date." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Config version:** ${{ steps.check-pricing.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Last verified:** ${{ steps.check-pricing.outputs.last_verified }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Models tracked:** ${{ steps.check-pricing.outputs.models }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Create GitHub Issue on Change
+        if: steps.detect-changes.outputs.changes_detected == 'true' && (github.event.inputs.create_issue == 'true' || github.event_name == 'schedule')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueTitle = 'Pricing change detected for z.ai GLM models';
+            const issueBody = `## Pricing Change Detected
+
+            The automated pricing check has detected that the pricing page at [docs.z.ai](https://docs.z.ai/guides/overview/pricing) has changed.
+
+            ### Details
+
+            | Property | Value |
+            |----------|-------|
+            | Detected at | ${new Date().toISOString()} |
+            | Workflow run | [${process.env.GITHUB_RUN_ID}](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}) |
+            | Config version | `${{ steps.check-pricing.outputs.version }}` |
+            | Last verified | ${{ steps.check-pricing.outputs.last_verified }} |
+            | Models in config | ${{ steps.check-pricing.outputs.models }} |
+
+            ### Action Required
+
+            1. Visit the [official pricing page](https://docs.z.ai/guides/overview/pricing)
+            2. Compare current pricing with \`config/pricing.json\`
+            3. Update \`config/pricing.json\` if necessary
+            4. Update \`lastVerifiedAt\` date
+            5. Run \`node scripts/check-pricing.js --check\` to verify
+
+            ### Current Config Hash
+
+            \`\`\`
+            ${{ steps.check-pricing.outputs.hash }}
+            \`\`\`
+
+            ---
+            *This issue was automatically created by the [Check Pricing workflow](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/master/.github/workflows/check-pricing.yml).*
+            `;
+
+            // Check if similar issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'pricing-update-needed'
+            });
+
+            if (issues.data.length === 0) {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: issueTitle,
+                body: issueBody,
+                labels: ['pricing-update-needed', 'automated']
+              });
+              console.log('Created new pricing update issue');
+            } else {
+              console.log('Pricing update issue already exists, skipping creation');
+            }
+
+      - name: Update stored hash
+        if: steps.fetch-pricing.outputs.page_hash != 'unknown'
+        run: |
+          echo "${{ steps.fetch-pricing.outputs.page_hash }}" > .github/workflows/.pricing-page-hash
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pricing-check-results
+          path: |
+            pricing-result.json
+            pricing-page.html
+          retention-days: 7

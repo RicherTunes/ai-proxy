@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Performance baseline configuration for GLM Proxy load testing",
+  "version": "1.0.0",
+  "updated": "2026-01-28",
+
+  "profiles": {
+    "smoke": {
+      "description": "Quick smoke test for CI - validates basic functionality",
+      "duration": 30,
+      "rps": 5,
+      "concurrency": 5,
+      "warmup": 5,
+      "thresholds": {
+        "latency": {
+          "p50": 5000,
+          "p95": 15000,
+          "p99": 30000
+        },
+        "throughput": {
+          "min": 3
+        },
+        "errors": {
+          "maxRate": 10
+        },
+        "memory": {
+          "maxHeapMB": 512
+        }
+      }
+    },
+
+    "standard": {
+      "description": "Standard load test for regression detection",
+      "duration": 120,
+      "rps": 20,
+      "concurrency": 20,
+      "warmup": 10,
+      "thresholds": {
+        "latency": {
+          "p50": 3000,
+          "p95": 10000,
+          "p99": 20000
+        },
+        "throughput": {
+          "min": 15
+        },
+        "errors": {
+          "maxRate": 5
+        },
+        "memory": {
+          "maxHeapMB": 512,
+          "maxLeakMBPerMinute": 10
+        }
+      }
+    },
+
+    "stress": {
+      "description": "High-load stress test for capacity planning",
+      "duration": 300,
+      "rps": 50,
+      "concurrency": 50,
+      "warmup": 30,
+      "thresholds": {
+        "latency": {
+          "p50": 5000,
+          "p95": 15000,
+          "p99": 30000
+        },
+        "throughput": {
+          "min": 30
+        },
+        "errors": {
+          "maxRate": 10
+        },
+        "memory": {
+          "maxHeapMB": 768,
+          "maxLeakMBPerMinute": 15
+        }
+      }
+    },
+
+    "soak": {
+      "description": "Long-running soak test for memory leak detection",
+      "duration": 3600,
+      "rps": 10,
+      "concurrency": 10,
+      "warmup": 60,
+      "thresholds": {
+        "latency": {
+          "p50": 3000,
+          "p95": 10000,
+          "p99": 20000
+        },
+        "throughput": {
+          "min": 8
+        },
+        "errors": {
+          "maxRate": 2
+        },
+        "memory": {
+          "maxHeapMB": 512,
+          "maxLeakMBPerMinute": 2
+        }
+      }
+    }
+  },
+
+  "errorCategories": {
+    "acceptable": ["timeout", "rate_limited"],
+    "unacceptable": ["connection_refused", "dns_error", "tls_error"]
+  },
+
+  "metrics": {
+    "collect": [
+      "requests.total",
+      "requests.success",
+      "requests.failed",
+      "latency.p50",
+      "latency.p95",
+      "latency.p99",
+      "latency.avg",
+      "throughput.rps",
+      "errors.rate",
+      "errors.byType",
+      "memory.heapUsed",
+      "memory.heapTotal",
+      "memory.rss",
+      "keys.healthy",
+      "keys.total",
+      "queue.size",
+      "queue.max"
+    ],
+    "sampleInterval": 1000
+  },
+
+  "reporting": {
+    "outputFormats": ["json", "markdown"],
+    "includeHistogram": true,
+    "histogramBuckets": [100, 500, 1000, 2000, 5000, 10000, 20000, 30000]
+  }
+}

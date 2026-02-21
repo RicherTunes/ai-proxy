@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Route policy configuration for GLM Proxy",
+  "version": "1.0.0",
+  "updated": "2026-01-28",
+
+  "policies": [
+    {
+      "name": "llm-chat",
+      "description": "Standard LLM chat completions - full tracing, standard retries",
+      "match": {
+        "paths": ["/v1/chat/completions"],
+        "methods": ["POST"]
+      },
+      "retryBudget": 3,
+      "maxQueueTime": 30000,
+      "tracing": {
+        "sampleRate": 100,
+        "includeBody": false,
+        "maxBodySize": 1024
+      },
+      "telemetry": {
+        "mode": "normal"
+      },
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "name": "llm-streaming",
+      "description": "Streaming completions - reduced retries for better UX",
+      "match": {
+        "paths": ["/v1/chat/completions"],
+        "methods": ["POST"],
+        "headers": {
+          "x-stream": "true"
+        }
+      },
+      "retryBudget": 1,
+      "maxQueueTime": 15000,
+      "tracing": {
+        "sampleRate": 50,
+        "includeBody": false
+      },
+      "priority": 20,
+      "enabled": true
+    },
+    {
+      "name": "telemetry-drop",
+      "description": "Drop telemetry/event logging requests to save capacity",
+      "match": {
+        "paths": ["/api/event_logging", "/v1/telemetry", "/events"],
+        "methods": ["POST"]
+      },
+      "telemetry": {
+        "mode": "drop"
+      },
+      "tracing": {
+        "sampleRate": 0
+      },
+      "priority": 100,
+      "enabled": true
+    },
+    {
+      "name": "health-checks",
+      "description": "Health check endpoints - no tracing, fast queue",
+      "match": {
+        "paths": ["/health", "/ping", "/ready"],
+        "methods": ["GET"]
+      },
+      "maxQueueTime": 5000,
+      "retryBudget": 0,
+      "tracing": {
+        "sampleRate": 0
+      },
+      "priority": 50,
+      "enabled": true
+    },
+    {
+      "name": "high-priority-models",
+      "description": "Premium models get higher retry budget",
+      "match": {
+        "paths": ["/v1/chat/completions"],
+        "models": ["claude-opus-*", "gpt-4-turbo", "gpt-4o"]
+      },
+      "retryBudget": 5,
+      "maxQueueTime": 60000,
+      "tracing": {
+        "sampleRate": 100,
+        "includeBody": true,
+        "maxBodySize": 4096
+      },
+      "priority": 15,
+      "enabled": true
+    },
+    {
+      "name": "sample-low-priority",
+      "description": "Low priority routes - sample tracing to reduce overhead",
+      "match": {
+        "paths": ["/v1/embeddings", "/v1/moderations"]
+      },
+      "retryBudget": 2,
+      "maxQueueTime": 20000,
+      "tracing": {
+        "sampleRate": 10
+      },
+      "priority": 5,
+      "enabled": true
+    }
+  ],
+
+  "defaultPolicy": {
+    "retryBudget": 3,
+    "maxQueueTime": 30000,
+    "pacing": null,
+    "tracing": {
+      "sampleRate": 100,
+      "includeBody": false,
+      "maxBodySize": 1024
+    },
+    "telemetry": {
+      "mode": "normal"
+    }
+  },
+
+  "settings": {
+    "hotReload": true,
+    "hotReloadDebounceMs": 300,
+    "auditPolicyChanges": true
+  }
+}

@@ -1,0 +1,510 @@
+        /* ========== NEW FEATURE STYLES (#3-#10) ========== */
+
+        /* Chart Loading Skeletons */
+        .chart-loading {
+            position: relative;
+        }
+
+        .chart-loading canvas {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .chart-skeleton {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-secondary, rgba(255, 255, 255, 0.5));
+            border-radius: var(--radius-sm, 4px);
+            transition: opacity 0.3s ease;
+            z-index: 1;
+        }
+
+        [data-theme="dark"] .chart-skeleton {
+            background: var(--bg-secondary, rgba(0, 0, 0, 0.3));
+        }
+
+        .skeleton-spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border, #e2e8f0);
+            border-top-color: var(--accent, #6366f1);
+            border-radius: 50%;
+            animation: skeleton-spin 0.8s linear infinite;
+        }
+
+        @keyframes skeleton-spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .skeleton-text {
+            margin-top: var(--spacing-sm, 8px);
+            font-size: var(--font-sm, 12px);
+            color: var(--text-tertiary, #94a3b8);
+        }
+
+        /* Prediction Badge (#5) */
+        .prediction-badge {
+            display: inline-block;
+            padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
+            border-radius: 4px;
+            font-size: var(--font-xs);
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-left: 4px;
+        }
+
+        .prediction-badge.healthy {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success);
+        }
+
+        .prediction-badge.elevated {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .prediction-badge.warning {
+            background: rgba(249, 115, 22, 0.2);
+            color: #f97316;
+        }
+
+        .prediction-badge.critical {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Cost Panel (#6) */
+        .cost-panel {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: var(--spacing-md);
+            margin-bottom: 12px;
+        }
+
+        .cost-panel h3 {
+            font-size: var(--font-base);
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cost-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(110px, 100%), 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: 12px;
+        }
+
+        .cost-stat {
+            background: var(--bg-secondary);
+            padding: var(--spacing-md);
+            border-radius: 6px;
+        }
+
+        .cost-stat .label {
+            font-size: var(--font-sm);
+            color: var(--text-secondary);
+        }
+
+        .cost-stat .value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .budget-progress {
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            height: 24px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .budget-fill {
+            height: 100%;
+            transition: width calc(var(--dur) * 1.67) var(--ease);
+        }
+
+        .budget-fill.ok { background: var(--success); }
+        .budget-fill.warning { background: var(--warning); }
+        .budget-fill.danger { background: var(--error); }
+
+        .budget-label {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: var(--font-sm);
+            font-weight: 600;
+        }
+
+        /* Latency Histogram (#4) */
+        .histogram-section {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: var(--spacing-md);
+            margin-bottom: 12px;
+        }
+
+        .histogram-section h3 {
+            font-size: var(--font-base);
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .time-range-selector {
+            display: flex;
+            gap: var(--spacing-xs);
+        }
+
+        .histogram-chart {
+            height: 200px;
+        }
+
+        .histogram-stats {
+            display: flex;
+            gap: var(--spacing-lg);
+            margin-top: 12px;
+            font-size: var(--font-sm);
+            color: var(--text-secondary);
+        }
+
+        .histogram-stats span {
+            color: var(--text-primary);
+        }
+
+        /* Comparison Panel (#8) */
+        .comparison-panel {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: var(--spacing-md);
+            margin-bottom: 12px;
+        }
+
+        .comparison-panel h3 {
+            font-size: var(--font-base);
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        /* Key Comparison Cards */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+        }
+
+        .comparison-card {
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            padding: var(--spacing-sm);
+            position: relative;
+            transition: all var(--dur) var(--ease);
+        }
+
+        .comparison-card:hover {
+            background: var(--bg-primary);
+        }
+
+        .comparison-card.top-performer {
+            border: 1px solid var(--success);
+            background: rgba(34, 197, 94, 0.05);
+        }
+
+        .comparison-card .key-name {
+            font-family: var(--font-mono);
+            font-size: var(--font-xs);
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .comparison-card .key-score {
+            font-family: var(--font-mono);
+            font-size: var(--font-lg);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .comparison-card .key-latency {
+            font-size: var(--font-xs);
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Mini Progress Bar for Keys */
+        .key-progress {
+            height: 3px;
+            background: var(--bg-primary);
+            border-radius: 2px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+
+        .key-progress-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .key-progress-fill.excellent { background: var(--success); }
+        .key-progress-fill.good { background: #22d3ee; }
+        .key-progress-fill.fair { background: var(--warning); }
+        .key-progress-fill.poor { background: var(--error); }
+
+        /* Key Ranking Badges */
+        .key-rank {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .key-rank.rank-1 {
+            background: linear-gradient(135deg, #ffd700, #ffb800);
+            color: #1a1a2e;
+        }
+
+        .key-rank.rank-2 {
+            background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
+            color: #1a1a2e;
+        }
+
+        .key-rank.rank-3 {
+            background: linear-gradient(135deg, #cd7f32, #b8722d);
+            color: white;
+        }
+
+        /* Legacy comparison-key styles (kept for compatibility) */
+        .comparison-key {
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            padding: var(--spacing-md);
+        }
+
+        .comparison-key.best {
+            border: 1px solid var(--success);
+        }
+
+        .comparison-key .key-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .comparison-key .score {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .comparison-bar {
+            height: 8px;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            margin: var(--spacing-xs) 0;
+            overflow: hidden;
+        }
+
+        .comparison-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width calc(var(--dur) * 1.67) var(--ease);
+        }
+
+        .comparison-bar-fill.performance { background: var(--accent); }
+        .comparison-bar-fill.reliability { background: var(--success); }
+        .comparison-bar-fill.stability { background: var(--accent-secondary); }
+        .comparison-bar-fill.ratelimit { background: var(--warning); }
+
+
+        /* ========== PHASE 2: HEATMAP & TABS ========== */
+
+        /* Keys Heatmap */
+        .keys-heatmap {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+            gap: var(--spacing-sm);
+            padding: var(--spacing-xs);
+        }
+
+        .heatmap-cell {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: var(--font-base);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--dur) var(--ease);
+            border: 2px solid transparent;
+        }
+
+        body.density-compact .heatmap-cell {
+            font-size: var(--font-sm);
+            min-height: 40px;
+        }
+
+        .heatmap-cell.excellent {
+            background: var(--score-excellent-bg);
+            color: var(--success);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .heatmap-cell.good {
+            background: var(--score-good-bg);
+            color: #22d3ee;
+            border-color: rgba(34, 211, 238, 0.3);
+        }
+
+        .heatmap-cell.fair {
+            background: var(--score-fair-bg);
+            color: var(--warning);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .heatmap-cell.poor {
+            background: var(--score-poor-bg);
+            color: var(--error);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .heatmap-cell.cooldown {
+            opacity: 0.5;
+            position: relative;
+        }
+
+        .heatmap-cell.cooldown::after {
+            content: '🔒';
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 0.5rem;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        body.density-compact .heatmap-cell:hover {
+            transform: scale(1.05);
+        }
+
+        .heatmap-cell.selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent);
+            transform: scale(1.05);
+        }
+
+        .heatmap-cell .cell-label {
+            font-size: var(--font-sm);
+        }
+
+        body.density-compact .heatmap-cell .cell-label {
+            font-size: var(--font-xs);
+        }
+
+        .heatmap-cell .cell-score {
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.55rem;
+            opacity: 0.8;
+        }
+
+        body.density-compact .heatmap-cell .cell-score {
+            font-size: 0.5rem;
+            bottom: 3px;
+        }
+
+        /* In-flight badge for heatmap cells */
+        .heatmap-cell .in-flight-badge {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            background: var(--accent);
+            color: white;
+            font-size: 0.5rem;
+            padding: 1px 3px;
+            border-radius: var(--radius-full);
+            font-weight: 600;
+            z-index: 5;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        body.density-compact .heatmap-cell .in-flight-badge {
+            font-size: 0.45rem;
+            padding: 0.5px 2px;
+            top: -2px;
+            right: -2px;
+        }
+
+        /* Heatmap tooltip */
+        .heatmap-tooltip {
+            position: absolute;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-size: var(--font-sm);
+            pointer-events: none;
+            z-index: 1000;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .heatmap-tooltip .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            gap: var(--spacing-lg);
+            margin-bottom: 2px;
+        }
+
+        .heatmap-tooltip .tooltip-label {
+            color: var(--text-secondary);
+        }
+
+        .heatmap-tooltip .tooltip-value {
+            font-weight: 600;
+        }
+

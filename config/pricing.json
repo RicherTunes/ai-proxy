@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "lastVerifiedAt": "2026-02-21",
+  "sourceUrl": "https://docs.z.ai/guides/overview/pricing",
+  "models": {
+    "claude-opus-4-6": { "inputTokenPer1M": 15.00, "outputTokenPer1M": 75.00 },
+    "claude-opus-4": { "inputTokenPer1M": 15.00, "outputTokenPer1M": 75.00 },
+    "claude-sonnet-4-6": { "inputTokenPer1M": 3.00, "outputTokenPer1M": 15.00 },
+    "claude-sonnet-4-5": { "inputTokenPer1M": 3.00, "outputTokenPer1M": 15.00 },
+    "claude-haiku-4-5": { "inputTokenPer1M": 0.80, "outputTokenPer1M": 4.00 },
+    "claude-haiku-4": { "inputTokenPer1M": 0.80, "outputTokenPer1M": 4.00 },
+    "claude-opus-3": { "inputTokenPer1M": 15.00, "outputTokenPer1M": 75.00 },
+    "claude-sonnet-3": { "inputTokenPer1M": 3.00, "outputTokenPer1M": 15.00 },
+    "claude-haiku-3": { "inputTokenPer1M": 0.25, "outputTokenPer1M": 1.25 },
+    "glm-5": { "inputTokenPer1M": 1.00, "outputTokenPer1M": 3.20 },
+    "glm-5-code": { "inputTokenPer1M": 1.20, "outputTokenPer1M": 5.00 },
+    "glm-4.5-x": { "inputTokenPer1M": 2.20, "outputTokenPer1M": 8.90 },
+    "glm-4.7": { "inputTokenPer1M": 0.60, "outputTokenPer1M": 2.20 },
+    "glm-4.6": { "inputTokenPer1M": 0.60, "outputTokenPer1M": 2.20 },
+    "glm-4.5": { "inputTokenPer1M": 0.60, "outputTokenPer1M": 2.20 },
+    "glm-4.5-air": { "inputTokenPer1M": 0.20, "outputTokenPer1M": 1.10 },
+    "glm-4.5-airx": { "inputTokenPer1M": 1.10, "outputTokenPer1M": 4.50 },
+    "glm-4.7-flash": { "inputTokenPer1M": 0.00, "outputTokenPer1M": 0.00 },
+    "glm-4.7-flashx": { "inputTokenPer1M": 0.07, "outputTokenPer1M": 0.40 },
+    "glm-4.5-flash": { "inputTokenPer1M": 0.00, "outputTokenPer1M": 0.00 },
+    "glm-4.5v": { "inputTokenPer1M": 0.60, "outputTokenPer1M": 1.80 },
+    "glm-4.6v": { "inputTokenPer1M": 0.30, "outputTokenPer1M": 0.90 },
+    "glm-4.6v-flashx": { "inputTokenPer1M": 0.04, "outputTokenPer1M": 0.40 },
+    "glm-4.6v-flash": { "inputTokenPer1M": 0.00, "outputTokenPer1M": 0.00 },
+    "glm-4-32b-0414-128k": { "inputTokenPer1M": 0.10, "outputTokenPer1M": 0.10 }
+  }
+}

@@ -1,0 +1,173 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check quarantine deadlines
+        run: npm run check:quarantine
+
+      - name: Run unit tests with coverage
+        run: npm test
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: matrix.node-version == '20.x'
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  smoke-load:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start stub upstream server (deterministic)
+        run: |
+          node scripts/stub-upstream.js --port=3001 --scenario=success &
+          sleep 2
+          curl -s http://localhost:3001/_stub/health | grep -q "ok"
+
+      - name: Start proxy server (single-process, fixed config)
+        run: |
+          NO_CLUSTER=1 node proxy.js &
+          sleep 3
+        env:
+          PORT: 3000
+          UPSTREAM_URL: http://localhost:3001
+          LOG_LEVEL: warn
+
+      - name: Run smoke load test (60s)
+        run: |
+          node scripts/load.js \
+            --target=http://localhost:3000 \
+            --rps=5 \
+            --duration=60 \
+            --warmup=5 \
+            --output=test-results/load-smoke.json
+
+      - name: Validate smoke test invariants
+        run: |
+          RESULT="test-results/load-smoke.json"
+          if [ ! -f "$RESULT" ]; then
+            echo "::error::Load test results not found"
+            exit 1
+          fi
+
+          SUCCESS_RATE=$(jq '.summary.successRate' "$RESULT")
+          P95=$(jq '.latency.p95' "$RESULT")
+          ERRORS=$(jq '.errors.total' "$RESULT")
+
+          echo "Success rate: $SUCCESS_RATE%"
+          echo "P95 latency: ${P95}ms"
+          echo "Total errors: $ERRORS"
+
+          # Stable invariants for CI
+          # - Success rate >= 99% (stub always succeeds)
+          # - P95 < 500ms (generous ceiling for CI runners)
+          # - No fatal connection errors (ECONNREFUSED, etc)
+          CONN_ERRORS=$(jq '[.errors.byType.ECONNREFUSED // 0, .errors.byType.ECONNRESET // 0] | add' "$RESULT")
+
+          FAILED=0
+          if [ "$(echo "$SUCCESS_RATE < 99" | bc -l)" -eq 1 ]; then
+            echo "::error::Success rate $SUCCESS_RATE% below 99% threshold"
+            FAILED=1
+          fi
+          if [ "$P95" -gt 500 ]; then
+            echo "::error::P95 latency ${P95}ms exceeds 500ms ceiling"
+            FAILED=1
+          fi
+          if [ "$CONN_ERRORS" -gt 0 ]; then
+            echo "::error::Fatal connection errors detected: $CONN_ERRORS"
+            FAILED=1
+          fi
+
+          exit $FAILED
+
+      - name: Upload load test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-load-results
+          path: test-results/
+          retention-days: 7
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests (with CI perf factor)
+        run: npm run test:e2e
+        env:
+          CI: true
+          # Scale perf thresholds for slower CI runners
+          PERF_FACTOR: '2'
+          # Warn instead of fail on non-deterministic heap tests
+          PERF_WARN_ONLY: '1'
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-results
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+      - name: Upload Playwright traces on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: test-results/**/trace.zip
+          retention-days: 7

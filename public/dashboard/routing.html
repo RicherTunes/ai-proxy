@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Routing Dashboard - GLM Proxy</title>
+    <link rel="stylesheet" href="/dashboard/css/routing-standalone.css">
+</head>
+<body>
+    <div class="routing-container">
+        <header class="routing-header">
+            <h1>Model Routing Dashboard</h1>
+            <div class="header-controls">
+                <button id="refreshBtn" class="btn btn-secondary">Refresh</button>
+                <button id="pauseBtn" class="btn btn-secondary">Pause</button>
+            </div>
+        </header>
+
+        <section class="summary-section">
+            <div class="summary-card">
+                <div class="summary-label">Total Requests</div>
+                <div class="summary-value" id="totalRequests">0</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">With Trace</div>
+                <div class="summary-value" id="withTrace">0</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Avg Latency</div>
+                <div class="summary-value" id="avgLatency">-</div>
+            </div>
+        </section>
+
+        <section class="requests-section">
+            <h2>Recent Requests</h2>
+            <div class="table-container">
+                <table class="requests-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Model</th>
+                            <th>Tier</th>
+                            <th>Strategy</th>
+                            <th>Why</th>
+                            <th>Latency</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requestsBody">
+                        <tr>
+                            <td colspan="7" class="empty-state">Connecting to request stream...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Trace Detail Modal -->
+    <div class="modal-overlay" id="traceModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Decision Trace</h2>
+                <button class="modal-close" id="closeTraceModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <pre id="traceContent"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="/dashboard/routing.js"></script>
+</body>
+</html>
