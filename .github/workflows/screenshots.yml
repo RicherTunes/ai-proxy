@@ -38,26 +38,52 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Install ImageMagick for pixel diff
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+
       - name: Generate screenshots
         run: npm run screenshots:generate
 
       - name: Extract screenshots to docs
         run: npm run screenshots:extract
 
-      - name: Check for screenshot changes
-        id: check_changes
-        run: |
-          git add docs/screenshots/
-          if git diff --staged --quiet; then
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-          else
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-          fi
+      - name: Compare screenshots for actual visual changes
+        id: compare
+        run: node scripts/compare-screenshots.js
 
       - name: Commit and push screenshots
-        if: steps.check_changes.outputs.has_changes == 'true'
+        if: steps.compare.outputs.has_changes == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: update documentation screenshots [skip ci]"
+          git add docs/screenshots/
+
+          # Read changed files from comparison output
+          if [ -f .screenshot-changes.txt ]; then
+            echo "Committing screenshots with actual visual changes:"
+            cat .screenshot-changes.txt | while read file; do
+              echo "  - $file"
+            done
+          fi
+
+          git commit -m "chore: update documentation screenshots [skip ci]
+
+          # Get list of changed files for summary
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD | grep 'docs/screenshots/' || true)
+
           git push
+
+      - name: Summary
+        if: steps.compare.outputs.has_changes == 'true'
+        run: |
+          echo "✅ Screenshots updated and pushed to repository"
+          echo "📊 Visual changes detected by pixel comparison"
+
+      - name: No changes summary
+        if: steps.compare.outputs.has_changes == 'false'
+        run: |
+          echo "✨ No visual changes detected in screenshots"
+          echo "🎯 Pixel comparison: screenshots are visually identical"
+          echo "⏭️ Skipping commit - no changes to push"
