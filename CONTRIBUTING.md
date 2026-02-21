@@ -36,7 +36,7 @@ Follow conventional commits:
 
 ## Pull Request Process
 
-1. Create a feature branch from `master`
+1. Create a feature branch from `main`
 2. Make your changes with tests
 3. Ensure all tests pass
 4. Submit a PR with description

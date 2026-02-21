@@ -1,4 +1,4 @@
-# GLM Proxy Documentation
+# AI Proxy Documentation
 
 ## Quick Links
 
@@ -14,7 +14,7 @@
 ## Documentation Sections
 
 ### User Guide
-Documentation for running and monitoring GLM Proxy.
+Documentation for running and monitoring AI Proxy.
 
 | Document | Description |
 |----------|-------------|

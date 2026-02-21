@@ -476,7 +476,7 @@ Z.ai claims **"21x better value than Claude"**:
 
 ### Internal Documentation
 
-- **[Model Mapping](./model-mapping.md)** - How Z.ai models map to internal model IDs
+- **[Model Mapping](../features/model-mapping.md)** - How Z.ai models map to internal model IDs
 - **[Model Routing](../features/model-routing.md)** - Request routing logic
 - **[Model Concurrency Findings](../model-concurrency-findings.md)** - Concurrency testing results
 
