@@ -81,6 +81,21 @@ async function setupDeterministicRoutes(page) {
     }));
 }
 
+async function clickDashboardControl(page, selector) {
+    const control = page.locator(selector).first();
+    if (await control.isVisible().catch(() => false)) {
+        await control.click();
+        return;
+    }
+    const overflow = page.locator('#overflowMenuTrigger').first();
+    if (await overflow.isVisible().catch(() => false)) {
+        await overflow.click();
+        await page.locator(selector).first().click();
+        return;
+    }
+    throw new Error(`Dashboard control not visible: ${selector}`);
+}
+
 test.describe('Dashboard Visual Regression', () => {
     test.beforeEach(async ({ page }) => {
         await setupDeterministicRoutes(page);
@@ -109,9 +124,7 @@ test.describe('Dashboard Visual Regression', () => {
         // Dashboard defaults to dark theme
         const theme = await page.locator('html').getAttribute('data-theme');
         if (theme === 'light') {
-            const trigger = page.locator('#overflowMenuTrigger');
-            await trigger.click();
-            await page.locator('[data-action="toggle-theme"]').click();
+            await clickDashboardControl(page, '[data-action="toggle-theme"]');
             await page.waitForTimeout(300);
         }
         await expect(page).toHaveScreenshot('dark-theme.png');
@@ -121,9 +134,7 @@ test.describe('Dashboard Visual Regression', () => {
         await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
         await page.waitForTimeout(500);
-        const trigger = page.locator('#overflowMenuTrigger');
-        await trigger.click();
-        await page.locator('[data-action="toggle-theme"]').click();
+        await clickDashboardControl(page, '[data-action="toggle-theme"]');
         await page.waitForTimeout(300);
         await expect(page).toHaveScreenshot('light-theme.png');
     });
@@ -132,9 +143,7 @@ test.describe('Dashboard Visual Regression', () => {
         await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="health-ribbon"]', { timeout: 10000 });
         await page.waitForTimeout(500);
-        const trigger = page.locator('#overflowMenuTrigger');
-        await trigger.click();
-        await page.locator('.density-btn[data-density="compact"]').click();
+        await clickDashboardControl(page, '.density-btn[data-density="compact"]');
         await page.waitForTimeout(300);
         await expect(page).toHaveScreenshot('compact-density.png');
     });
