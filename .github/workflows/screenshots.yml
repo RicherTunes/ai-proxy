@@ -1,0 +1,63 @@
+name: Update Documentation Screenshots
+
+on:
+  # Trigger manually from the Actions tab
+  workflow_dispatch:
+  # Run after dashboard-related changes
+  push:
+    branches: [master, main]
+    paths:
+      - 'lib/dashboard.js'
+      - 'public/js/**'
+      - 'public/css/**'
+      - '.github/workflows/screenshots.yml'
+      # Run weekly to keep screenshots fresh
+  schedule:
+    - cron: '0 2 * * 1'  # Every Monday at 2 AM UTC
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate-screenshots:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Generate screenshots
+        run: npm run screenshots:generate
+
+      - name: Extract screenshots to docs
+        run: npm run screenshots:extract
+
+      - name: Check for screenshot changes
+        id: check_changes
+        run: |
+          git add docs/screenshots/
+          if git diff --staged --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push screenshots
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: update documentation screenshots [skip ci]"
+          git push

@@ -121,6 +121,10 @@ Expected response:
 **Or open the dashboard:**
 Go to http://127.0.0.1:18765/dashboard in your browser. You should see your keys listed.
 
+![Dashboard Overview](../screenshots/overview.png)
+
+> See the [Dashboard Guide](./dashboard.md) for a complete visual tour of all dashboard features.
+
 ### Step 7: Connect Your Application
 
 Now configure your application to use the proxy:
