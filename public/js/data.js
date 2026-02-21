@@ -361,6 +361,7 @@
                 options: chartOptions
             });
             STATE.charts.latency = latencyChart;
+            markChartLoaded(latEl);
         }
 
         var errEl = document.getElementById('errorChart');
@@ -378,6 +379,7 @@
                 })
             });
             STATE.charts.error = errorChart;
+            markChartLoaded(errEl);
         }
 
         var distEl = document.getElementById('distChart');
@@ -388,6 +390,7 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'right', labels: { color: theme.legendLabel, font: { size: 11 } } } } }
             });
             STATE.charts.dist = distChart;
+            markChartLoaded(distEl);
         }
 
         var tierEl = document.getElementById('routingTierChart');
@@ -398,6 +401,7 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'right', labels: { color: theme.legendLabel, font: { size: 10 } } } } }
             });
             STATE.charts.routingTier = routingTierChart;
+            markChartLoaded(tierEl);
         }
 
         var srcEl = document.getElementById('routingSourceChart');
@@ -408,6 +412,7 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'right', labels: { color: theme.legendLabel, font: { size: 10 } } } } }
             });
             STATE.charts.routingSource = routingSourceChart;
+            markChartLoaded(srcEl);
         }
 
         var r429El = document.getElementById('routing429Chart');
@@ -431,6 +436,7 @@
                 }
             });
             STATE.charts.routing429 = routing429Chart;
+            markChartLoaded(r429El);
         }
 
         // Account Usage charts
@@ -449,6 +455,7 @@
                 }
             });
             STATE.charts.acctToken = acctTokenChart;
+            markChartLoaded(acctTokenEl);
         }
 
         var acctReqEl = document.getElementById('acctRequestChart');
@@ -466,6 +473,7 @@
                 }
             });
             STATE.charts.acctRequest = acctRequestChart;
+            markChartLoaded(acctReqEl);
         }
 
         // Per-model token breakdown chart (stacked bar)
@@ -486,6 +494,7 @@
                 }
             });
             STATE.charts.modelToken = modelTokenChart;
+            markChartLoaded(modelTokenEl);
         }
 
         // Cost over time chart (stacked bar by model)
@@ -507,6 +516,7 @@
                 }
             });
             STATE.charts.costTime = costTimeChart;
+            markChartLoaded(costTimeEl);
         }
     }
 
@@ -2043,6 +2053,7 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: hTheme.tick }, grid: { color: hTheme.grid } }, x: { ticks: { color: hTheme.tick, maxRotation: 45 }, grid: { display: false } } } }
             });
             STATE.charts.histogram = histogramChart;
+            markChartLoaded(el);
         } else {
             histogramChart.data.labels = labels;
             histogramChart.data.datasets[0].data = values;
