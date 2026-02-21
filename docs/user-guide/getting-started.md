@@ -53,7 +53,9 @@ This downloads everything the proxy needs. It may take 1-2 minutes.
 
 > **Tip:** Having multiple keys lets the proxy spread requests across them, giving you higher rate limits.
 >
-> **Need help choosing a subscription?** See [Z.ai Coding Subscription Reference](../reference/zai-coding-subscription.md) for tier comparisons, limits, and pricing.
+> **Documentation:**
+> - [Z.ai Coding Subscription Reference](../reference/zai-coding-subscription.md) - Quick tier comparisons and limits
+> - [Z.ai Knowledge Base](../reference/zai-knowledge-base.md) - Comprehensive model specs, integrations, and troubleshooting
 
 ### Step 4: Create Your Configuration File
 

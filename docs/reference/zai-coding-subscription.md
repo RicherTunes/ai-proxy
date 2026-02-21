@@ -2,7 +2,9 @@
 
 > **Last Updated:** February 21, 2026
 > **Provider:** Zhipu AI (Z.ai / BigModel.cn)
-> **Documentation Sources: [z.ai](https://z.ai) | [docs.z.ai](https://docs.z.ai) | [open.bigmodel.cn](https://open.bigmodel.cn)
+> **Documentation Sources:** [z.ai](https://z.ai) | [docs.z.ai](https://docs.z.ai) | [open.bigmodel.cn](https://open.bigmodel.cn)
+
+> **Looking for more details?** See the [Z.ai Knowledge Base](./zai-knowledge-base.md) for comprehensive documentation including model specs, integrations, known issues, and historical changes.
 
 ---
 
