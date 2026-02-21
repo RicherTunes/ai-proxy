@@ -68,7 +68,7 @@ jobs:
 
       - name: Start proxy server (single-process, fixed config)
         run: |
-          GLM_NO_CLUSTER=1 GLM_PORT=3000 GLM_LOG_LEVEL=info node proxy.js &
+          GLM_NO_CLUSTER=1 GLM_PORT=3000 GLM_LOG_LEVEL=warn GLM_RATE_LIMIT=0 node proxy.js &
           sleep 3
 
       - name: Verify proxy is listening
