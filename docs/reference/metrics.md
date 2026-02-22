@@ -7,6 +7,8 @@ title: Month 1 Metrics: 429 Efficiency & Retry Intelligence
 
 Metrics added to quantify retry waste, give-up behavior, model routing effectiveness, and tier downgrade impact under 429 pressure. All counters are monotonic (Prometheus `counter` type) and reset only on proxy restart or explicit `/reset`.
 
+> **Related:** See [Model Routing](../features/model-routing.md) for configuration details and [Z.ai Knowledge Base](zai-knowledge-base.md#rate-limits--quotas) for provider-specific rate limit behavior.
+
 ## Endpoints
 
 | Endpoint | Format | Includes Month 1? |

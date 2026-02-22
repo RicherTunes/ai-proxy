@@ -150,6 +150,8 @@ Before deploying to production, verify:
 - [ ] Logging does not expose sensitive data
 - [ ] TLS is enabled (reverse proxy or native)
 
+> **Using Z.ai API keys?** See [Z.ai Knowledge Base](../reference/zai-knowledge-base.md#data-privacy--security) for data handling and privacy information.
+
 ## Common Unsafe Configurations
 
 The following configurations are flagged as unsafe by the config linter:
