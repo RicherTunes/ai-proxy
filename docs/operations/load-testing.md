@@ -213,6 +213,8 @@ Example update:
 3. Verify upstream availability
 4. Check backpressure queue
 
+> **Using Z.ai?** See [Z.ai Knowledge Base](../reference/zai-knowledge-base.md#rate-limits--quotas) for understanding quota limits and [Model Concurrency Findings](../model-concurrency-findings.md) for Z.ai-specific concurrency behavior.
+
 ### Memory Growth
 
 1. Run soak test to confirm leak
