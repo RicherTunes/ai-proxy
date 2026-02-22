@@ -185,3 +185,40 @@ jobs:
           name: playwright-traces
           path: test-results/**/trace.zip
           retention-days: 7
+
+  live-e2e:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    needs: [test]
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run live E2E tests
+        env:
+          Z_AI_GLM_API_KEY_FOR_TESTS: ${{ secrets.Z_AI_GLM_API_KEY_FOR_TESTS }}
+          CI: true
+        run: npx playwright test test/e2e/live-integration.e2e.spec.js --project=chromium --retries=1
+
+      - name: Upload live E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-e2e-results
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
