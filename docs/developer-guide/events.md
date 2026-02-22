@@ -7,6 +7,11 @@ title: SSE Event Contract
 
 This document describes the Server-Sent Events (SSE) contract for the `/events` (alias: `/requests/stream`) endpoint.
 
+> **Related:**
+> - [Monitoring Guide](../user-guide/monitoring.md) - Dashboard and alerting setup
+> - [Metrics Reference](../reference/metrics.md) - Available Prometheus metrics
+> - [Dashboard Guide](../user-guide/dashboard.md) - Real-time dashboard visualization
+
 ## Dashboard Visualization
 
 The Requests page displays real-time events from the SSE stream:
@@ -218,6 +223,8 @@ These are SSE comments (start with `:`) and are not JSON events.
 
 ## Backpressure Handling
 
+> **Performance:** See [Load Testing Guide](../operations/load-testing.md) for throughput optimization under high load.
+
 The server implements backpressure to protect against slow clients:
 
 1. **Non-critical events** (`kpi`): Silently dropped when client buffer is full
@@ -291,3 +298,5 @@ The `schemaVersion` field enables backward-compatible evolution:
 | `GET /requests` | Recent requests list (for gap recovery) |
 | `GET /stats/models` | Per-model statistics |
 | `GET /health` | Health check |
+
+> **Reference:** See [Metrics Reference](../reference/metrics.md) for all available `/stats` and `/metrics` fields.

@@ -5,6 +5,12 @@ title: Cost Tracking Admin API Quick Reference
 
 # Cost Tracking Admin API Quick Reference
 
+> **Related:**
+> - [Security Configuration](./security.md) - Admin authentication setup
+> - [Monitoring Guide](../user-guide/monitoring.md) - Dashboard metrics and alerts
+> - [Configuration Guide](../user-guide/configuration.md) - Full configuration options
+> - [Z.ai Knowledge Base](../reference/zai-knowledge-base.md#pricing--costs) - GLM pricing reference
+
 ## Dashboard Visualization
 
 The Cost Panel in the dashboard provides real-time visibility into cost tracking:
@@ -265,6 +271,8 @@ curl -H "x-admin-token: TOKEN" /admin/cost-tracking/metrics | jq '.metrics'
 ```
 
 ## Best Practices
+
+> **Security:** See [Security Configuration](./security.md#admin-authentication) for token management best practices.
 
 1. **Always authenticate** - Use admin tokens for all requests
 2. **Validate changes** - Check config after updates

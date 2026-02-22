@@ -7,6 +7,11 @@ title: Release Process
 
 This document describes the automated and manual release processes for ai-proxy.
 
+> **Related:**
+> - [Testing Guide](./developer-guide/testing.md) - Test coverage and CI requirements
+> - [Load Testing Guide](./operations/load-testing.md) - Performance baseline validation
+> - [Security Configuration](./operations/security.md) - Release security checklist
+
 ## Automated Releases
 
 Releases are automated using [semantic-release](https://github.com/semantic-release/semantic-release).
@@ -68,6 +73,8 @@ git push origin v<version>
 ```
 
 ## Release Checklist
+
+> **Pre-release Testing:** Run [Load Testing](./operations/load-testing.md) baselines and [Test Suite](./developer-guide/testing.md) before releasing.
 
 Before a release:
 

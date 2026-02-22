@@ -5,6 +5,11 @@ title: Model Mapping Backend Implementation
 
 # Model Mapping Backend Implementation
 
+> **Related:**
+> - [Model Routing](./model-routing.md) - Tier-based model selection and fallback logic
+> - [Configuration Guide](../user-guide/configuration.md) - Full configuration options
+> - [Z.ai Knowledge Base](../reference/zai-knowledge-base.md#model-catalog) - Available GLM models
+
 ## Dashboard Visualization
 
 The Model Routing page displays model mappings and configurations:
@@ -366,6 +371,11 @@ All tests passed successfully.
 ## Next Steps
 
 The backend implementation is complete. Next steps would be:
+
+> **See Also:**
+> - [Testing Guide](../developer-guide/testing.md) - Test strategy and coverage
+> - [Security Configuration](../operations/security.md) - Admin authentication for endpoints
+> - [Metrics Reference](../reference/metrics.md) - Available monitoring metrics
 
 1. **Frontend integration** - Add UI components to dashboard for live management
 2. **Persistence** - Add ability to save/load model mapping configuration

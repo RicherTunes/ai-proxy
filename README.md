@@ -112,6 +112,8 @@ Just change the API endpoint from `https://api.anthropic.com` to `http://127.0.0
 
 That's it! Your requests now go through the proxy automatically.
 
+> **Need more help?** See [Getting Started Guide](./docs/user-guide/getting-started.md) for detailed setup instructions.
+
 ## Dashboard
 
 After starting the proxy, open **http://127.0.0.1:18765/dashboard** in your browser to see the real-time monitoring dashboard.
@@ -142,6 +144,9 @@ The dashboard provides:
 
 ## Having Problems?
 
+> **Troubleshooting:** See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues and solutions.
+> **Z.ai Users:** See [Z.ai Documentation](./docs/reference/zai-coding-subscription.md) for provider-specific issues.
+
 **Proxy won't start?**
 - Make sure you ran `npm install` first
 - Check that `api-keys.json` exists and has valid JSON format
@@ -158,9 +163,10 @@ The dashboard provides:
 - Look at the terminal output for error messages
 
 For more help, see:
-- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
+- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) — Common issues and solutions
 - [Documentation](./docs/) — Complete documentation with guides and references
 - [Z.ai Knowledge Base](./docs/reference/zai-knowledge-base.md) — Comprehensive Z.ai provider information
+- [Configuration Guide](./docs/user-guide/configuration.md) — All available options
 
 ## Features
 
@@ -191,6 +197,9 @@ New to proxies? Here are some terms you might see:
 
 ## Advanced Features
 
+> **See Also:** [Features Documentation](./docs/features/) for detailed feature guides.
+> **Configuration:** See [Configuration Guide](./docs/user-guide/configuration.md) for all available options.
+
 Beyond the basics, AI Proxy includes these powerful features for production use:
 
 ### Webhook Notifications
@@ -216,6 +225,8 @@ curl -H "X-Tenant-ID: team-a" http://127.0.0.1:18765/v1/messages
 
 ### Admin Authentication
 Protect sensitive endpoints (like stats and configuration) with token-based authentication. Perfect for shared environments.
+
+> **Security Guide:** See [Security Configuration](./docs/operations/security.md) for authentication best practices.
 
 **Enable it:** Set `GLM_ADMIN_AUTH_ENABLED=true` and provide tokens via `GLM_ADMIN_TOKENS`
 

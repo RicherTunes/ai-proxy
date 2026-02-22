@@ -7,6 +7,11 @@ title: Dashboard Screenshots
 
 This directory contains screenshots generated from E2E tests for documentation purposes.
 
+> **Related:**
+> - [Testing Guide](../developer-guide/testing.md#e2e-testing-with-screenshots) - E2E test and screenshot generation
+> - [Dashboard Guide](../user-guide/dashboard.md) - Dashboard feature documentation
+> - [Search Functionality](../search/README.md) - Documentation search index
+
 ## Usage
 
 Include screenshots in markdown using:
@@ -16,6 +21,8 @@ Include screenshots in markdown using:
 ```
 
 ## Regenerate Screenshots
+
+> **Testing:** See [Testing Guide](../developer-guide/testing.md) for full E2E test commands.
 
 ```bash
 npm run screenshots:generate

@@ -10,8 +10,11 @@ title: Z.AI Model Concurrency & Availability Findings
 **Base URL:** <https://api.z.ai/api/anthropic>
 **Total Keys:** 20
 
-> **Related:** See [Z.ai Knowledge Base](../reference/zai-knowledge-base/) for complete documentation on tiers, pricing, and API configuration.
-> **Quick Reference:** See [Z.ai Coding Subscription](../reference/zai-coding-subscription/) for tier limits and quotas.
+> **Related:**
+> - [Z.ai Knowledge Base](./reference/zai-knowledge-base.md) - Complete documentation on tiers, pricing, and API configuration
+> - [Z.ai Coding Subscription](./reference/zai-coding-subscription.md) - Tier limits and quotas quick reference
+> - [Chaos Mode](./features/chaos-mode.md) - Cross-model concurrent throughput maximization
+> - [Troubleshooting Guide](./TROUBLESHOOTING.md) - Rate limit and error handling
 
 ## Key Finding: Concurrency is PER-ACCOUNT, not per-key
 
@@ -83,6 +86,9 @@ Concurrency 11-12:  All green again (0 429s)
 **Conclusion:** Similar soft limit around 10. Occasional 429s are transient, not a hard wall.
 
 ## Impact on Proxy Configuration
+
+> **Configuration:** See [Model Routing](./docs/features/model-routing.md) for tier-based routing configuration.
+> **Troubleshooting:** See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md#rate-limit-exceeded) for handling 429 errors.
 
 ### 1. Remove unavailable models from tiers
 
