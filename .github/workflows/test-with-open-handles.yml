@@ -8,6 +8,7 @@ on:
 jobs:
   test-with-open-handles:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -24,8 +25,8 @@ jobs:
         run: mkdir -p test-results
 
       - name: Run tests with open handles detection
-        run: npm run test -- --detectOpenHandles --no-coverage 2>&1 | tee test-results/detect-open-handles.log
-        continue-on-error: true
+        run: timeout 300 npm run test -- --detectOpenHandles --no-coverage 2>&1 | tee test-results/detect-open-handles.log || true
+        timeout-minutes: 7
 
       - name: Check for new open handles
         run: node scripts/check-open-handles.js \
