@@ -702,6 +702,25 @@
         }
         .side-panel-backdrop.visible { opacity: 1; visibility: visible; }
 
+        /* ========== M3: INSPECTOR DOCK MODE ========== */
+        /* Desktop (>=1024px): side panel docks to the right without blocking backdrop.
+           Users can still interact with the request list while inspector is open. */
+        @media (min-width: 1024px) {
+            .side-panel {
+                top: var(--header-h, 44px);
+                height: calc(100vh - var(--header-h, 44px));
+                z-index: var(--z-drawer, 200);
+            }
+            .side-panel-backdrop.visible {
+                display: none;
+            }
+            .bottom-drawer {
+                right: var(--dock-right, 0px);
+                transition: right var(--dur, 180ms) var(--ease, ease), height calc(var(--dur) * 1.67) var(--ease);
+            }
+        }
+        /* Mobile (<1024px): keep existing overlay behavior with backdrop */
+
         /* Bottom Drawer */
         .bottom-drawer {
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
