@@ -14,7 +14,7 @@ highlighter: rouge
 title: AI Proxy
 description: Intelligent AI Request Router with Smart Monitoring
 baseurl: "/ai-proxy"
-url: "https://richtunes.github.io"
+url: "https://richertunes.github.io"
 
 # Permalink structure for pretty URLs
 permalink: /:categories/:title/

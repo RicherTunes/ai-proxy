@@ -13,7 +13,7 @@ Complete reference for AI Proxy configuration options.
 > - [Security Configuration](../operations/security.md) - Admin authentication and secure deployment
 > - [Z.ai Knowledge Base](../reference/zai-knowledge-base.md) - Provider-specific configuration
 
-> **New to configuration?** Start with the [Getting Started](./getting-started/) guide for basic setup. You only need to read this if you want to customize advanced settings.
+> **New to configuration?** Start with the [Getting Started](./getting-started.md) guide for basic setup. You only need to read this if you want to customize advanced settings.
 
 ## What Are Environment Variables?
 
@@ -106,7 +106,7 @@ The `api-keys.json` file contains your API credentials:
 }
 ```
 
-> **Need API keys?** Sign up at [z.ai](https://z.ai) and create API keys in your dashboard. See [Z.ai Documentation](../reference/zai-coding-subscription/) for tier comparisons and pricing.
+> **Need API keys?** Sign up at [z.ai](https://z.ai) and create API keys in your dashboard. See [Z.ai Documentation](../reference/zai-coding-subscription.md) for tier comparisons and pricing.
 
 ### Fields
 
@@ -256,8 +256,8 @@ Invoke-WebRequest -Uri http://127.0.0.1:18765/reload -Method POST
 
 ## See Also
 
-- **[Getting Started](./getting-started/)** — Step-by-step setup guide
-- **[Monitoring](./monitoring/)** — Health checks and statistics endpoints
+- **[Getting Started](./getting-started.md)** — Step-by-step setup guide
+- **[Monitoring](./monitoring.md)** — Health checks and statistics endpoints
 - **[Architecture - Circuit Breaker](../developer-guide/architecture.md#circuit-breaker)** — Circuit breaker design and diagrams
-- **[README.md](../../README/)** — Project overview and quick start
-- **[TROUBLESHOOTING.md](../../TROUBLESHOOTING/)** — Common issues and solutions
+- **[README.md](../../README.md)** — Project overview and quick start
+- **[TROUBLESHOOTING.md](../../TROUBLESHOOTING.md)** — Common issues and solutions

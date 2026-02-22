@@ -55,13 +55,12 @@ Run the test script:
 
 ## Link Format
 
-- **External links in index.html**: Use directory format with trailing slash
+- **Links in index.html**: Use directory format with trailing slash
   - Correct: `./user-guide/getting-started/`
-  - Incorrect: `./user-guide/getting-started.md`
 
-- **Internal markdown links**: Use directory format with trailing slash
-  - Correct: `[Getting Started](../user-guide/getting-started/)`
-  - Incorrect: `[Getting Started](../user-guide/getting-started.md)`
+- **Internal markdown links**: Use `.md` extensions (works both on GitHub and GitHub Pages)
+  - Correct: `[Getting Started](../user-guide/getting-started.md)`
+  - Incorrect: `[Getting Started](../user-guide/getting-started/)`
 
 ## Architecture
 
@@ -81,4 +80,4 @@ The documentation uses a custom gradient design with:
 ## Deployment
 
 The site is automatically deployed to GitHub Pages when changes are pushed to the main branch. The site is available at:
-https://richtunes.github.io/ai-proxy/
+https://richertunes.github.io/ai-proxy/

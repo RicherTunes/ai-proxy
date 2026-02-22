@@ -13,7 +13,7 @@ A step-by-step guide to get AI Proxy running.
 > - [Troubleshooting](../../TROUBLESHOOTING.md) - Common issues and solutions
 > - [Z.ai Documentation](../reference/zai-coding-subscription.md) - Tier limits and pricing
 
-> **New to this?** Start with the [README.md](../../README/) for a quick overview, then come back here for detailed instructions.
+> **New to this?** Start with the [README.md](../../README.md) for a quick overview, then come back here for detailed instructions.
 
 ## What You'll Need
 
@@ -69,8 +69,8 @@ This downloads everything the proxy needs. It may take 1-2 minutes.
 >
 > **Documentation:**
 >
-> - [Z.ai Coding Subscription Reference](../reference/zai-coding-subscription/) - Quick tier comparisons and limits
-> - [Z.ai Knowledge Base](../reference/zai-knowledge-base/) - Comprehensive model specs, integrations, and troubleshooting
+> - [Z.ai Coding Subscription Reference](../reference/zai-coding-subscription.md) - Quick tier comparisons and limits
+> - [Z.ai Knowledge Base](../reference/zai-knowledge-base.md) - Comprehensive model specs, integrations, and troubleshooting
 
 ### Step 4: Create Your Configuration File
 
@@ -170,7 +170,7 @@ You can also see real-time connection status and control the proxy:
 ![Connection Status](../screenshots/components/connection-status.png)
 ![Pause Button](../screenshots/components/pause-button.png)
 
-> See the [Dashboard Guide](./dashboard/) for a complete visual tour of all dashboard features.
+> See the [Dashboard Guide](./dashboard.md) for a complete visual tour of all dashboard features.
 
 ### Step 7: Connect Your Application
 
@@ -222,20 +222,20 @@ If successful, you'll see a response from the AI model.
 
 ## Next Steps
 
-- **[Configuration](./configuration/)** — Customize settings for your needs
-- **[Monitoring](./monitoring/)** — Learn about health checks and stats
-- **[Troubleshooting](../../TROUBLESHOOTING/)** — Solve common problems
+- **[Configuration](./configuration.md)** — Customize settings for your needs
+- **[Monitoring](./monitoring.md)** — Learn about health checks and stats
+- **[Troubleshooting](../../TROUBLESHOOTING.md)** — Solve common problems
 
 ## Need Help?
 
-1. Check the [Troubleshooting Guide](../../TROUBLESHOOTING/)
+1. Check the [Troubleshooting Guide](../../TROUBLESHOOTING.md)
 2. Look at the dashboard for error messages
 3. Check the terminal output for logs
 4. Open a GitHub issue with your error message
 
 ## See Also
 
-- **[Configuration Guide](./configuration/)** — Complete environment variable reference
-- **[Monitoring Guide](./monitoring/)** — Health checks, stats, and metrics
-- **[Dashboard Guide](./dashboard/)** — Visual tour of dashboard features
-- **[README.md](../../README/)** — Project overview and features
+- **[Configuration Guide](./configuration.md)** — Complete environment variable reference
+- **[Monitoring Guide](./monitoring.md)** — Health checks, stats, and metrics
+- **[Dashboard Guide](./dashboard.md)** — Visual tour of dashboard features
+- **[README.md](../../README.md)** — Project overview and features

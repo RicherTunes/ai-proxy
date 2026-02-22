@@ -9,7 +9,7 @@ title: Z.ai GLM Coding Plan - Complete Reference
 > **Provider:** Zhipu AI (Z.ai / BigModel.cn)
 > **Documentation Sources:** [z.ai](https://z.ai) | [docs.z.ai](https://docs.z.ai) | [open.bigmodel.cn](https://open.bigmodel.cn)
 
-> **Looking for more details?** See the [Z.ai Knowledge Base](./zai-knowledge-base/) for comprehensive documentation including model specs, integrations, known issues, and historical changes.
+> **Looking for more details?** See the [Z.ai Knowledge Base](./zai-knowledge-base.md) for comprehensive documentation including model specs, integrations, known issues, and historical changes.
 
 ---
 
@@ -488,15 +488,15 @@ Z.ai claims **"21x better value than Claude"**:
 
 ### Internal Documentation
 
-- **[Model Mapping](../features/model-mapping/)** - How Z.ai models map to internal model IDs
-- **[Model Routing](../features/model-routing/)** - Request routing logic
-- **[Model Concurrency Findings](../model-concurrency-findings/)** - Concurrency testing results
+- **[Model Mapping](../features/model-mapping.md)** - How Z.ai models map to internal model IDs
+- **[Model Routing](../features/model-routing.md)** - Request routing logic
+- **[Model Concurrency Findings](../model-concurrency-findings.md)** - Concurrency testing results
 
 ### External Documentation
 
 - **[Z.ai Official Docs](https://docs.z.ai)**
 - **[BigModel China Docs](https://docs.bigmodel.cn)**
-- **[Claude Code Setup](../developer-guide/claude-code-setup/)**
+- **[Claude Code Setup](../developer-guide/claude-code-setup.md)**
 
 ---
 

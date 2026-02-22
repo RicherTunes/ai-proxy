@@ -11,8 +11,8 @@ When `enabled: false` (default), the router is constructed but `selectModel()` r
 
 > **Related Documentation:**
 >
-> - [Z.ai Coding Subscription Reference](../reference/zai-coding-subscription/) - Quick tier comparisons and limits
-> - [Z.ai Knowledge Base](../reference/zai-knowledge-base/) - Comprehensive model specs, API details, and integrations
+> - [Z.ai Coding Subscription Reference](../reference/zai-coding-subscription.md) - Quick tier comparisons and limits
+> - [Z.ai Knowledge Base](../reference/zai-knowledge-base.md) - Comprehensive model specs, API details, and integrations
 
 ## Dashboard Visualization
 
