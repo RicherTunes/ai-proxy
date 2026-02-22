@@ -283,6 +283,7 @@
         if (!drawer) return;
         var isCompact = !!enabled;
         drawer.classList.toggle('compact-controls', isCompact);
+        document.documentElement.style.setProperty('--dock-bottom', isCompact ? '30px' : '34px');
         if (!isCompact) {
             setLiveCompactMore(false);
         }

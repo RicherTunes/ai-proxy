@@ -63,6 +63,10 @@
             /* Layout dimensions */
             --drawer-header-h: 44px;
 
+            /* Dock insets — clearance for fixed dock panels */
+            --dock-bottom: 34px;
+            --dock-right: 0px;
+
             /* Header responsive sizing */
             --header-h: 44px;
             --header-h-expanded: 56px;

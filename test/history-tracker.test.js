@@ -238,8 +238,14 @@ describe('HistoryTracker', () => {
 
             realTracker.save();
 
-            // Wait for async save to complete
-            await new Promise(r => setTimeout(r, 200));
+            // Poll for file existence with timeout (more robust than fixed wait)
+            const maxWait = 2000;
+            const pollInterval = 50;
+            let elapsed = 0;
+            while (!fs.existsSync(saveTestFile) && elapsed < maxWait) {
+                await new Promise(r => setTimeout(r, pollInterval));
+                elapsed += pollInterval;
+            }
 
             expect(fs.existsSync(saveTestFile)).toBe(true);
             const saved = JSON.parse(fs.readFileSync(saveTestFile, 'utf8'));
@@ -321,8 +327,14 @@ describe('HistoryTracker', () => {
             badTracker.tiers.fine.data.push({ timestamp: Date.now() });
             badTracker.save();
 
-            // Wait for async error handling
-            await new Promise(r => setTimeout(r, 200));
+            // Poll for error to be logged with timeout (more robust than fixed wait)
+            const maxWait = 2000;
+            const pollInterval = 50;
+            let elapsed = 0;
+            while (mockLogger.error.mock.calls.length === 0 && elapsed < maxWait) {
+                await new Promise(r => setTimeout(r, pollInterval));
+                elapsed += pollInterval;
+            }
 
             expect(mockLogger.error).toHaveBeenCalledWith('Could not save history', expect.any(Object));
 
