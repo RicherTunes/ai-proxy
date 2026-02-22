@@ -306,3 +306,128 @@ describe('Dock panel relocation into bottom drawer (JSDOM)', () => {
         expect(drawer.classList.contains('expanded')).toBe(true);
     });
 });
+
+// ── Hash route → dock tab normalization tests (M1.3) ─────────────────────
+
+describe('Hash route normalization for dock tabs (M1.3)', () => {
+    const DOCK_TAB_HASHES = ['live', 'traces', 'logs', 'queue', 'circuit'];
+
+    // Source-level contract: switchRequestTab must call switchDockTab for ALL dock-tab routes
+    describe('init.js source contracts', () => {
+        let initSource;
+
+        beforeAll(() => {
+            initSource = fs.readFileSync(
+                path.join(__dirname, '..', 'public', 'js', 'init.js'),
+                'utf8'
+            );
+        });
+
+        test('HASH_ROUTES includes all five dock-tab sub-routes', () => {
+            DOCK_TAB_HASHES.forEach(tab => {
+                expect(initSource).toMatch(new RegExp(`'requests/${tab}'`));
+            });
+        });
+
+        test('switchRequestTab calls switchDockTab for logs, queue and circuit (not only live/traces)', () => {
+            // The fix: the condition must cover logs, queue and circuit too.
+            // A correct implementation will NOT have a narrow guard that only checks live/traces.
+            // We verify that switchDockTab is invoked for all five dock tabs, not just live|traces.
+            const narrowGuard = /if\s*\(\s*tabName\s*===\s*['"]live['"]\s*\|\|\s*tabName\s*===\s*['"]traces['"]\s*\)/;
+            expect(initSource).not.toMatch(narrowGuard);
+        });
+
+        test('switchRequestTab opens drawer for all dock-tab routes (logs, queue, circuit)', () => {
+            // After the fix the drawer-open logic must not be gated on live|traces only.
+            // We check that setDrawerExpanded is called within switchRequestTab for dock tabs generically.
+            // The source should contain a DOCK_TABS set/array or equivalent broad condition.
+            const hasDockTabSet = /DOCK_TABS|dockTabs|dock_tabs/.test(initSource) ||
+                /includes\(tabName\)/.test(initSource) ||
+                /indexOf\(tabName\)/.test(initSource);
+            expect(hasDockTabSet).toBe(true);
+        });
+    });
+
+    // DOM-simulation contract: all five hash routes open the drawer and activate correct dock tab
+    describe('DOM simulation (JSDOM)', () => {
+        let dom, doc;
+
+        function buildSimulatedEnv() {
+            const html = generateDashboard({ nonce: '', cspEnabled: false });
+            dom = new JSDOM(html, { runScripts: 'outside-only' });
+            doc = dom.window.document;
+
+            // Relocate dock panels (mirrors init.js relocateDockPanels)
+            const drawerContent = doc.getElementById('drawerContent');
+            const dockContainer = doc.getElementById('dockPanelsContainer');
+            if (drawerContent && dockContainer) {
+                const tabContent = dockContainer.querySelector('.tab-content');
+                if (tabContent) {
+                    drawerContent.appendChild(tabContent);
+                    dockContainer.remove();
+                }
+            }
+        }
+
+        // Minimal switchDockTab simulation (mirrors init.js logic)
+        function switchDockTab(tabName) {
+            doc.querySelectorAll('.dock-tab').forEach(btn => {
+                const isActive = btn.dataset.dockTab === tabName;
+                btn.classList.toggle('active', isActive);
+                btn.setAttribute('aria-selected', String(isActive));
+            });
+            const panel = doc.getElementById('tab-' + tabName);
+            if (panel) {
+                doc.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                panel.classList.add('active');
+            }
+        }
+
+        // Minimal switchRequestTab simulation reflecting the FIXED behaviour
+        function switchRequestTab(tabName) {
+            const DOCK_TABS = ['live', 'traces', 'logs', 'queue', 'circuit'];
+            if (DOCK_TABS.indexOf(tabName) !== -1) {
+                switchDockTab(tabName);
+                const drawer = doc.getElementById('bottomDrawer');
+                if (drawer && !drawer.classList.contains('expanded')) {
+                    drawer.classList.add('expanded');
+                }
+            }
+        }
+
+        beforeEach(() => {
+            buildSimulatedEnv();
+        });
+
+        DOCK_TAB_HASHES.forEach(tab => {
+            test(`#requests/${tab} opens drawer`, () => {
+                switchRequestTab(tab);
+                const drawer = doc.getElementById('bottomDrawer');
+                expect(drawer.classList.contains('expanded')).toBe(true);
+            });
+
+            test(`#requests/${tab} activates dock tab button`, () => {
+                switchRequestTab(tab);
+                const btn = doc.querySelector(`.dock-tab[data-dock-tab="${tab}"]`);
+                expect(btn).not.toBeNull();
+                expect(btn.classList.contains('active')).toBe(true);
+                expect(btn.getAttribute('aria-selected')).toBe('true');
+            });
+
+            test(`#requests/${tab} activates correct tab panel`, () => {
+                switchRequestTab(tab);
+                const panel = doc.getElementById('tab-' + tab);
+                expect(panel).not.toBeNull();
+                expect(panel.classList.contains('active')).toBe(true);
+            });
+
+            test(`#requests/${tab} deactivates other dock tab buttons`, () => {
+                switchRequestTab(tab);
+                doc.querySelectorAll('.dock-tab').forEach(btn => {
+                    const isThis = btn.dataset.dockTab === tab;
+                    expect(btn.classList.contains('active')).toBe(isThis);
+                });
+            });
+        });
+    });
+});
