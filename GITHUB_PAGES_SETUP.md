@@ -109,7 +109,7 @@ After pushing to main:
 
 The site will be available at:
 ```
-https://richtunes.github.io/ai-proxy/
+https://richertunes.github.io/ai-proxy/
 ```
 
 ## Workflow Triggers

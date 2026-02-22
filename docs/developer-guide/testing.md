@@ -27,7 +27,7 @@ npm run screenshots:generate
 npm run screenshots:extract
 ```
 
-See [Screenshots Gallery](../screenshots/) for all available screenshots.
+See [Screenshots Gallery](../screenshots/README.md) for all available screenshots.
 
 ## Running Tests
 
@@ -162,5 +162,5 @@ Test fixtures and mocks:
 
 ## See Also
 
-- [TEST_PLAN.md](../../../test/TEST_PLAN/) - Comprehensive test strategy
-- [COVERAGE_DEBT.md](../../../test/COVERAGE_DEBT/) - Coverage tracking
+- [TEST_PLAN.md](../../../test/TEST_PLAN.md) - Comprehensive test strategy
+- [COVERAGE_DEBT.md](../../../test/COVERAGE_DEBT.md) - Coverage tracking

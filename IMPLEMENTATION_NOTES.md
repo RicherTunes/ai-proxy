@@ -1,7 +1,7 @@
 # GitHub Pages Documentation Fix - Implementation Summary
 
 ## Problem
-The GitHub Pages documentation site at https://richtunes.github.io/ai-proxy/ was showing raw markdown files instead of rendered HTML when clicking navigation links.
+The GitHub Pages documentation site at https://richertunes.github.io/ai-proxy/ was showing raw markdown files instead of rendered HTML when clicking navigation links.
 
 ## Root Cause
 Jekyll was not processing the markdown files because:
@@ -171,7 +171,7 @@ The documentation site features:
 ## Next Steps
 
 1. **Deploy to GitHub Pages**: Push changes to trigger rebuild
-2. **Test Live Site**: Verify https://richtunes.github.io/ai-proxy/ works
+2. **Test Live Site**: Verify https://richertunes.github.io/ai-proxy/ works
 3. **Monitor Build**: Check GitHub Actions for build success
 4. **Update Links**: Update any external documentation that links to .md files
 

@@ -21,7 +21,7 @@ Milestone 7 standardized statistics semantics across the system, ensuring consis
 
 | Document | Description |
 |----------|-------------|
-| [SUMMARY.md](./SUMMARY/) | Milestone summary and achievements |
+| [SUMMARY.md](./SUMMARY.md) | Milestone summary and achievements |
 
 ## Key Changes
 

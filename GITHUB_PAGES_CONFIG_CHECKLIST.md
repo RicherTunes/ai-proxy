@@ -6,7 +6,7 @@ You MUST update the GitHub Pages settings in your repository:
 
 ### Steps:
 
-1. Navigate to: https://github.com/richtunes/ai-proxy/settings/pages
+1. Navigate to: https://github.com/RicherTunes/ai-proxy/settings/pages
 
 2. Under "Build and deployment":
    - Find the **Source** section
@@ -41,7 +41,7 @@ After updating the setting:
 2. Go to the **Actions** tab
 3. Click on "Build and Deploy Documentation"
 4. Verify both jobs (build + deploy) complete successfully
-5. Visit https://richtunes.github.io/ai-proxy/
+5. Visit https://RicherTunes.github.io/ai-proxy/
 
 ## Troubleshooting
 
@@ -62,6 +62,6 @@ After updating the setting:
 
 ## Quick Links
 
-- Actions tab: https://github.com/richtunes/ai-proxy/actions
-- Pages settings: https://github.com/richtunes/ai-proxy/settings/pages
+- Actions tab: https://github.com/RicherTunes/ai-proxy/actions
+- Pages settings: https://github.com/RicherTunes/ai-proxy/settings/pages
 - Workflow file: `.github/workflows/docs.yml`

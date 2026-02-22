@@ -9,7 +9,7 @@ title: Z.ai (Zhipu AI) - Complete Knowledge Base
 > **Provider:** Zhipu AI (Z.ai / BigModel.cn)
 > **Purpose:** Comprehensive brain dump of all Z.ai knowledge for integration and reference
 >
-> **See Also:** [Z.ai Coding Subscription Quick Reference](./zai-coding-subscription/)
+> **See Also:** [Z.ai Coding Subscription Quick Reference](./zai-coding-subscription.md)
 
 ---
 
