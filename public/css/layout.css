@@ -621,6 +621,7 @@
             overflow: auto;
             padding: var(--spacing-lg);
             padding-bottom: var(--dock-bottom, 34px);
+            padding-right: var(--dock-right, 0px);
             max-width: 100%;
             min-height: calc(100vh - 44px - 44px - 80px);
         }
@@ -758,6 +759,7 @@
         }
         body.screenshot-mode .main-content {
             --dock-bottom: var(--spacing-lg);
+            --dock-right: 0px;
             padding-bottom: var(--dock-bottom);
         }
         body.screenshot-mode .shortcuts-help-btn,
