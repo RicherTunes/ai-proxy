@@ -7,6 +7,12 @@ title: Configuration
 
 Complete reference for AI Proxy configuration options.
 
+> **Related:**
+> - [Getting Started](./getting-started.md) - Basic setup guide
+> - [Monitoring](./monitoring.md) - Health checks and stats endpoints
+> - [Security Configuration](../operations/security.md) - Admin authentication and secure deployment
+> - [Z.ai Knowledge Base](../reference/zai-knowledge-base.md) - Provider-specific configuration
+
 > **New to configuration?** Start with the [Getting Started](./getting-started/) guide for basic setup. You only need to read this if you want to customize advanced settings.
 
 ## What Are Environment Variables?
@@ -59,6 +65,8 @@ set GLM_PORT=8080 && npm start
 | `GLM_LOG_LEVEL` | `INFO` | Log level | How much detail to show in logs: `DEBUG` (most), `INFO`, `WARN`, `ERROR` (least) |
 
 ### Additional Environment Variables
+
+> **Security Settings:** See [Security Configuration](../operations/security.md) for admin authentication and security modes.
 
 See the [README.md](../../README.md#additional-environment-variables) for the full list of additional environment variables including weighted selection, cost tracking, admin auth, and tier downgrade settings.
 
