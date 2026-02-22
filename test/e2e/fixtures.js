@@ -183,6 +183,52 @@ exports.test = test.extend({
     await proxyServer.shutdown();
     fs.rmSync(testDir, { recursive: true, force: true });
   }, { scope: 'worker' }],
+
+  liveProxyServer: [async ({}, use, testInfo) => {
+    const apiKey = process.env.Z_AI_GLM_API_KEY_FOR_TESTS;
+    if (!apiKey) {
+      // Mark test as skipped when the secret is unavailable
+      testInfo.skip(true, 'Z_AI_GLM_API_KEY_FOR_TESTS secret not set — skipping live integration test');
+      await use(null);
+      return;
+    }
+
+    const testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'glm-proxy-live-e2e-'));
+    const testKeysFile = 'api-keys.json';
+    const testStatsFile = 'test-stats.json';
+
+    fs.writeFileSync(
+      path.join(testDir, testKeysFile),
+      JSON.stringify({
+        keys: [apiKey],
+        baseUrl: 'https://api.z.ai/api/anthropic'
+      })
+    );
+
+    fs.writeFileSync(path.join(testDir, testStatsFile), JSON.stringify({}));
+
+    const config = new Config({
+      configDir: testDir,
+      keysFile: testKeysFile,
+      statsFile: testStatsFile,
+      useCluster: false,
+      port: 0,
+      adminAuth: { enabled: false },
+      enableHotReload: false,
+      security: { rateLimit: { enabled: false } },
+      usageMonitor: { enabled: false }
+    });
+
+    const proxyServer = new ProxyServer({ config });
+    const server = await proxyServer.start();
+    const address = server.address();
+    const proxyUrl = `http://127.0.0.1:${address.port}`;
+
+    await use({ url: proxyUrl, server: proxyServer, testDir, config });
+
+    await proxyServer.shutdown();
+    fs.rmSync(testDir, { recursive: true, force: true });
+  }, { scope: 'test' }],
 });
 
 // Helper to wait for store and debug API to be initialized (no SSE required)

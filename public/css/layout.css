@@ -621,6 +621,7 @@
             overflow: auto;
             padding: var(--spacing-lg);
             padding-bottom: var(--dock-bottom, 34px);
+            padding-right: var(--dock-right, 0px);
             max-width: 100%;
             min-height: calc(100vh - 44px - 44px - 80px);
         }
@@ -701,17 +702,37 @@
         }
         .side-panel-backdrop.visible { opacity: 1; visibility: visible; }
 
+        /* ========== M3: INSPECTOR DOCK MODE ========== */
+        /* Desktop (>=1024px): side panel docks to the right without blocking backdrop.
+           Users can still interact with the request list while inspector is open. */
+        @media (min-width: 1024px) {
+            .side-panel {
+                top: var(--header-h, 44px);
+                height: calc(100vh - var(--header-h, 44px));
+                z-index: var(--z-drawer, 200);
+            }
+            .side-panel-backdrop.visible {
+                display: none;
+            }
+            .bottom-drawer {
+                right: var(--dock-right, 0px);
+                transition: right var(--dur, 180ms) var(--ease, ease), height calc(var(--dur) * 1.67) var(--ease);
+            }
+        }
+        /* Mobile (<1024px): keep existing overlay behavior with backdrop */
+
         /* Bottom Drawer */
         .bottom-drawer {
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
             background: var(--bg-secondary); border-top: 1px solid var(--border);
             transition: height calc(var(--dur) * 1.67) var(--ease);
+            /* Override :root --drawer-header-h (44px) to match actual bottom drawer header size */
             --live-panel-height: 360px; --drawer-header-h: 34px; --drawer-resize-h: 6px;
         }
         .bottom-drawer .drawer-header {
             display: flex; align-items: center; gap: var(--spacing-xs);
             padding: var(--spacing-xs) var(--spacing-md); cursor: pointer; user-select: none;
-            border-bottom: 1px solid var(--border); min-height: 34px;
+            border-bottom: 1px solid var(--border); min-height: var(--drawer-header-h);
         }
         .bottom-drawer .drawer-tabs {
             display: flex; align-items: center; gap: var(--spacing-xs);
@@ -758,6 +779,7 @@
         }
         body.screenshot-mode .main-content {
             --dock-bottom: var(--spacing-lg);
+            --dock-right: 0px;
             padding-bottom: var(--dock-bottom);
         }
         body.screenshot-mode .shortcuts-help-btn,
