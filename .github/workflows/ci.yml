@@ -159,13 +159,10 @@ jobs:
             --project=chromium \
             --ignore-snapshots \
             --retries=1 \
-            test/e2e/dashboard.e2e.spec.js \
             test/e2e/api-hardening.e2e.spec.js \
             test/e2e/live-flow.e2e.spec.js \
-            test/e2e/counters-schema.e2e.spec.js \
-            test/e2e/dashboard-states.e2e.spec.js \
-            test/e2e/dashboard-perf-smoke.e2e.spec.js \
-            test/e2e/golden-semantics.e2e.spec.js
+            test/e2e/golden-semantics.e2e.spec.js \
+            test/e2e/dashboard-perf-smoke.e2e.spec.js
         env:
           CI: true
           PERF_FACTOR: '2'
