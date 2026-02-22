@@ -205,6 +205,7 @@
         self.searchInput.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 self.hideHistory();
+                self.searchInput.focus();
                 return;
             }
             // Handle Enter key for command palette navigation
@@ -217,6 +218,23 @@
                 e.preventDefault();
                 self.navigateDropdown(e.key === 'ArrowDown' ? 1 : -1);
                 return;
+            }
+        });
+
+        // Handle Enter and Escape on focused dropdown items (roving tabindex keyboard activation)
+        self.historyDropdown && self.historyDropdown.addEventListener('keydown', function(e) {
+            var focused = document.activeElement;
+            if (!focused || !self.historyDropdown.contains(focused)) return;
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                focused.click();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                self.hideHistory();
+                self.searchInput.focus();
+            } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                self.navigateDropdown(e.key === 'ArrowDown' ? 1 : -1);
             }
         });
     };
@@ -412,6 +430,9 @@
             matches.slice(0, 8).forEach(function(cmd) {
                 var item = document.createElement('div');
                 item.className = 'search-history-item command-suggestion';
+                item.setAttribute('role', 'option');
+                item.setAttribute('tabindex', '-1');
+                item.setAttribute('aria-selected', 'false');
                 item.innerHTML = '<span class="command-icon">↪</span> ' + DS.escapeHtml(cmd.label);
                 item.addEventListener('click', function() {
                     self.searchInput.value = '';
@@ -442,8 +463,14 @@
                 self.historyDropdown.appendChild(item);
             });
             this.historyDropdown.classList.add('visible');
+            if (this.searchInput) {
+                this.searchInput.setAttribute('aria-expanded', 'true');
+            }
         } else {
             this.historyDropdown.classList.remove('visible');
+            if (this.searchInput) {
+                this.searchInput.setAttribute('aria-expanded', 'false');
+            }
         }
     };
 
@@ -539,6 +566,9 @@
         self.searchHistory.forEach(function(query) {
             var item = document.createElement('div');
             item.className = 'search-history-item';
+            item.setAttribute('role', 'option');
+            item.setAttribute('tabindex', '-1');
+            item.setAttribute('aria-selected', 'false');
             item.textContent = query;
             item.addEventListener('click', function() {
                 self.searchInput.value = query;
@@ -548,11 +578,17 @@
             self.historyDropdown.appendChild(item);
         });
         self.historyDropdown.classList.add('visible');
+        if (self.searchInput) {
+            self.searchInput.setAttribute('aria-expanded', 'true');
+        }
     };
 
     GlobalSearchManager.prototype.hideHistory = function() {
         if (this.historyDropdown) {
             this.historyDropdown.classList.remove('visible');
+        }
+        if (this.searchInput) {
+            this.searchInput.setAttribute('aria-expanded', 'false');
         }
     };
 
@@ -573,6 +609,46 @@
     STATE.selectedListIndex = -1;
     STATE.filters = { status: '', key: '', model: '' };
 
+    /**
+     * getFilteredRequests — returns the filtered view of STATE.requestsHistory.
+     * Used by the virtual scroll renderer in sse.js so that filtering is
+     * data-driven rather than DOM-driven (fixes filter state destroyed on scroll).
+     */
+    function getFilteredRequests() {
+        var items = STATE.requestsHistory;
+        var f = STATE.filters;
+        if (!f.status && !f.key && !f.model) return items;
+
+        return items.filter(function(req) {
+            if (f.status) {
+                var rowStatus = req.error ? 'error' : req.status === 'completed' ? 'success' : 'pending';
+                if (rowStatus !== f.status) return false;
+            }
+            if (f.key && String(req.keyIndex ?? '') !== f.key) return false;
+            if (f.model) {
+                var model = req.originalModel || req.mappedModel || '';
+                if (!model.includes(f.model)) return false;
+            }
+            return true;
+        });
+    }
+
+    /**
+     * updateFilterCount — updates the filter count badge to show filtered/total.
+     */
+    function updateFilterCount(filteredCount, totalCount) {
+        var countEl = document.getElementById('filterCount');
+        if (countEl) {
+            if (filteredCount < totalCount) {
+                countEl.textContent = filteredCount + '/' + totalCount;
+                countEl.style.display = '';
+            } else {
+                countEl.textContent = '';
+                countEl.style.display = 'none';
+            }
+        }
+    }
+
     function applyFilters() {
         var statusFilter = document.getElementById('filterStatus')?.value || '';
         var keyFilter = document.getElementById('filterKey')?.value || '';
@@ -580,50 +656,42 @@
 
         STATE.filters = { status: statusFilter, key: keyFilter, model: modelFilter };
 
+        // Reset scroll position
         var viewport = document.querySelector('.virtual-scroll-viewport');
         if (viewport) viewport.scrollTop = 0;
 
-        var rows = document.querySelectorAll('#liveStreamRequestList .request-row');
-        var visibleCount = 0;
+        // Update filter count display
+        var filtered = getFilteredRequests();
+        var total = STATE.requestsHistory.length;
+        updateFilterCount(filtered.length, total);
 
-        rows.forEach(function(row) {
-            var status = row.dataset.status || '';
-            var key = row.dataset.keyIndex || '';
-            var model = row.dataset.model || '';
-
-            var matchesStatus = !statusFilter || status === statusFilter;
-            var matchesKey = !keyFilter || key === keyFilter;
-            var matchesModel = !modelFilter || model.includes(modelFilter);
-
-            if (matchesStatus && matchesKey && matchesModel) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
-        });
-
-        var filterCountEl = document.getElementById('filterCount');
-        if (filterCountEl) {
-            if (statusFilter || keyFilter || modelFilter) {
-                filterCountEl.textContent = 'Showing ' + visibleCount + ' of ' + rows.length + ' requests';
-            } else {
-                filterCountEl.textContent = 'Showing all requests';
-            }
-        }
-
-        clearRequestListSelection();
+        // Trigger virtual re-render with filtered data
         if (window.DashboardSSE?.scheduleVirtualRender) {
             window.DashboardSSE.scheduleVirtualRender();
         }
+
+        // Clear selection since filtered set changed
+        clearRequestListSelection();
     }
 
     function clearFilters() {
-        document.getElementById('filterStatus').value = '';
-        document.getElementById('filterKey').value = '';
-        document.getElementById('filterModel').value = '';
+        var filterStatus = document.getElementById('filterStatus');
+        var filterKey = document.getElementById('filterKey');
+        var filterModel = document.getElementById('filterModel');
+        if (filterStatus) filterStatus.value = '';
+        if (filterKey) filterKey.value = '';
+        if (filterModel) filterModel.value = '';
         STATE.filters = { status: '', key: '', model: '' };
-        applyFilters();
+
+        // Update filter count display (no filter active = hide badge)
+        updateFilterCount(STATE.requestsHistory.length, STATE.requestsHistory.length);
+
+        // Trigger virtual re-render with unfiltered data
+        if (window.DashboardSSE?.scheduleVirtualRender) {
+            window.DashboardSSE.scheduleVirtualRender();
+        }
+
+        clearRequestListSelection();
         if (typeof window.showToast === 'function') window.showToast('Filters cleared', 'info');
     }
 
@@ -723,16 +791,27 @@
     function navigateRequestList(direction) {
         var rows = document.querySelectorAll('#liveStreamRequestList .request-row');
         if (rows.length === 0) return;
-        rows.forEach(function(r) { r.classList.remove('selected'); });
 
-        STATE.selectedListIndex += direction;
-        if (STATE.selectedListIndex < 0) STATE.selectedListIndex = 0;
-        if (STATE.selectedListIndex >= rows.length) STATE.selectedListIndex = rows.length - 1;
+        // Find current selection in rendered rows
+        var currentIndex = -1;
+        rows.forEach(function(row, i) {
+            if (row.classList.contains('selected')) currentIndex = i;
+        });
 
-        var selectedRow = rows[STATE.selectedListIndex];
-        if (selectedRow) {
-            selectedRow.classList.add('selected');
-            selectedRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        var nextIndex = currentIndex + direction;
+        if (nextIndex < 0) nextIndex = rows.length - 1;
+        if (nextIndex >= rows.length) nextIndex = 0;
+
+        // Remove old selection
+        rows.forEach(function(row) { row.classList.remove('selected'); });
+
+        // Apply new selection
+        var targetRow = rows[nextIndex];
+        if (targetRow) {
+            targetRow.classList.add('selected');
+            targetRow.scrollIntoView({ block: 'nearest' });
+            STATE.selectedRequestId = targetRow.dataset.requestId || null;
+            STATE.selectedListIndex = nextIndex;
         }
     }
 
@@ -753,9 +832,9 @@
     }
 
     function jumpToLatest() {
-        var requestList = document.getElementById('liveStreamRequestList');
-        if (requestList) {
-            requestList.scrollTop = 0;
+        var viewport = document.querySelector('.virtual-scroll-viewport');
+        if (viewport) {
+            viewport.scrollTop = 0;
             if (typeof window.showToast === 'function') window.showToast('Jumped to latest', 'info');
         }
     }
@@ -807,6 +886,8 @@
         FilterStateManager: FilterStateManager,
         URLStateManager: URLStateManager,
         GlobalSearchManager: GlobalSearchManager,
+        getFilteredRequests: getFilteredRequests,
+        updateFilterCount: updateFilterCount,
         applyFilters: applyFilters,
         clearFilters: clearFilters,
         populateFilterOptions: populateFilterOptions,

@@ -42,7 +42,9 @@
         // Skip rendering if viewport is not visible (IntersectionObserver will re-trigger when visible)
         if (!isViewportVisible) return;
 
-        var items = STATE.requestsHistory;
+        var items = (window.DashboardFilters && window.DashboardFilters.getFilteredRequests)
+            ? window.DashboardFilters.getFilteredRequests()
+            : STATE.requestsHistory;
         var totalItems = items.length;
         if (totalItems === 0) return;
 
@@ -81,6 +83,10 @@
                 rowEl.style.left = '0';
                 rowEl.style.right = '0';
                 rowEl.style.height = VIRTUAL_ROW_HEIGHT + 'px';
+                // Preserve selection state across virtual re-renders
+                if (STATE.selectedRequestId && rowEl.dataset.requestId === STATE.selectedRequestId) {
+                    rowEl.classList.add('selected');
+                }
                 fragment.appendChild(rowEl);
             }
         }
