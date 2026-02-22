@@ -312,4 +312,80 @@ describe('Cost Tracking Admin API', () => {
             expect(response.statusCode).toBe(401);
         });
     });
+
+    describe('COST-09: Audit entries for config mutations', () => {
+        beforeAll(() => {
+            // Enable audit log for this test group
+            proxyServer.config.security = proxyServer.config.security || {};
+            proxyServer.config.security.auditLog = { enabled: true };
+        });
+
+        test('rates update creates cost_tracking_rates_updated audit entry', async () => {
+            const sizeBefore = proxyServer._auditLog.size;
+
+            await makeRequest('POST', '/admin/cost-tracking/config', {
+                rates: { inputTokenPer1M: 8.00 }
+            });
+
+            const entries = proxyServer._auditLog.toArray();
+            const ratesEntries = entries.filter(e => e.event === 'cost_tracking_rates_updated');
+            const ratesEntry = ratesEntries[ratesEntries.length - 1];
+            expect(ratesEntry).toBeDefined();
+            expect(ratesEntry.changes).toHaveProperty('inputTokenPer1M', 8.00);
+            expect(ratesEntry.ip).toBeDefined();
+            expect(ratesEntry.timestamp).toBeDefined();
+            expect(proxyServer._auditLog.size).toBeGreaterThan(sizeBefore);
+        });
+
+        test('budget update creates cost_tracking_budget_updated audit entry', async () => {
+            await makeRequest('POST', '/admin/cost-tracking/config', {
+                budget: { daily: 300, monthly: 9000 }
+            });
+
+            const entries = proxyServer._auditLog.toArray();
+            const budgetEntries = entries.filter(e => e.event === 'cost_tracking_budget_updated');
+            const budgetEntry = budgetEntries[budgetEntries.length - 1];
+            expect(budgetEntry).toBeDefined();
+            expect(budgetEntry.changes.daily).toBe(300);
+            expect(budgetEntry.changes.monthly).toBe(9000);
+        });
+
+        test('model rates update creates cost_tracking_model_rates_updated audit entry', async () => {
+            const sizeBefore = proxyServer._auditLog.size;
+
+            await makeRequest('POST', '/admin/cost-tracking/config', {
+                modelRates: { 'glm-4.7': { inputTokenPer1M: 0.60 } }
+            });
+
+            const entries = proxyServer._auditLog.toArray();
+            // Find the LATEST model rates entry (after sizeBefore)
+            const modelEntries = entries.filter(e => e.event === 'cost_tracking_model_rates_updated');
+            const modelEntry = modelEntries[modelEntries.length - 1];
+            expect(modelEntry).toBeDefined();
+            expect(modelEntry.models).toContain('glm-4.7');
+            expect(proxyServer._auditLog.size).toBeGreaterThan(sizeBefore);
+        });
+
+        test('saveDebounceMs update creates cost_tracking_config_updated audit entry', async () => {
+            await makeRequest('POST', '/admin/cost-tracking/config', {
+                saveDebounceMs: 15000
+            });
+
+            const entries = proxyServer._auditLog.toArray();
+            const configEntries = entries.filter(e => e.event === 'cost_tracking_config_updated');
+            const configEntry = configEntries[configEntries.length - 1];
+            expect(configEntry).toBeDefined();
+            expect(configEntry.changes.saveDebounceMs).toBe(15000);
+        });
+
+        test('all 4 cost-tracking audit event types present in audit log', () => {
+            const entries = proxyServer._auditLog.toArray();
+            const costEvents = entries.filter(e => e.event.startsWith('cost_tracking_'));
+            const eventTypes = [...new Set(costEvents.map(e => e.event))];
+            expect(eventTypes).toContain('cost_tracking_rates_updated');
+            expect(eventTypes).toContain('cost_tracking_budget_updated');
+            expect(eventTypes).toContain('cost_tracking_model_rates_updated');
+            expect(eventTypes).toContain('cost_tracking_config_updated');
+        });
+    });
 });

@@ -288,4 +288,70 @@ describe('Usage Monitor E2E', () => {
         expect(details._monitor).toBeDefined();
         expect(details._monitor.pollSuccessTotal).toBeGreaterThanOrEqual(1);
     });
+
+    // ---- COST-07: Anomaly detection E2E ----
+
+    it('UsageMonitor has anomaly detection wired and callback set', () => {
+        expect(proxyServer.usageMonitor).toBeDefined();
+        expect(proxyServer.usageMonitor._anomalyConfig).toBeDefined();
+        expect(proxyServer.usageMonitor._anomalyConfig.enabled).toBe(true);
+        expect(proxyServer.usageMonitor._onAnomalyAlert).toBeInstanceOf(Function);
+    });
+
+    it('anomaly detection fires rate jump alert and appears in /stats', async () => {
+        const monitor = proxyServer.usageMonitor;
+
+        // Inject synthetic time-series with an obvious spike
+        monitor._timeSeriesCache = {
+            times: ['t0', 't1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9'],
+            tokenCounts: [100, 102, 98, 101, 99, 100, 103, 97, 101, 500],
+            callCounts: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+        };
+        // Clear cooldowns so alert fires
+        monitor._anomalyCooldowns = {};
+        monitor._checkRateJump({});
+
+        // Verify alert surfaced
+        const alerts = monitor.getAnomalyAlerts();
+        const rateJump = alerts.find(a => a.type === 'usage.rate_jump');
+        expect(rateJump).toBeDefined();
+        expect(rateJump.data.direction).toBe('spike');
+
+        // Verify it appears in /stats response
+        const stats = await fetchJson(`${proxyUrl}/stats`);
+        expect(stats.accountUsage.anomalyAlerts).toBeDefined();
+        expect(stats.accountUsage.anomalyAlerts.length).toBeGreaterThanOrEqual(1);
+        const statsAlert = stats.accountUsage.anomalyAlerts.find(a => a.type === 'usage.rate_jump');
+        expect(statsAlert).toBeDefined();
+    });
+
+    it('anomaly detection fires quota warning and appears in /stats', async () => {
+        const monitor = proxyServer.usageMonitor;
+
+        // Clear previous quota state and cooldowns
+        monitor._quotaThresholdsFired = new Set();
+        monitor._anomalyCooldowns = {};
+
+        // Inject snapshot with high quota usage
+        monitor._checkQuotaWarning({ quota: { tokenUsagePercent: 85, level: 'max' } });
+
+        const alerts = monitor.getAnomalyAlerts();
+        const quotaAlert = alerts.find(a => a.type === 'usage.quota_warning');
+        expect(quotaAlert).toBeDefined();
+        expect(quotaAlert.data.threshold).toBe(0.8);
+
+        const stats = await fetchJson(`${proxyUrl}/stats`);
+        const statsQuota = stats.accountUsage.anomalyAlerts.find(a => a.type === 'usage.quota_warning');
+        expect(statsQuota).toBeDefined();
+    });
+
+    it('anomaly alerts absent from /stats when none exist', async () => {
+        const monitor = proxyServer.usageMonitor;
+
+        // Clear all alerts
+        monitor._anomalyAlerts = [];
+
+        const stats = await fetchJson(`${proxyUrl}/stats`);
+        expect(stats.accountUsage.anomalyAlerts).toBeUndefined();
+    });
 });
