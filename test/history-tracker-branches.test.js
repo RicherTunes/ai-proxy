@@ -85,8 +85,14 @@ describe('HistoryTracker - destroy method coverage', () => {
 
         await realTracker.destroy();
 
-        // Wait for async save to complete
-        await new Promise(r => setTimeout(r, 200));
+        // Poll for file existence with timeout (more robust than fixed wait)
+        const maxWait = 2000;
+        const pollInterval = 50;
+        let elapsed = 0;
+        while (!fs.existsSync(testHistoryFile) && elapsed < maxWait) {
+            await new Promise(r => setTimeout(r, pollInterval));
+            elapsed += pollInterval;
+        }
 
         expect(fs.existsSync(testHistoryFile)).toBe(true);
         expect(realTracker.destroyed).toBe(true);
