@@ -1,3 +1,8 @@
+---
+layout: default
+title: Dashboard Guide
+---
+
 # Dashboard Guide
 
 The AI Proxy includes a comprehensive real-time dashboard for monitoring requests, managing routing, and diagnosing issues.
@@ -297,6 +302,7 @@ The dashboard supports URL-based navigation for bookmarking and sharing:
 - `/dashboard#system` - System page
 
 Sub-pages are also supported:
+
 - `/dashboard#requests/live` - Live stream tab
 - `/dashboard#requests/traces` - Traces tab
 - `/dashboard#requests/logs` - Logs tab
@@ -305,6 +311,6 @@ Sub-pages are also supported:
 
 ## Next Steps
 
-- [Configuration](./configuration.md) - Customize proxy settings
-- [Monitoring](./monitoring.md) - API endpoints for monitoring
-- [Model Routing](../features/model-routing.md) - Detailed routing configuration
+- [Configuration](./configuration/) - Customize proxy settings
+- [Monitoring](./monitoring/) - API endpoints for monitoring
+- [Model Routing](../features/model-routing/) - Detailed routing configuration

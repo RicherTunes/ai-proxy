@@ -1,10 +1,15 @@
+---
+layout: default
+title: Z.ai GLM Coding Plan - Complete Reference
+---
+
 # Z.ai GLM Coding Plan - Complete Reference
 
 > **Last Updated:** February 21, 2026
 > **Provider:** Zhipu AI (Z.ai / BigModel.cn)
 > **Documentation Sources:** [z.ai](https://z.ai) | [docs.z.ai](https://docs.z.ai) | [open.bigmodel.cn](https://open.bigmodel.cn)
 
-> **Looking for more details?** See the [Z.ai Knowledge Base](./zai-knowledge-base.md) for comprehensive documentation including model specs, integrations, known issues, and historical changes.
+> **Looking for more details?** See the [Z.ai Knowledge Base](./zai-knowledge-base/) for comprehensive documentation including model specs, integrations, known issues, and historical changes.
 
 ---
 
@@ -162,18 +167,21 @@ curl -X POST "https://api.z.ai/api/paas/v4/chat/completions" \
 #### Environment Variables for Claude Code
 
 **macOS/Linux:**
+
 ```bash
 export ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
 export ANTHROPIC_API_KEY="YOUR_ZAI_API_KEY"
 ```
 
 **Windows PowerShell:**
+
 ```powershell
 $env:ANTHROPIC_BASE_URL = "https://open.bigmodel.cn/api/anthropic"
 $env:ANTHROPIC_API_KEY = "YOUR_ZAI_API_KEY"
 ```
 
 **Windows CMD:**
+
 ```cmd
 set ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic
 set ANTHROPIC_API_KEY=YOUR_ZAI_API_KEY
@@ -228,6 +236,7 @@ completion = client.chat.completions.create(
 ### Official Capacity Measures
 
 Since January 23, 2026:
+
 - Daily sales limited to **20% of capacity**
 - Daily quota refreshes at **10:00**
 - Auto-renewal subscribers unaffected
@@ -270,6 +279,7 @@ Since January 23, 2026:
 ### MCP Usage Tracking
 
 The 24-hour rolling window tracks:
+
 - Model usage (prompts)
 - MCP tool usage (web_search, web_reader, vision)
 
@@ -364,6 +374,7 @@ In Claude Code settings or `.claude/settings.json`:
 ### Capacity Constraints
 
 Since January 2026:
+
 - **2.7 million paid users** (as of December 2025)
 - Daily sales limited to 20% of capacity
 - Peak hour rate limiting (15:00-18:00 weekdays)
@@ -384,6 +395,7 @@ Since January 2026:
 ### Market Positioning
 
 Z.ai claims **"21x better value than Claude"**:
+
 - 1/7 of Claude's price (at equivalent usage)
 - 3x the usage quota
 - Comparable model performance (GLM-4.7 ≈ Claude Sonnet 4)
@@ -476,15 +488,15 @@ Z.ai claims **"21x better value than Claude"**:
 
 ### Internal Documentation
 
-- **[Model Mapping](../features/model-mapping.md)** - How Z.ai models map to internal model IDs
-- **[Model Routing](../features/model-routing.md)** - Request routing logic
-- **[Model Concurrency Findings](../model-concurrency-findings.md)** - Concurrency testing results
+- **[Model Mapping](../features/model-mapping/)** - How Z.ai models map to internal model IDs
+- **[Model Routing](../features/model-routing/)** - Request routing logic
+- **[Model Concurrency Findings](../model-concurrency-findings/)** - Concurrency testing results
 
 ### External Documentation
 
 - **[Z.ai Official Docs](https://docs.z.ai)**
 - **[BigModel China Docs](https://docs.bigmodel.cn)**
-- **[Claude Code Setup](../developer-guide/claude-code-setup.md)**
+- **[Claude Code Setup](../developer-guide/claude-code-setup/)**
 
 ---
 

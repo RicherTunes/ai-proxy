@@ -1,8 +1,14 @@
+---
+layout: default
+title: Milestone 4: Before/After Comparison
+---
+
 # Milestone 4: Before/After Comparison
 
 ## lib/request-handler.js
 
 ### Before (Lines 192-196)
+
 ```javascript
 this.keyManager = options.keyManager;
 this.statsAggregator = options.statsAggregator;
@@ -12,6 +18,7 @@ this.onRequestCallback = options.onRequest || null;  // SSE callback
 ```
 
 ### After (Lines 192-195)
+
 ```javascript
 this.keyManager = options.keyManager;
 this.statsAggregator = options.statsAggregator;
@@ -20,6 +27,7 @@ this.logger = options.logger;
 ```
 
 ### Before (Lines 364-383 in addRequestToStream)
+
 ```javascript
 this.requestStream.push(normalized);
 
@@ -42,6 +50,7 @@ if (this.onRequestCallback) {
 ```
 
 ### After (Lines 364-373)
+
 ```javascript
 this.requestStream.push(normalized);
 
@@ -57,6 +66,7 @@ this.emit('request', normalized);
 ## lib/proxy-server.js
 
 ### Before (Lines 52-58)
+
 ```javascript
 this.requestHandler = new RequestHandler({
     keyManager: this.keyManager,
@@ -68,6 +78,7 @@ this.requestHandler = new RequestHandler({
 ```
 
 ### After (Lines 52-56)
+
 ```javascript
 this.requestHandler = new RequestHandler({
     keyManager: this.keyManager,
@@ -78,6 +89,7 @@ this.requestHandler = new RequestHandler({
 ```
 
 ### Before (Lines 88-93)
+
 ```javascript
 // Setup request stream clients (PHASE 2 - Task #10)
 this.sseClients = new Set();
@@ -88,6 +100,7 @@ this.sseClients = new Set();
 ```
 
 ### After (Lines 87-92)
+
 ```javascript
 // Setup request stream clients (PHASE 2 - Task #10)
 this.sseClients = new Set();
@@ -100,17 +113,20 @@ this.requestHandler.on('request', (request) => this._broadcastRequest(request));
 ## Summary of Changes
 
 ### Removed
+
 - ❌ `onRequestCallback` storage in RequestHandler constructor
 - ❌ Callback invocation in `addRequestToStream()` method
 - ❌ `onRequest` option passed from ProxyServer to RequestHandler
 - ❌ Outdated comment about dual emission
 
 ### Added
+
 - ✅ Event listener subscription: `requestHandler.on('request', ...)`
 - ✅ Clear comment explaining single source of truth
 - ✅ Comprehensive unit tests for single emission
 
 ### Kept
+
 - ✅ EventEmitter emission: `this.emit('request', normalized)`
 - ✅ Event normalization (latency alias, status mapping)
 - ✅ Request stream buffer management

@@ -1,3 +1,8 @@
+---
+layout: default
+title: Model Routing
+---
+
 # Model Routing
 
 Complexity-aware routing layer that sits above the legacy `ModelMappingManager`. Routes Anthropic `/v1/messages` requests to GLM target models based on request complexity, supporting rule-based matching, heuristic classification, per-model cooldowns, and failover.
@@ -5,8 +10,9 @@ Complexity-aware routing layer that sits above the legacy `ModelMappingManager`.
 When `enabled: false` (default), the router is constructed but `selectModel()` returns `null`. All traffic falls through to the legacy `ModelMappingManager`. You can configure the router while disabled and toggle on without restart.
 
 > **Related Documentation:**
-> - [Z.ai Coding Subscription Reference](../reference/zai-coding-subscription.md) - Quick tier comparisons and limits
-> - [Z.ai Knowledge Base](../reference/zai-knowledge-base.md) - Comprehensive model specs, API details, and integrations
+>
+> - [Z.ai Coding Subscription Reference](../reference/zai-coding-subscription/) - Quick tier comparisons and limits
+> - [Z.ai Knowledge Base](../reference/zai-knowledge-base/) - Comprehensive model specs, API details, and integrations
 
 ## Dashboard Visualization
 
@@ -23,6 +29,7 @@ The routing page displays all configured models with their tier assignments, pri
 ![Model List](../screenshots/components/model-list.png)
 
 Each model card shows:
+
 - Model name and tier assignment
 - Input/output token pricing
 - Current and maximum concurrency
@@ -35,6 +42,7 @@ Configure routing tiers using the drag-and-drop interface:
 ![Tier Builder](../screenshots/routing/tier-builder.png)
 
 The tier builder lets you:
+
 - Assign models to tiers (light, medium, heavy)
 - Configure fallback chains for each tier
 - Set routing strategies (balanced, quality, throughput)
@@ -238,11 +246,13 @@ When the target model is cooled down (429), the router tries fallback models in 
 **Backward compatibility:** The deprecated `failoverModel` (string) is still supported. If `fallbackModels` is absent or empty, `failoverModel` is automatically wrapped as `[failoverModel]`. When both are set, `fallbackModels` takes precedence.
 
 **`failover.maxModelSwitchesPerRequest`** (default: 1) caps how many times a model can be switched during a single request's retry loop. With the default of 1:
+
 - First attempt uses `targetModel`
 - On 429, retry switches to first available fallback
 - On another 429, no further model switch (uses current model as best-effort)
 
 Set to a higher value for deeper fallback chains:
+
 ```json
 "failover": {
     "maxModelSwitchesPerRequest": 3
@@ -391,9 +401,11 @@ the classifier never fires — only explicit rules route traffic:
    active but routing nothing — safe to observe.
 
 2. **Add one low-risk rule** targeting a specific model:
+
    ```json
    { "match": { "model": "claude-3-haiku-*" }, "tier": "light" }
    ```
+
    Only haiku requests route to `glm-4-flash`. Everything else unchanged.
 
 3. **Monitor via `/metrics` and `/model-routing`.**
@@ -405,6 +417,7 @@ the classifier never fires — only explicit rules route traffic:
 
 5. **Enable `always-route` on one tier** (e.g., `light`) to let the
    classifier handle requests that don't match any rule:
+
    ```json
    "light": { "targetModel": "glm-4-flash", "fallbackModels": ["glm-4"], "clientModelPolicy": "always-route" }
    ```
@@ -438,7 +451,6 @@ the classifier never fires — only explicit rules route traffic:
 5. **Enable classifier** -- flip light tier to `always-route` first, monitor failover rate
 6. **Monitor** -- watch `byTier` and `bySource` stats, check `/metrics` for anomalies
 
-
 ## Quick Configuration Presets
 
 The dashboard includes three preset configurations to help you get started quickly:
@@ -454,29 +466,35 @@ Presets can be applied via the API by sending a PUT request to `/model-routing` 
 ### Migration from Static Mapping to Intelligent Routing
 
 **Step 1: Understand your current setup**
+
 - Static mapping uses `ModelMappingManager` for 1:1 model name translation
 - Intelligent routing adds `ModelRouter` with complexity-aware tier selection
 - Both can coexist - router takes priority when enabled
 
 **Step 2: Start with Conservative preset**
+
 - Enables routing but only for explicit rules
 - No automatic classification until you're ready
 - Safe for production - minimal behavior change
 
 **Step 3: Add rules for known patterns**
+
 ```json
 { "match": { "model": "claude-3-haiku-*" }, "tier": "light" }
 { "match": { "model": "claude-opus-*" }, "tier": "heavy" }
 ```
+
 - Target specific model patterns to appropriate tiers
 - Monitor decision distribution in dashboard
 
 **Step 4: Gradually enable classifier**
+
 - Switch to Balanced preset (light tier `always-route`)
 - Monitor cost savings and error rates
 - Adjust classifier thresholds if needed
 
 **Step 5: Full optimization (optional)**
+
 - Switch to Aggressive preset only after thorough testing
 - All tiers use automatic complexity classification
 - Maximum cost savings but requires careful tuning
@@ -513,6 +531,7 @@ Config files are stamped with a `version` field. The loader accepts any version 
 ### V1 vs V2 Format
 
 **V1 format (deprecated for in-memory use):**
+
 ```json
 {
   "tiers": {
@@ -527,6 +546,7 @@ Config files are stamped with a `version` field. The loader accepts any version 
 ```
 
 **V2 format (canonical in-memory format):**
+
 ```json
 {
   "tiers": {
@@ -574,6 +594,7 @@ The v2 `models[]` array takes precedence in this case.
 ### Conditional Persistence (NORM-02)
 
 Normalized configs are only persisted when:
+
 1. Config file was migrated from v1 to v2 format
 2. Config content hash has changed since last persistence
 
@@ -586,6 +607,7 @@ Write failures are handled gracefully - the server continues running with in-mem
 All API endpoints return v2 format only:
 
 **GET /model-routing response:**
+
 ```json
 {
   "config": {
@@ -604,6 +626,7 @@ V1 fields (`targetModel`, `fallbackModels`, `failoverModel`) are **never** retur
 ### Per-Key Overrides (NORM-08)
 
 Per-key overrides in `ModelMappingManager` are simple model ID string mappings:
+
 ```json
 { "claudeModel": "glmModel" }
 ```
@@ -619,6 +642,7 @@ The normalization system uses SHA-256 hashes to detect config changes:
 - `shouldPersistNormalizedConfig()` compares current hash to marker
 
 This ensures:
+
 - First-time v1 load → persisted
 - Same v1 loaded again → skipped (hash matches)
 - Config updated → persisted (hash differs)

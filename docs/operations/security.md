@@ -1,3 +1,8 @@
+---
+layout: default
+title: Security Configuration Guide
+---
+
 # Security Configuration Guide
 
 This document describes security settings for the GLM Proxy and provides guidance for safe deployment.
@@ -50,6 +55,7 @@ The proxy supports three security modes that configure sensible defaults for dif
 **Best for:** Internet-facing deployments, production systems.
 
 Automatically enables:
+
 - Admin authentication required
 - CSP headers with strict policy
 - Sensitive endpoints restricted
@@ -235,6 +241,6 @@ If you suspect a security breach:
 If you discover a security vulnerability, please report it via:
 
 1. GitHub Security Advisory (preferred)
-2. Email to security@example.com
+2. Email to <security@example.com>
 
 Do not disclose security issues publicly until a fix is available.

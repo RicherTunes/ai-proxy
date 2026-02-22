@@ -1,3 +1,8 @@
+---
+layout: default
+title: Milestone 4: SSE Single Source
+---
+
 # Milestone 4: SSE Single Source
 
 **Status:** Completed | **Date:** 2024-01-26
@@ -16,11 +21,11 @@ Milestone 4 consolidated Server-Sent Events (SSE) delivery to a single source, e
 
 | Document | Description |
 |----------|-------------|
-| [SUMMARY.md](./SUMMARY.md) | Milestone summary and achievements |
-| [VERIFICATION.md](./VERIFICATION.md) | Verification checklist and results |
-| [BEFORE_AFTER.md](./BEFORE_AFTER.md) | Before/after comparison |
-| [CHECKLIST.md](./CHECKLIST.md) | Implementation checklist |
-| [IMPLEMENTATION.md](./IMPLEMENTATION.md) | Detailed implementation notes |
+| [SUMMARY.md](./SUMMARY/) | Milestone summary and achievements |
+| [VERIFICATION.md](./VERIFICATION/) | Verification checklist and results |
+| [BEFORE_AFTER.md](./BEFORE_AFTER/) | Before/after comparison |
+| [CHECKLIST.md](./CHECKLIST/) | Implementation checklist |
+| [IMPLEMENTATION.md](./IMPLEMENTATION/) | Detailed implementation notes |
 
 ## Key Changes
 

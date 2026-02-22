@@ -1,8 +1,13 @@
+---
+layout: default
+title: Getting Started
+---
+
 # Getting Started
 
 A step-by-step guide to get AI Proxy running.
 
-> **New to this?** Start with the [README.md](../../README.md) for a quick overview, then come back here for detailed instructions.
+> **New to this?** Start with the [README.md](../../README/) for a quick overview, then come back here for detailed instructions.
 
 ## What You'll Need
 
@@ -20,12 +25,14 @@ Before starting, make sure you have:
 ### Step 1: Get the Code
 
 **Option A: Using Git (recommended)**
+
 ```bash
 git clone https://github.com/RicherTunes/ai-proxy.git
 cd ai-proxy
 ```
 
 **Option B: Download ZIP**
+
 1. Go to [GitHub](https://github.com/RicherTunes/ai-proxy)
 2. Click "Code" → "Download ZIP"
 3. Extract the ZIP file
@@ -40,6 +47,7 @@ npm install
 This downloads everything the proxy needs. It may take 1-2 minutes.
 
 **What if this fails?**
+
 - Make sure Node.js is installed: `node --version`
 - Try deleting `node_modules` folder and running `npm install` again
 - Check your internet connection
@@ -54,8 +62,9 @@ This downloads everything the proxy needs. It may take 1-2 minutes.
 > **Tip:** Having multiple keys lets the proxy spread requests across them, giving you higher rate limits.
 >
 > **Documentation:**
-> - [Z.ai Coding Subscription Reference](../reference/zai-coding-subscription.md) - Quick tier comparisons and limits
-> - [Z.ai Knowledge Base](../reference/zai-knowledge-base.md) - Comprehensive model specs, integrations, and troubleshooting
+>
+> - [Z.ai Coding Subscription Reference](../reference/zai-coding-subscription/) - Quick tier comparisons and limits
+> - [Z.ai Knowledge Base](../reference/zai-knowledge-base/) - Comprehensive model specs, integrations, and troubleshooting
 
 ### Step 4: Create Your Configuration File
 
@@ -74,6 +83,7 @@ Create a file named `api-keys.json` in the project folder:
 > **For API keys configuration format and advanced options**, see [Configuration Guide - api-keys.json Format](./configuration.md#api-keysjson-format).
 
 **Common mistakes:**
+
 - ❌ Missing comma between keys
 - ❌ Extra comma after the last key
 - ❌ Using the wrong quotes (must be `"` not `'`)
@@ -86,6 +96,7 @@ npm start
 ```
 
 **You should see:**
+
 ```
 [INFO] GLM Proxy starting...
 [INFO] Loaded 2 API keys from api-keys.json
@@ -96,6 +107,7 @@ npm start
 > **What is `127.0.0.1:18765`?**
 >
 > This is the address where your proxy is running:
+>
 > - `127.0.0.1` = "localhost" (means "your own computer")
 > - `18765` = the port number (like a door number)
 > - Together = "Connect to my computer on door 18765"
@@ -103,6 +115,7 @@ npm start
 > You can open this address in your browser to see the dashboard!
 
 **If you see errors:**
+
 - `Cannot find module`: Run `npm install` again
 - `ENOENT: no such file`: Check that `api-keys.json` exists
 - `Invalid JSON`: Check your JSON syntax (use a JSON validator)
@@ -110,6 +123,7 @@ npm start
 ### Step 6: Verify It's Working
 
 **Check the health endpoint:**
+
 ```bash
 curl http://127.0.0.1:18765/health
 ```
@@ -123,6 +137,7 @@ curl http://127.0.0.1:18765/health
 > An endpoint is a specific URL path that does something. `/health` is an endpoint that tells you if the proxy is running correctly.
 
 Expected response:
+
 ```json
 {
   "status": "OK",
@@ -132,7 +147,7 @@ Expected response:
 ```
 
 **Or open the dashboard:**
-Go to http://127.0.0.1:18765/dashboard in your browser. You should see your keys listed.
+Go to <http://127.0.0.1:18765/dashboard> in your browser. You should see your keys listed.
 
 ![Dashboard Overview](../screenshots/overview.png)
 
@@ -149,7 +164,7 @@ You can also see real-time connection status and control the proxy:
 ![Connection Status](../screenshots/components/connection-status.png)
 ![Pause Button](../screenshots/components/pause-button.png)
 
-> See the [Dashboard Guide](./dashboard.md) for a complete visual tour of all dashboard features.
+> See the [Dashboard Guide](./dashboard/) for a complete visual tour of all dashboard features.
 
 ### Step 7: Connect Your Application
 
@@ -160,6 +175,7 @@ Now configure your application to use the proxy:
 > An environment variable is a setting that your computer or applications can read. It's like a configuration file, but set as part of your system's environment. Here, we're telling applications to use the proxy instead of connecting directly to the API.
 
 **For Claude Code CLI:**
+
 ```bash
 # Mac/Linux
 export ANTHROPIC_BASE_URL=http://127.0.0.1:18765
@@ -172,6 +188,7 @@ set ANTHROPIC_BASE_URL=http://127.0.0.1:18765
 ```
 
 **For Python applications:**
+
 ```python
 import anthropic
 
@@ -199,20 +216,20 @@ If successful, you'll see a response from the AI model.
 
 ## Next Steps
 
-- **[Configuration](./configuration.md)** — Customize settings for your needs
-- **[Monitoring](./monitoring.md)** — Learn about health checks and stats
-- **[Troubleshooting](../../TROUBLESHOOTING.md)** — Solve common problems
+- **[Configuration](./configuration/)** — Customize settings for your needs
+- **[Monitoring](./monitoring/)** — Learn about health checks and stats
+- **[Troubleshooting](../../TROUBLESHOOTING/)** — Solve common problems
 
 ## Need Help?
 
-1. Check the [Troubleshooting Guide](../../TROUBLESHOOTING.md)
+1. Check the [Troubleshooting Guide](../../TROUBLESHOOTING/)
 2. Look at the dashboard for error messages
 3. Check the terminal output for logs
 4. Open a GitHub issue with your error message
 
 ## See Also
 
-- **[Configuration Guide](./configuration.md)** — Complete environment variable reference
-- **[Monitoring Guide](./monitoring.md)** — Health checks, stats, and metrics
-- **[Dashboard Guide](./dashboard.md)** — Visual tour of dashboard features
-- **[README.md](../../README.md)** — Project overview and features
+- **[Configuration Guide](./configuration/)** — Complete environment variable reference
+- **[Monitoring Guide](./monitoring/)** — Health checks, stats, and metrics
+- **[Dashboard Guide](./dashboard/)** — Visual tour of dashboard features
+- **[README.md](../../README/)** — Project overview and features

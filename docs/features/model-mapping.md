@@ -1,3 +1,8 @@
+---
+layout: default
+title: Model Mapping Backend Implementation
+---
+
 # Model Mapping Backend Implementation
 
 ## Dashboard Visualization
@@ -25,6 +30,7 @@ Successfully implemented the backend for live model management in the GLM Proxy.
 #### Added ModelMappingManager Class (lines 409-536)
 
 **Constructor:**
+
 - Takes model mapping config object
 - Initializes with enabled flag, models map, default model, and logging preference
 - Creates empty Map for per-key overrides
@@ -67,15 +73,19 @@ Successfully implemented the backend for live model management in the GLM Proxy.
 #### Updated Config Class
 
 **Constructor (line 198):**
+
 - Added call to `_initializeModelMappingManager()`
 
 **New Method (lines 342-352):**
+
 - `_initializeModelMappingManager()` - Creates ModelMappingManager instance from config
 
 **New Getter (lines 354-357):**
+
 - `modelMappingManager` - Returns the manager instance
 
 #### Updated Module Exports (line 556)
+
 - Added `ModelMappingManager` to exports
 
 ### 2. lib/proxy-server.js
@@ -83,6 +93,7 @@ Successfully implemented the backend for live model management in the GLM Proxy.
 #### Added Route Handlers (lines 349-350, 368-369)
 
 **New Routes:**
+
 - `/model-mapping` - GET/PUT for global mapping config
 - `/model-mapping/reset` - POST to reset to defaults
 - `/model-mapping/keys/:keyIndex` - GET/PUT/DELETE for per-key overrides
@@ -90,15 +101,18 @@ Successfully implemented the backend for live model management in the GLM Proxy.
 #### Added Handler Methods (lines 950-1073)
 
 **_handleModelMapping(req, res)**
+
 - GET: Returns current config and all key overrides
 - PUT: Updates global mapping configuration
 - Returns JSON with success/error status
 
 **_handleModelMappingReset(req, res)**
+
 - POST: Resets to default configuration
 - Returns updated config
 
 **_handleModelMappingKey(req, res, pathname)**
+
 - GET: Returns overrides for specific key
 - PUT: Sets override for specific key (requires claudeModel and glmModel)
 - DELETE: Clears override(s) for specific key
@@ -110,6 +124,7 @@ Successfully implemented the backend for live model management in the GLM Proxy.
 #### Updated _transformRequestBody Method (lines 248-292)
 
 **Changes:**
+
 - Added `keyIndex` parameter (default null)
 - Uses `config.modelMappingManager` instead of direct config access
 - Calls `manager.getMappedModel(originalModel, keyIndex)` for mapping
@@ -119,15 +134,18 @@ Successfully implemented the backend for live model management in the GLM Proxy.
 #### Updated Method Call (line 774)
 
 **Changes:**
+
 - Passes `keyInfo.index` as third parameter to `_transformRequestBody`
 - Enables per-key model mapping based on which key is being used
 
 ## API Endpoints
 
 ### GET /model-mapping
+
 Get current model mapping configuration and all key overrides.
 
 **Response:**
+
 ```json
 {
   "config": {
@@ -148,9 +166,11 @@ Get current model mapping configuration and all key overrides.
 ```
 
 ### PUT /model-mapping
+
 Update global model mapping configuration.
 
 **Request Body:**
+
 ```json
 {
   "enabled": true,
@@ -163,6 +183,7 @@ Update global model mapping configuration.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -171,9 +192,11 @@ Update global model mapping configuration.
 ```
 
 ### POST /model-mapping/reset
+
 Reset model mapping to default configuration.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -182,9 +205,11 @@ Reset model mapping to default configuration.
 ```
 
 ### GET /model-mapping/keys/:keyIndex
+
 Get per-key overrides for a specific key.
 
 **Response:**
+
 ```json
 {
   "keyIndex": 0,
@@ -195,9 +220,11 @@ Get per-key overrides for a specific key.
 ```
 
 ### PUT /model-mapping/keys/:keyIndex
+
 Set per-key override for a specific key.
 
 **Request Body:**
+
 ```json
 {
   "claudeModel": "claude-opus-4-5-20251101",
@@ -206,6 +233,7 @@ Set per-key override for a specific key.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -215,9 +243,11 @@ Set per-key override for a specific key.
 ```
 
 ### DELETE /model-mapping/keys/:keyIndex
+
 Clear per-key override(s) for a specific key.
 
 **Request Body (optional):**
+
 ```json
 {
   "claudeModel": "claude-opus-4-5-20251101"
@@ -228,6 +258,7 @@ If `claudeModel` is provided, clears only that model's override.
 If omitted, clears all overrides for the key.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -248,6 +279,7 @@ Model mapping follows this priority order:
 ## Usage Examples
 
 ### Get mapped model
+
 ```javascript
 const mappedModel = config.modelMappingManager.getMappedModel(
     'claude-opus-4-5-20251101',
@@ -257,6 +289,7 @@ const mappedModel = config.modelMappingManager.getMappedModel(
 ```
 
 ### Set per-key override
+
 ```javascript
 config.modelMappingManager.setKeyOverride(
     0,  // keyIndex
@@ -266,6 +299,7 @@ config.modelMappingManager.setKeyOverride(
 ```
 
 ### Clear per-key override
+
 ```javascript
 // Clear specific model override
 config.modelMappingManager.clearKeyOverride(0, 'claude-opus-4-5-20251101');
@@ -275,6 +309,7 @@ config.modelMappingManager.clearKeyOverride(0);
 ```
 
 ### Update global mapping
+
 ```javascript
 config.modelMappingManager.updateGlobalMapping({
     enabled: true,
@@ -283,6 +318,7 @@ config.modelMappingManager.updateGlobalMapping({
 ```
 
 ### Reset to defaults
+
 ```javascript
 config.modelMappingManager.resetToDefaults(DEFAULT_CONFIG.modelMapping);
 ```

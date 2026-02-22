@@ -1,8 +1,13 @@
+---
+layout: default
+title: Architecture
+---
+
 # Architecture
 
 System architecture overview for GLM Proxy.
 
-> **Provider Context:** This proxy is designed for [Z.ai (GLM Coding Plan)](../reference/zai-coding-subscription.md). See [Z.ai Knowledge Base](../reference/zai-knowledge-base.md) for model specifications and API details.
+> **Provider Context:** This proxy is designed for [Z.ai (GLM Coding Plan)](../reference/zai-coding-subscription/). See [Z.ai Knowledge Base](../reference/zai-knowledge-base/) for model specifications and API details.
 
 ## Overview
 
@@ -204,6 +209,7 @@ The AIMD controller dynamically adjusts per-model concurrency limits based on 42
 ```
 
 **Modes:**
+
 - `observe_only` (default): Monitors and logs adjustments without enforcing
 - `enforce`: Actively applies calculated limits to requests
 
@@ -235,6 +241,7 @@ GLM Proxy supports multi-worker clustering for high throughput:
 ```
 
 **Configuration:**
+
 - `GLM_MAX_WORKERS` - Maximum number of workers
 - `GLM_NO_CLUSTER=1` - Disable clustering
 
@@ -249,7 +256,7 @@ GLM Proxy emits events for monitoring and integration:
 - `circuit:open` - Circuit opened
 - `circuit:closed` - Circuit closed
 
-See [events.md](./events.md) for detailed event documentation.
+See [events.md](./events/) for detailed event documentation.
 
 ## Testing
 
@@ -260,7 +267,7 @@ npm test                    # Run tests
 npm run test:verbose       # Run with coverage
 ```
 
-See [testing.md](./testing.md) for test strategy and coverage information.
+See [testing.md](./testing/) for test strategy and coverage information.
 
 ## Security Considerations
 
@@ -269,4 +276,4 @@ See [testing.md](./testing.md) for test strategy and coverage information.
 - Circuit breaker prevents cascading failures
 - Rate limiting prevents abuse
 
-See [Security](../operations/security.md) for more details.
+See [Security](../operations/security/) for more details.

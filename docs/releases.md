@@ -1,3 +1,8 @@
+---
+layout: default
+title: Release Process
+---
+
 # Release Process
 
 This document describes the automated and manual release processes for ai-proxy.
@@ -29,6 +34,7 @@ Releases follow [Conventional Commits](https://www.conventionalcommits.org/):
 | `ci:` | none | CI changes |
 
 Examples:
+
 - `feat(dashboard): add tier builder visualization`
 - `fix(api): resolve race condition in key scheduler`
 - `perf(proxy): optimize circuit breaker state machine`
@@ -36,6 +42,7 @@ Examples:
 ### Breaking Changes
 
 Add `!` after type and `BREAKING CHANGE:` in body:
+
 ```
 feat(api)!: remove legacy endpoint
 
@@ -63,12 +70,14 @@ git push origin v<version>
 ## Release Checklist
 
 Before a release:
+
 - [ ] All tests passing
 - [ ] Coverage thresholds met
 - [ ] CHANGELOG.md updated
 - [ ] Version in sync
 
 After release:
+
 - [ ] Verify GitHub release created
 - [ ] Verify npm package published
 - [ ] Update announcements

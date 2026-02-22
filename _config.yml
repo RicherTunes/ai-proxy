@@ -1,6 +1,6 @@
 # GitHub Pages Configuration for AI Proxy
 # Source: docs/ directory
-# Theme: None (using custom index.html)
+# Theme: None (using custom layouts)
 
 # GitHub Pages settings
 theme: null
@@ -16,6 +16,9 @@ description: Intelligent AI Request Router with Smart Monitoring
 baseurl: "/ai-proxy"
 url: "https://richtunes.github.io"
 
+# Permalink structure for pretty URLs
+permalink: /:categories/:title/
+
 # Exclude files from processing
 exclude:
   - node_modules/
@@ -24,8 +27,17 @@ exclude:
   - .git/
   - .gitignore
   - "*.log"
+  - scripts/
+  - Gemfile
+  - Gemfile.lock
 
 # Sass/SCSS settings
 sass:
   sass_dir: _sass
   style: compressed
+
+# Collections (if needed)
+collections:
+  docs:
+    output: true
+    permalink: /:path/

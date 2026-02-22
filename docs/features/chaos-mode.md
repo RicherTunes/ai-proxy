@@ -1,3 +1,8 @@
+---
+layout: default
+title: Chaos Mode: Cross-Model Concurrent Throughput Maximization
+---
+
 # Chaos Mode: Cross-Model Concurrent Throughput Maximization
 
 ## Dashboard Visualization
@@ -111,6 +116,7 @@ score(model) = (maxConcurrency - inFlight) / maxConcurrency
 Ties broken by: lower cost → higher maxConcurrency → round-robin.
 
 **Example with 5 parallel requests:**
+
 ```
 Request 1 → glm-4.5 (10 slots, 0 used, score=1.0)
 Request 2 → glm-4.5 (10 slots, 1 used, score=0.9)
@@ -227,6 +233,7 @@ In the routing page, show chaos mode status:
 | 1.7 | Add cooldown integration: accept `getCooldown(model)` callback |
 
 **Tests:** `test/chaos-pool.test.js` (~25 tests)
+
 - Eligible model filtering by tier/quality floor
 - Each strategy distributes correctly
 - At-capacity models skipped
@@ -249,6 +256,7 @@ In the routing page, show chaos mode status:
 | 2.5 | Add `getChaosStatus()` method for API endpoint |
 
 **Tests:** Add to `test/model-router.test.js` (~10 tests)
+
 - Chaos mode bypasses classifier
 - Quality floor enforced
 - Attempted models excluded
@@ -339,6 +347,7 @@ Shows which models are eligible for each incoming request tier:
 | light | LIGHT | Above + flashx (3), flash (1), 4.5-flash (1) | **28** |
 
 This means:
+
 - **Opus** requests spread across 3 heavy models (8 concurrent max)
 - **Sonnet** requests spread across 5 models (23 concurrent max)
 - **Haiku** requests can use everything (28 concurrent max)

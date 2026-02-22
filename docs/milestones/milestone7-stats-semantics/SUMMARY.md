@@ -1,6 +1,12 @@
+---
+layout: default
+title: Milestone 7: Stats Semantics + Dashboard Labeling - Implementation Summary
+---
+
 # Milestone 7: Stats Semantics + Dashboard Labeling - Implementation Summary
 
 ## Overview
+
 Implemented Milestone 7 (P1) focusing on stats semantics clarity and dashboard labeling accuracy. The implementation maintains full backward compatibility while improving user understanding of the metrics.
 
 ## Changes Made
@@ -8,6 +14,7 @@ Implemented Milestone 7 (P1) focusing on stats semantics clarity and dashboard l
 ### 1. Dashboard UI Label Updates (`lib/dashboard.js`)
 
 #### Fixed Misleading Labels
+
 - **Before:** "Active Requests" → **After:** "In-Flight Requests"
   - Clarifies that these are requests currently being processed, not active connections
 
@@ -19,6 +26,7 @@ Implemented Milestone 7 (P1) focusing on stats semantics clarity and dashboard l
   - More accurately describes the concurrent request limit
 
 #### Added New "Request Semantics" Info Card
+
 A new info card was added after the "Rate Limit Status" section that explains the difference between:
 
 1. **Client Requests** (Primary metrics - TRUE user success rate)
@@ -37,7 +45,9 @@ A new info card was added after the "Rate Limit Status" section that explains th
 Each metric includes an explanatory note below the value for clarity.
 
 #### CSS Styling
+
 Added `.info-note` CSS class for the explanatory notes:
+
 ```css
 .info-item .info-note {
     font-size: 0.65rem;
@@ -50,6 +60,7 @@ Added `.info-note` CSS class for the explanatory notes:
 ### 2. Dashboard JavaScript Updates (`lib/dashboard.js`)
 
 #### Updated `updateUI()` Function
+
 Added code to populate the new Request Semantics fields:
 
 ```javascript
@@ -88,6 +99,7 @@ document.getElementById('inFlightRequests').textContent = clientReq.inFlight || 
 ### 4. Test Updates (`test/dashboard.test.js`)
 
 Added comprehensive tests for Milestone 7:
+
 - Test for "Request Semantics" section presence
 - Test for all required IDs (clientRequests, clientSuccessRate, keyAttempts, inFlightRequests)
 - Test for explanatory notes
@@ -98,12 +110,15 @@ Added comprehensive tests for Milestone 7:
 ## Backward Compatibility
 
 ### `/stats` Endpoint
+
 The `/stats` endpoint remains fully backward compatible:
+
 - All existing fields are preserved
 - New canonical fields added: `clientRequests` and `keyAttempts`
 - Primary fields (`successRate`, `totalRequests`) already use client-request semantics
 
 ### Dashboard
+
 - All existing functionality preserved
 - New Request Semantics section is additive
 - Label changes are purely cosmetic (no API changes)
@@ -111,18 +126,23 @@ The `/stats` endpoint remains fully backward compatible:
 ## Metrics Semantics Explained
 
 ### Client Requests (Canonical Metrics)
+
 **What it tracks:** Unique requests from clients
+
 - One client request = one user API call, regardless of how many retry attempts are made
 - If a request fails and retries 3 times before succeeding, this counts as 1 request, 1 success
 - **This is the TRUE user success rate**
 
 ### Key Attempts (Debugging Metrics)
+
 **What it tracks:** Individual attempts to use API keys
+
 - Includes all retry attempts
 - If a request fails and retries 3 times before succeeding, this counts as 4 attempts, 1 success
 - Useful for debugging and understanding retry behavior
 
 ### Example Scenario
+
 ```
 Client makes 1 request
 → Fails (rate limited)

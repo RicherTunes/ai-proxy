@@ -1,3 +1,8 @@
+---
+layout: default
+title: Dashboard Screenshots
+---
+
 # Dashboard Screenshots
 
 This directory contains screenshots generated from E2E tests for documentation purposes.
@@ -101,4 +106,3 @@ npm run screenshots:extract
 - [circuit-indicators](./components/circuit-indicators.png)
 - [request-rate-chart](./components/request-rate-chart.png)
 - [latency-chart](./components/latency-chart.png)
-
