@@ -1663,4 +1663,151 @@ describe('UsageMonitor', () => {
             expect(monitor._toolTimeSeriesCache.searchMcpCount).toEqual([8, 9]);
         });
     });
+
+    describe('anomaly detection (COST-07)', () => {
+        let monitor;
+        let callback;
+
+        beforeEach(() => {
+            monitor = new UsageMonitor(
+                { anomaly: { enabled: true, rateJumpThreshold: 2.5, minDataPoints: 6, cooldownMs: 3600000, quotaWarningThresholds: [0.8, 0.95] } },
+                { logger: mockLogger(), keyManager: mockKeyManager() }
+            );
+            callback = jest.fn();
+            monitor.setAnomalyCallback(callback);
+        });
+
+        test('rate jump fires above threshold', () => {
+            monitor._timeSeriesCache = {
+                times: Array.from({ length: 10 }, (_, i) => `t${i}`),
+                tokenCounts: [100, 102, 98, 101, 99, 100, 103, 97, 101, 500],
+                callCounts: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+            };
+            monitor._checkRateJump({});
+            expect(callback).toHaveBeenCalled();
+            const alert = callback.mock.calls[0][0];
+            expect(alert.type).toBe('usage.rate_jump');
+            expect(alert.data.direction).toBe('spike');
+            expect(alert.data.metric).toBe('tokenCounts');
+        });
+
+        test('rate jump silent below threshold', () => {
+            monitor._timeSeriesCache = {
+                times: Array.from({ length: 10 }, (_, i) => `t${i}`),
+                tokenCounts: [100, 102, 98, 101, 99, 100, 103, 97, 101, 103],
+                callCounts: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+            };
+            monitor._checkRateJump({});
+            expect(callback).not.toHaveBeenCalled();
+        });
+
+        test('rate jump requires minDataPoints', () => {
+            monitor._timeSeriesCache = {
+                times: ['t0', 't1', 't2'],
+                tokenCounts: [100, 100, 500],
+                callCounts: [10, 10, 10]
+            };
+            monitor._checkRateJump({});
+            expect(callback).not.toHaveBeenCalled();
+        });
+
+        test('stale feed alert on false to true', () => {
+            monitor._checkStaleFeed({ stale: true, lastPollAt: Date.now() - 120000 }, { stale: false });
+            expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback.mock.calls[0][0].type).toBe('usage.feed_stale');
+        });
+
+        test('stale feed deduplicates', () => {
+            monitor._checkStaleFeed({ stale: true, lastPollAt: Date.now() - 120000 }, { stale: false });
+            monitor._anomalyCooldowns = {};
+            monitor._checkStaleFeed({ stale: true, lastPollAt: Date.now() - 120000 }, { stale: true });
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+
+        test('stale recovery on true to false', () => {
+            monitor._staleFeedAlerted = true;
+            monitor._checkStaleFeed({ stale: false }, { stale: true });
+            expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback.mock.calls[0][0].type).toBe('usage.feed_recovered');
+        });
+
+        test('quota warning at 80%', () => {
+            monitor._checkQuotaWarning({ quota: { tokenUsagePercent: 82, level: 'tier-1' } });
+            expect(callback).toHaveBeenCalledTimes(1);
+            const alert = callback.mock.calls[0][0];
+            expect(alert.type).toBe('usage.quota_warning');
+            expect(alert.data.threshold).toBe(0.8);
+        });
+
+        test('quota warning at 95% separately', () => {
+            monitor._quotaThresholdsFired.add(0.8);
+            monitor._checkQuotaWarning({ quota: { tokenUsagePercent: 96, level: 'tier-1' } });
+            expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback.mock.calls[0][0].data.threshold).toBe(0.95);
+            expect(callback.mock.calls[0][0].severity).toBe('critical');
+        });
+
+        test('quota warning deduplicates', () => {
+            monitor._checkQuotaWarning({ quota: { tokenUsagePercent: 85, level: 'tier-1' } });
+            monitor._anomalyCooldowns = {};
+            monitor._checkQuotaWarning({ quota: { tokenUsagePercent: 87, level: 'tier-1' } });
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+
+        test('cooldown prevents re-fire', () => {
+            monitor._timeSeriesCache = {
+                times: Array.from({ length: 10 }, (_, i) => `t${i}`),
+                tokenCounts: [100, 102, 98, 101, 99, 100, 103, 97, 101, 500],
+                callCounts: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+            };
+            monitor._checkRateJump({});
+            expect(callback).toHaveBeenCalledTimes(1);
+            monitor._checkRateJump({});
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+
+        test('callback receives structured alert', () => {
+            monitor._checkStaleFeed({ stale: true, lastPollAt: Date.now() - 120000 }, { stale: false });
+            const alert = callback.mock.calls[0][0];
+            expect(alert).toHaveProperty('type');
+            expect(alert).toHaveProperty('severity');
+            expect(alert).toHaveProperty('message');
+            expect(alert).toHaveProperty('data');
+            expect(alert).toHaveProperty('timestamp');
+        });
+
+        test('getAnomalyAlerts bounded to 100', () => {
+            for (let i = 0; i < 150; i++) {
+                monitor._anomalyCooldowns = {};
+                monitor._fireAnomaly('usage.rate_jump', 'warning', {
+                    message: `alert ${i}`,
+                    data: { index: i }
+                });
+            }
+            const alerts = monitor.getAnomalyAlerts();
+            expect(alerts.length).toBe(100);
+        });
+
+        test('disabled anomaly detection produces no alerts', () => {
+            monitor._anomalyConfig.enabled = false;
+            monitor._timeSeriesCache = {
+                times: Array.from({ length: 10 }, (_, i) => `t${i}`),
+                tokenCounts: [100, 102, 98, 101, 99, 100, 103, 97, 101, 500],
+                callCounts: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+            };
+            monitor._checkAnomalies({ stale: true, quota: { tokenUsagePercent: 90 } }, null);
+            expect(callback).not.toHaveBeenCalled();
+        });
+
+        test('poll integration triggers anomaly detection', () => {
+            const spy = jest.spyOn(monitor, '_checkAnomalies');
+            monitor._snapshot = {};
+            monitor._lastPollAt = Date.now();
+            const enriched = monitor.getSnapshot();
+            monitor._checkAnomalies(enriched, monitor._prevSnapshot);
+            monitor._prevSnapshot = enriched;
+            expect(spy).toHaveBeenCalledTimes(1);
+            spy.mockRestore();
+        });
+    });
 });
