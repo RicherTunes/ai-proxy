@@ -8,6 +8,30 @@ System architecture overview for GLM Proxy.
 
 GLM Proxy is a Node.js-based HTTP proxy that provides intelligent request routing, load balancing, and fault tolerance for API requests to the Z.AI GLM service.
 
+## Dashboard Architecture
+
+The dashboard provides a visual interface to monitor all system components:
+
+![Dashboard Overview](../screenshots/overview.png)
+
+### Key UI Components
+
+**Page Navigation** - Switch between Overview, Model Routing, Requests, and System views:
+
+![Page Navigation Tabs](../screenshots/components/page-nav-tabs.png)
+
+**Connection Status** - Real-time upstream connectivity indicator:
+
+![Connection Status](../screenshots/components/connection-status.png)
+
+**Keys Heatmap** - Visual representation of API key health:
+
+![Keys Heatmap](../screenshots/components/keys-heatmap.png)
+
+**Request Rate Chart** - Monitor throughput over time:
+
+![Request Rate Chart](../screenshots/components/request-rate-chart.png)
+
 ## System Components
 
 ```

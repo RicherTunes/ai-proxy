@@ -1,5 +1,13 @@
 # AI Proxy Documentation
 
+## Dashboard Preview
+
+The monitoring dashboard provides real-time visibility into your proxy:
+
+![Dashboard Overview](./screenshots/overview.png)
+
+For a complete visual tour, see the [Dashboard Guide](./user-guide/dashboard.md) or browse the [Screenshots Gallery](./screenshots/).
+
 ## Quick Links
 
 - [Getting Started](./user-guide/getting-started.md) - Installation and quick start

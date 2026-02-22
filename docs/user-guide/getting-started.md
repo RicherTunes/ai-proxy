@@ -93,6 +93,15 @@ npm start
 [INFO] Server listening on http://127.0.0.1:18765
 ```
 
+> **What is `127.0.0.1:18765`?**
+>
+> This is the address where your proxy is running:
+> - `127.0.0.1` = "localhost" (means "your own computer")
+> - `18765` = the port number (like a door number)
+> - Together = "Connect to my computer on door 18765"
+>
+> You can open this address in your browser to see the dashboard!
+
 **If you see errors:**
 - `Cannot find module`: Run `npm install` again
 - `ENOENT: no such file`: Check that `api-keys.json` exists
@@ -104,6 +113,14 @@ npm start
 ```bash
 curl http://127.0.0.1:18765/health
 ```
+
+> **What is `curl`?**
+>
+> `curl` is a command-line tool for making web requests. It's like a browser, but for your terminal.
+>
+> **What is an "endpoint"?**
+>
+> An endpoint is a specific URL path that does something. `/health` is an endpoint that tells you if the proxy is running correctly.
 
 Expected response:
 ```json
@@ -137,6 +154,10 @@ You can also see real-time connection status and control the proxy:
 ### Step 7: Connect Your Application
 
 Now configure your application to use the proxy:
+
+> **What is an environment variable?**
+>
+> An environment variable is a setting that your computer or applications can read. It's like a configuration file, but set as part of your system's environment. Here, we're telling applications to use the proxy instead of connecting directly to the API.
 
 **For Claude Code CLI:**
 ```bash

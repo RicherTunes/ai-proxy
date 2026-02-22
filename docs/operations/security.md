@@ -2,6 +2,20 @@
 
 This document describes security settings for the GLM Proxy and provides guidance for safe deployment.
 
+## Dashboard Security
+
+The dashboard provides visibility into system health and security status:
+
+![Dashboard Overview](../screenshots/overview.png)
+
+**Connection Status** - Verify secure connectivity to upstream API:
+
+![Connection Status](../screenshots/components/connection-status.png)
+
+**Keys Heatmap** - Monitor API key health for security incidents:
+
+![Keys Heatmap](../screenshots/components/keys-heatmap.png)
+
 ## Security Modes
 
 The proxy supports three security modes that configure sensible defaults for different deployment scenarios.

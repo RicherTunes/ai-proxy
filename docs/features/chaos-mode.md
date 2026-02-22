@@ -1,5 +1,15 @@
 # Chaos Mode: Cross-Model Concurrent Throughput Maximization
 
+## Dashboard Visualization
+
+The Model Routing page shows available models and their configurations:
+
+![Model Routing Page](../screenshots/routing.png)
+
+**Model List** - View all available models with their tier classifications:
+
+![Model List](../screenshots/components/model-list.png)
+
 ## Problem Statement
 
 With z.ai's per-model concurrency limits, a single model bottlenecks at its limit (e.g., glm-4.7 at 3 concurrent). When running parallel Claude Code agents (oh-my-claudecode's ultrawork/swarm modes), requests queue behind the same model's rate limit even though other models have spare capacity.
@@ -182,6 +192,8 @@ chaosStats: {
 #### 5. Dashboard (new panel section)
 
 In the routing page, show chaos mode status:
+
+![Model Routing Page](../screenshots/routing.png)
 
 ```
 ┌─ Chaos Mode ─────────────────────────────────────┐

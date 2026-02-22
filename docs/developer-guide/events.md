@@ -2,6 +2,20 @@
 
 This document describes the Server-Sent Events (SSE) contract for the `/events` (alias: `/requests/stream`) endpoint.
 
+## Dashboard Visualization
+
+The Requests page displays real-time events from the SSE stream:
+
+![Requests Page](../screenshots/requests.png)
+
+**Trace Table** - View individual request events:
+
+![Trace Table](../screenshots/components/trace-table.png)
+
+**Log Entries** - Real-time event log:
+
+![Log Entries](../screenshots/components/log-entries.png)
+
 ## Connection
 
 **Endpoint:** `GET /events` or `GET /requests/stream`
