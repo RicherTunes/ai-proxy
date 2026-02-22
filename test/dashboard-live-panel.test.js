@@ -69,11 +69,16 @@ describe('Bottom drawer HTML contract', () => {
         expect(handle).not.toBeNull();
     });
 
-    test('dock panels container exists (pre-relocation) with tab panels', () => {
+    test('dock panels are rendered directly inside drawerContent (M5 canonical placement)', () => {
+        const drawerContent = doc.getElementById('drawerContent');
+        expect(drawerContent).not.toBeNull();
+        expect(drawerContent.querySelector('#tab-live')).not.toBeNull();
+        expect(drawerContent.querySelector('#tab-traces')).not.toBeNull();
+    });
+
+    test('dockPanelsContainer no longer exists in server-rendered HTML', () => {
         const container = doc.getElementById('dockPanelsContainer');
-        expect(container).not.toBeNull();
-        expect(container.querySelector('#tab-live')).not.toBeNull();
-        expect(container.querySelector('#tab-traces')).not.toBeNull();
+        expect(container).toBeNull();
     });
 });
 
@@ -133,11 +138,13 @@ describe('init.js implementation contracts', () => {
         expect(initSource).not.toMatch(/sectionTab\s*!==\s*['"]live['"]/);
     });
 
-    test('dock panels are relocated into bottom drawer', () => {
-        expect(initSource).toMatch(/relocateDockPanels/);
-        expect(initSource).toMatch(/drawerContent/);
-        expect(initSource).toMatch(/dockPanelsContainer/);
-        expect(initSource).toMatch(/drawerContent\.appendChild/);
+    test('M5: relocateDockPanels IIFE has been removed (canonical placement)', () => {
+        // The IIFE is gone — panels are now server-rendered inside #drawerContent
+        // Check that the actual function definition/IIFE pattern is absent (not just comments)
+        expect(initSource).not.toMatch(/function relocateDockPanels\(\)\s*\{/);
+        expect(initSource).not.toMatch(/dockContainer\.remove\(\)/);
+        // The comment referencing M5 canonical placement should exist
+        expect(initSource).toMatch(/M5.*canonical/i);
     });
 
     test('traces loading uses DashboardData API (no missing global symbol)', () => {
@@ -171,25 +178,10 @@ describe('init.js implementation contracts', () => {
     });
 });
 
-// ── DOM relocation tests (JSDOM simulation) ──────────────────────────────
+// ── M5: Canonical dock panel placement tests (JSDOM) ─────────────────────
 
-describe('Dock panel relocation into bottom drawer (JSDOM)', () => {
+describe('Canonical dock panels inside #drawerContent (JSDOM, M5)', () => {
     let doc;
-
-    /**
-     * Simulate the init.js relocateDockPanels logic
-     */
-    function relocateDockPanels() {
-        var drawerContent = doc.getElementById('drawerContent');
-        var dockContainer = doc.getElementById('dockPanelsContainer');
-        if (drawerContent && dockContainer) {
-            var tabContent = dockContainer.querySelector('.tab-content');
-            if (tabContent) {
-                drawerContent.appendChild(tabContent);
-                dockContainer.remove();
-            }
-        }
-    }
 
     function switchDockTab(tabName) {
         doc.querySelectorAll('.tab-panel').forEach(function (panel) {
@@ -204,40 +196,30 @@ describe('Dock panel relocation into bottom drawer (JSDOM)', () => {
         doc = new JSDOM(html).window.document;
     });
 
-    test('relocation moves tab-content into drawerContent', () => {
-        relocateDockPanels();
-
+    test('tab-content is already inside drawerContent (no relocation needed)', () => {
         const drawerContent = doc.getElementById('drawerContent');
         const tabContent = drawerContent.querySelector('.tab-content');
         expect(tabContent).not.toBeNull();
     });
 
-    test('relocation removes dockPanelsContainer from DOM', () => {
-        relocateDockPanels();
-
+    test('dockPanelsContainer does not exist in server-rendered HTML', () => {
         const dockContainer = doc.getElementById('dockPanelsContainer');
         expect(dockContainer).toBeNull();
     });
 
-    test('tab-live panel is inside drawer after relocation', () => {
-        relocateDockPanels();
-
+    test('tab-live panel is inside drawer on initial render', () => {
         const drawer = doc.getElementById('bottomDrawer');
         const livePanel = drawer.querySelector('#tab-live');
         expect(livePanel).not.toBeNull();
     });
 
-    test('tab-traces panel is inside drawer after relocation', () => {
-        relocateDockPanels();
-
+    test('tab-traces panel is inside drawer on initial render', () => {
         const drawer = doc.getElementById('bottomDrawer');
         const tracesPanel = drawer.querySelector('#tab-traces');
         expect(tracesPanel).not.toBeNull();
     });
 
-    test('all five tab panels are inside drawer after relocation', () => {
-        relocateDockPanels();
-
+    test('all five tab panels are inside drawer on initial render', () => {
         const drawer = doc.getElementById('bottomDrawer');
         expect(drawer.querySelector('#tab-live')).not.toBeNull();
         expect(drawer.querySelector('#tab-traces')).not.toBeNull();
@@ -246,9 +228,7 @@ describe('Dock panel relocation into bottom drawer (JSDOM)', () => {
         expect(drawer.querySelector('#tab-circuit')).not.toBeNull();
     });
 
-    test('switchDockTab still works after relocation (global ID selectors)', () => {
-        relocateDockPanels();
-
+    test('switchDockTab works with canonical placement (global ID selectors)', () => {
         switchDockTab('traces');
         expect(doc.getElementById('tab-traces').classList.contains('active')).toBe(true);
         expect(doc.getElementById('tab-live').classList.contains('active')).toBe(false);
@@ -259,8 +239,6 @@ describe('Dock panel relocation into bottom drawer (JSDOM)', () => {
     });
 
     test('only one tab-panel is active at a time after switching', () => {
-        relocateDockPanels();
-
         ['live', 'traces', 'logs', 'queue', 'circuit'].forEach(tabName => {
             switchDockTab(tabName);
             const activePanels = doc.querySelectorAll('.tab-panel.active');
@@ -270,7 +248,7 @@ describe('Dock panel relocation into bottom drawer (JSDOM)', () => {
     });
 
     test('drawer visibility follows scope mode', () => {
-        relocateDockPanels();
+        // M5: No relocation needed — panels are already in #drawerContent
 
         function switchPageDrawer(pageName, scope) {
             var drawer = doc.getElementById('bottomDrawer');
@@ -350,16 +328,7 @@ describe('Hash route normalization for dock tabs (M1.3)', () => {
             const html = generateDashboard({ nonce: '', cspEnabled: false });
             dom = new JSDOM(html, { runScripts: 'outside-only' });
             doc = dom.window.document;
-
-            const drawerContent = doc.getElementById('drawerContent');
-            const dockContainer = doc.getElementById('dockPanelsContainer');
-            if (drawerContent && dockContainer) {
-                const tabContent = dockContainer.querySelector('.tab-content');
-                if (tabContent) {
-                    drawerContent.appendChild(tabContent);
-                    dockContainer.remove();
-                }
-            }
+            // M5: Panels are already inside #drawerContent server-side — no relocation needed
         }
 
         function switchDockTab(tabName) {

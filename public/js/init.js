@@ -2002,22 +2002,9 @@
     bindDelegatedListeners();
     bindDrawerResize();
 
-    // ========== RELOCATE DOCK PANELS INTO BOTTOM DRAWER ==========
-    // Phase 4c promoted dock panel content inline on the Requests page,
-    // but the bottom drawer is the correct home for persistent visibility.
-    // Move the tab-content back into the drawer; switchDockTab uses global
-    // ID selectors so all functionality is preserved.
-    (function relocateDockPanels() {
-        var drawerContent = document.getElementById('drawerContent');
-        var dockContainer = document.getElementById('dockPanelsContainer');
-        if (drawerContent && dockContainer) {
-            var tabContent = dockContainer.querySelector('.tab-content');
-            if (tabContent) {
-                drawerContent.appendChild(tabContent);
-                dockContainer.remove();
-            }
-        }
-    })();
+    // ========== DOCK PANELS (M5: canonical placement) ==========
+    // Dock panels are now rendered directly inside #drawerContent server-side.
+    // The relocateDockPanels() IIFE has been removed — no runtime DOM mutation needed.
 
     (function bootstrapInit() {
         if (window.__dashboardInitBootstrapped) return;

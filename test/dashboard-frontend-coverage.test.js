@@ -551,7 +551,7 @@ describe('Critical element IDs referenced by JS exist in HTML', () => {
 
     // IDs referenced by init.js
     const INIT_JS_IDS = [
-        'bottomDrawer', 'drawerContent', 'dockPanelsContainer',
+        'bottomDrawer', 'drawerContent',
         'requestsSubTabs', 'shortcutsModal', 'requestCountBadge',
         'sidePanelBackdrop', 'sidePanel', 'sidePanelBody',
     ];

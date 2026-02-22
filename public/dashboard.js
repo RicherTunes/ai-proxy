@@ -5282,17 +5282,8 @@
             loadDensity();
             loadTabOrdering();  // Phase 2: Load tab ordering preferences
 
-            // Phase 4b/4c: Dock panels promoted to Requests page inline content
-            // (No longer moved to bottom drawer — drawer is hidden via CSS)
-            (function initPromotedPanels() {
-                const panelsContainer = document.getElementById('dockPanelsContainer');
-                if (panelsContainer) {
-                    // Remove display:none if any residual inline style
-                    panelsContainer.style.removeProperty('display');
-                    // Ensure page-hidden class is removed during initialization
-                    panelsContainer.classList.remove('page-hidden');
-                }
-            })();
+            // M5: Dock panels are now rendered directly inside #drawerContent server-side.
+            // No initPromotedPanels() needed — dockPanelsContainer has been removed.
 
             loadActiveTab();
             loadActivePage();  // Top-level page navigation
