@@ -620,9 +620,9 @@
             flex: 1;
             overflow: auto;
             padding: var(--spacing-lg);
-            padding-bottom: 44px;
+            padding-bottom: var(--dock-bottom, 34px);
             max-width: 100%;
-            min-height: calc(100vh - 44px - 44px - 80px - 40px);
+            min-height: calc(100vh - 44px - 44px - 80px);
         }
 
         /* Virtual scroll */
@@ -757,7 +757,8 @@
             display: none;
         }
         body.screenshot-mode .main-content {
-            padding-bottom: var(--spacing-lg);
+            --dock-bottom: var(--spacing-lg);
+            padding-bottom: var(--dock-bottom);
         }
         body.screenshot-mode .shortcuts-help-btn,
         body.screenshot-mode .toast-container,
@@ -879,8 +880,6 @@
         }
 
         /* ========== PHASE 4b: NAVIGATION FLATTENING ========== */
-
-        .main-content { padding-bottom: var(--drawer-header-h); min-height: calc(100vh - 44px - 44px - 80px); }
 
         .overflow-menu-trigger {
             background: none; border: 1px solid var(--border); color: var(--text-secondary);
