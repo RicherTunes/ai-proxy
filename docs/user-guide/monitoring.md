@@ -7,7 +7,12 @@ title: Monitoring
 
 Guide for monitoring GLM Proxy health and performance.
 
-> **New to Z.ai?** See [Z.ai Documentation](../reference/zai-coding-subscription/) for understanding quotas, rate limits, and tier capabilities.
+> **Related:**
+> - [Dashboard Guide](./dashboard.md) - Visual dashboard tour and features
+> - [Configuration Guide](./configuration.md) - Environment variables and settings
+> - [Z.ai Documentation](../reference/zai-coding-subscription.md) - Understanding quotas, rate limits, and tier capabilities
+> - [Metrics Reference](../reference/metrics.md) - Prometheus metrics definitions
+> - [Events SSE Contract](../developer-guide/events.md) - Real-time event streaming
 
 ## Dashboard Monitoring
 
@@ -262,6 +267,9 @@ Per-key circuit breaker state is included in `/stats`:
 ![Circuit Indicators](../screenshots/components/circuit-indicators.png)
 
 ## Alerts and Monitoring
+
+> **Security:** See [Security Configuration](../operations/security.md) for admin authentication and endpoint protection.
+> **Load Testing:** See [Load Testing Guide](../operations/load-testing.md) for performance baseline validation.
 
 ### Recommended Alerts
 
