@@ -1906,6 +1906,11 @@
                 case 'select-tenant':
                     selectTenant(element.value);
                     break;
+                case 'toggle-global-mapping':
+                    if (window.DashboardActions && window.DashboardActions.toggleGlobalMapping) {
+                        window.DashboardActions.toggleGlobalMapping();
+                    }
+                    break;
             }
         });
     }

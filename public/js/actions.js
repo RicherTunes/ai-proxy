@@ -306,6 +306,15 @@
         }
     }
 
+    function toggleGlobalMapping() {
+        var useGlobalEl = document.getElementById('useGlobalMapping');
+        if (!useGlobalEl || !currentKeyOverrides) return;
+        var useGlobal = useGlobalEl.checked;
+        currentKeyOverrides.useGlobal = useGlobal;
+        var addForm = document.getElementById('addOverrideForm');
+        if (addForm) addForm.style.display = useGlobal ? 'none' : 'flex';
+    }
+
     function saveKeyOverrides() {
         if (currentEditingKeyIndex === null) return;
         if (!STATE.routingData) { showToast('Routing data not available', 'error'); return; }
@@ -364,7 +373,8 @@
         addOverride: addOverride,
         removeOverride: removeOverride,
         saveKeyOverrides: saveKeyOverrides,
-        renderOverrideList: renderOverrideList
+        renderOverrideList: renderOverrideList,
+        toggleGlobalMapping: toggleGlobalMapping
     };
 
 })(window);
