@@ -7,6 +7,12 @@ title: Dashboard Guide
 
 The AI Proxy includes a comprehensive real-time dashboard for monitoring requests, managing routing, and diagnosing issues.
 
+> **Related:**
+> - [Monitoring Guide](./monitoring.md) - API endpoints for health and stats
+> - [Configuration Guide](./configuration.md) - Dashboard and proxy settings
+> - [Events SSE Contract](../developer-guide/events.md) - Real-time event streaming
+> - [Metrics Reference](../reference/metrics.md) - Prometheus metrics
+
 ## Accessing the Dashboard
 
 Once the proxy is running, access the dashboard at:
@@ -311,6 +317,8 @@ Sub-pages are also supported:
 
 ## Next Steps
 
-- [Configuration](./configuration/) - Customize proxy settings
-- [Monitoring](./monitoring/) - API endpoints for monitoring
-- [Model Routing](../features/model-routing/) - Detailed routing configuration
+> **More Guides:**
+> - [Configuration](./configuration.md) - Customize proxy settings
+> - [Monitoring](./monitoring.md) - API endpoints for monitoring
+> - [Model Routing](../features/model-routing.md) - Detailed routing configuration
+> - [Troubleshooting](../../TROUBLESHOOTING.md) - Common issues and solutions

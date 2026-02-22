@@ -7,6 +7,12 @@ title: Getting Started
 
 A step-by-step guide to get AI Proxy running.
 
+> **Related:**
+> - [Configuration Guide](./configuration.md) - All environment variables
+> - [Dashboard Guide](./dashboard.md) - Visual monitoring tour
+> - [Troubleshooting](../../TROUBLESHOOTING.md) - Common issues and solutions
+> - [Z.ai Documentation](../reference/zai-coding-subscription.md) - Tier limits and pricing
+
 > **New to this?** Start with the [README.md](../../README/) for a quick overview, then come back here for detailed instructions.
 
 ## What You'll Need
