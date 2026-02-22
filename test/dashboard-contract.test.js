@@ -107,6 +107,17 @@ describe('Dashboard HTML contract', () => {
     const duplicateClassAfterId = html.match(/id="[^"]*"[^>]*class="[^"]*"\s+class="/g);
     expect(duplicateClassAfterId || []).toHaveLength(0);
   });
+
+  test('global search input aria-controls points to searchHistoryDropdown', () => {
+    const searchInput = doc.getElementById('globalSearchInput');
+    expect(searchInput).not.toBeNull();
+    expect(searchInput.getAttribute('aria-controls')).toBe('searchHistoryDropdown');
+  });
+
+  test('searchHistoryDropdown element exists', () => {
+    const dropdown = doc.getElementById('searchHistoryDropdown');
+    expect(dropdown).not.toBeNull();
+  });
 });
 
 describe('HTML Structure Contracts', () => {
