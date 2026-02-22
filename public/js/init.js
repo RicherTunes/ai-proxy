@@ -612,7 +612,8 @@
             var matchesTab = sectionTab.split(' ').indexOf(tabName) !== -1;
             s.classList.toggle('page-hidden', !matchesTab);
         });
-        if (tabName === 'live' || tabName === 'traces') {
+        var DOCK_TABS = ['live', 'traces', 'logs', 'queue', 'circuit'];
+        if (DOCK_TABS.indexOf(tabName) !== -1) {
             switchDockTab(tabName);
             var drawer = document.getElementById('bottomDrawer');
             if (drawer && !drawer.classList.contains('expanded')) {
