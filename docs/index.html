@@ -150,6 +150,277 @@
             background: #28a745;
         }
 
+        /* Search Styles */
+        .search-container {
+            margin: 30px 0;
+            position: relative;
+        }
+
+        .search-toggle {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-toggle:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .search-toggle svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .search-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 10vh;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .search-overlay.hidden {
+            display: none;
+            opacity: 0;
+        }
+
+        .search-overlay.visible {
+            opacity: 1;
+        }
+
+        .search-modal {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .search-input-wrapper {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .search-input-wrapper svg {
+            width: 20px;
+            height: 20px;
+            color: #667eea;
+            flex-shrink: 0;
+        }
+
+        #search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 1.1rem;
+            font-family: inherit;
+            color: #333;
+        }
+
+        #search-input::placeholder {
+            color: #adb5bd;
+        }
+
+        .search-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #adb5bd;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .search-close:hover {
+            color: #333;
+        }
+
+        .search-results {
+            overflow-y: auto;
+            flex: 1;
+            padding: 0;
+        }
+
+        .search-results-header {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .search-results-list {
+            padding: 10px 0;
+        }
+
+        .search-result-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f1f3f5;
+            transition: background 0.2s;
+        }
+
+        .search-result-item:hover,
+        .search-result-item.selected {
+            background: #f8f9fa;
+        }
+
+        .search-result-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .search-result-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .search-result-title mark {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .search-result-category {
+            font-size: 0.85rem;
+            color: #667eea;
+            font-weight: 500;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .search-result-snippet {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .search-result-snippet mark {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+
+        .search-result-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .search-result-tags {
+            display: flex;
+            gap: 6px;
+        }
+
+        .search-result-tags .tag {
+            background: #e7f5ff;
+            color: #1971c2;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .search-result-relevance {
+            font-size: 0.75rem;
+            color: #adb5bd;
+            margin-left: auto;
+        }
+
+        .search-no-results {
+            padding: 40px 20px;
+            text-align: center;
+            color: #666;
+        }
+
+        .search-no-results p {
+            margin-bottom: 10px;
+        }
+
+        .search-suggestions {
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        .search-no-results ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 10px;
+        }
+
+        .search-no-results li {
+            color: #868e96;
+            font-size: 0.9rem;
+        }
+
+        .search-error {
+            padding: 40px 20px;
+            text-align: center;
+            color: #e74c3c;
+        }
+
+        .search-spinner {
+            padding: 40px;
+            text-align: center;
+            color: #adb5bd;
+        }
+
+        @media (max-width: 768px) {
+            .search-modal {
+                width: 95%;
+                max-height: 85vh;
+            }
+
+            .search-overlay {
+                padding-top: 5vh;
+            }
+
+            .search-result-item {
+                padding: 12px 15px;
+            }
+
+            .search-result-title {
+                font-size: 1rem;
+            }
+        }
+
         footer {
             text-align: center;
             padding: 40px 20px;
@@ -194,7 +465,31 @@
                 <a href="./user-guide/getting-started/">Get Started</a>
                 <a href="./releases/">Release Notes</a>
             </div>
+            <div class="search-container">
+                <button class="search-toggle" id="search-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    Search Documentation (Ctrl+K)
+                </button>
+            </div>
         </header>
+
+        <!-- Search Overlay -->
+        <div class="search-overlay hidden" id="search-overlay">
+            <div class="search-modal">
+                <div class="search-input-wrapper">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input type="text" id="search-input" placeholder="Search documentation..." autocomplete="off">
+                    <button class="search-close" id="search-close">&times;</button>
+                </div>
+                <div class="search-results" id="search-results">
+                    <div class="search-spinner">Loading search index...</div>
+                </div>
+            </div>
+        </div>
 
         <div class="content">
             <div class="section">
@@ -323,5 +618,19 @@
             <p>AI Proxy v2.0.1 | <a href="https://github.com/richtunes/ai-proxy">GitHub</a></p>
         </footer>
     </div>
+
+    <!-- Fuse.js for fuzzy search -->
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.min.js"></script>
+    <!-- Search functionality -->
+    <script src="/ai-proxy/js/search.js"></script>
+    <script>
+        // Keyboard shortcut for search (Ctrl+K or Cmd+K)
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                window.toggleSearch();
+            }
+        });
+    </script>
 </body>
 </html>
