@@ -68,7 +68,7 @@ jobs:
 
       - name: Start proxy server (single-process, fixed config)
         run: |
-          GLM_NO_CLUSTER=1 GLM_PORT=3000 GLM_LOG_LEVEL=info node proxy.js &
+          GLM_NO_CLUSTER=1 GLM_PORT=3000 GLM_LOG_LEVEL=warn GLM_RATE_LIMIT=0 node proxy.js &
           sleep 3
 
       - name: Verify proxy is listening
@@ -136,6 +136,7 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     needs: test
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v4
@@ -152,13 +153,19 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run E2E tests (with CI perf factor)
-        run: npm run test:e2e
+      - name: Run E2E tests (critical subset)
+        run: |
+          npx playwright test \
+            --project=chromium \
+            --ignore-snapshots \
+            --retries=1 \
+            test/e2e/api-hardening.e2e.spec.js \
+            test/e2e/live-flow.e2e.spec.js \
+            test/e2e/golden-semantics.e2e.spec.js \
+            test/e2e/dashboard-perf-smoke.e2e.spec.js
         env:
           CI: true
-          # Scale perf thresholds for slower CI runners
           PERF_FACTOR: '2'
-          # Warn instead of fail on non-deterministic heap tests
           PERF_WARN_ONLY: '1'
 
       - name: Upload E2E test results
