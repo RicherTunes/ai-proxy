@@ -7,6 +7,13 @@ title: Architecture
 
 System architecture overview for GLM Proxy.
 
+> **Related:**
+> - [Model Routing](../features/model-routing.md) - Tier-based routing configuration
+> - [Configuration Guide](../user-guide/configuration.md) - Environment variables
+> - [Metrics Reference](../reference/metrics.md) - Prometheus metrics
+> - [Events SSE Contract](./events.md) - Real-time event streaming
+> - [Testing Guide](./testing.md) - Test strategy and coverage
+
 > **Provider Context:** This proxy is designed for [Z.ai (GLM Coding Plan)](../reference/zai-coding-subscription/). See [Z.ai Knowledge Base](../reference/zai-knowledge-base/) for model specifications and API details.
 
 ## Overview

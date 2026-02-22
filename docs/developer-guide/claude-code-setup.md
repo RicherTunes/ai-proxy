@@ -7,6 +7,12 @@ title: Claude Code Setup for AI Proxy
 
 This guide helps you use Claude Code (Anthropic's AI CLI) effectively with this project.
 
+> **Related:**
+> - [Architecture Overview](./architecture.md) - System design and components
+> - [Testing Guide](./testing.md) - Test strategy and coverage
+> - [Configuration Guide](../user-guide/configuration.md) - Environment variables
+> - [Z.ai Knowledge Base](../reference/zai-knowledge-base.md#claude-code-integration) - GLM-specific setup
+
 > **Using Z.ai (GLM Coding Plan)?** See [Z.ai Knowledge Base](../reference/zai-knowledge-base.md#claude-code-integration) for specific setup instructions with GLM models.
 
 ## Dashboard Overview
