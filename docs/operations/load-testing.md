@@ -1,3 +1,8 @@
+---
+layout: default
+title: Load Testing Guide
+---
+
 # Load Testing Guide
 
 This document describes how to run load tests and validate performance baselines for the GLM Proxy.
@@ -74,6 +79,7 @@ Baselines are defined in `config/performance-baseline.json`. Each profile specif
 ### Prerequisites
 
 1. Start the proxy server:
+
    ```bash
    npm start
    ```
@@ -180,6 +186,7 @@ When performance improves, update the baseline thresholds:
 4. Document the change with date and reason
 
 Example update:
+
 ```json
 {
   "latency": {

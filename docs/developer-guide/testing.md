@@ -1,3 +1,8 @@
+---
+layout: default
+title: Testing
+---
+
 # Testing
 
 Test strategy and coverage information for GLM Proxy.
@@ -113,6 +118,7 @@ Tests that are temporarily disabled are tracked in:
 ## Continuous Integration
 
 Tests run automatically on:
+
 - Every push
 - Every pull request
 - Before release
@@ -140,11 +146,12 @@ NODE_ENV=test node --inspect-brk node_modules/.bin/jest --runInBand
 ## Test Data
 
 Test fixtures and mocks:
+
 - Mock API keys in test setup
 - Sample responses for testing
 - Error scenario mocks
 
 ## See Also
 
-- [TEST_PLAN.md](../../../test/TEST_PLAN.md) - Comprehensive test strategy
-- [COVERAGE_DEBT.md](../../../test/COVERAGE_DEBT.md) - Coverage tracking
+- [TEST_PLAN.md](../../../test/TEST_PLAN/) - Comprehensive test strategy
+- [COVERAGE_DEBT.md](../../../test/COVERAGE_DEBT/) - Coverage tracking

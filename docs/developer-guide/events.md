@@ -1,3 +1,8 @@
+---
+layout: default
+title: SSE Event Contract
+---
+
 # SSE Event Contract
 
 This document describes the Server-Sent Events (SSE) contract for the `/events` (alias: `/requests/stream`) endpoint.
@@ -21,10 +26,12 @@ The Requests page displays real-time events from the SSE stream:
 **Endpoint:** `GET /events` or `GET /requests/stream`
 
 **Query Parameters:**
+
 - `types` (optional): Comma-separated list of event types to subscribe to. Default: `all`
   - Valid types: `request`, `kpi`, `alert`, `all`
 
 **Example:**
+
 ```
 GET /events?types=request,kpi
 ```
@@ -52,6 +59,7 @@ All event payloads include these fields:
 Plus event-specific fields described below.
 
 **Sequence Number Semantics:**
+
 - `seq` is a global counter incremented once per broadcast event
 - All clients subscribed to the same event type receive the same `seq` value
 - The `connected` event has its own seq (unique to that client's connection)
@@ -216,6 +224,7 @@ The server implements backpressure to protect against slow clients:
 2. **Critical events** (`request`): Client disconnected after 30 seconds of backpressure
 
 Clients should:
+
 - Process events quickly
 - Track `seq` numbers to detect gaps
 - Reconnect and hydrate from `recentRequests` if gaps detected

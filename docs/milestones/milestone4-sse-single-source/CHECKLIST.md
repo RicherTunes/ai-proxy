@@ -1,13 +1,20 @@
+---
+layout: default
+title: Milestone 4 - Acceptance Checklist
+---
+
 # Milestone 4 - Acceptance Checklist
 
 ## Requirements from Plan
 
 ### 4.1 Remove dual emission paths ✅
+
 - [x] Remove `onRequest` callback usage in `ProxyServer`
 - [x] Remove callback invocation inside `RequestHandler.addRequestToStream()`
 - [x] Keep `EventEmitter` event only
 
 **Verification:**
+
 ```bash
 # Verify callback removed
 grep -n "onRequestCallback" lib/request-handler.js
@@ -23,12 +30,14 @@ grep -n "this.emit('request'" lib/request-handler.js
 ```
 
 ### 4.2 SSE broadcast ✅
+
 - [x] `ProxyServer` subscribes to RequestHandler `'request'` once
 - [x] Writes to all connected SSE responses
 - [x] Ensures cleanup on disconnect
 - [x] Never uses `readyState` (not a thing for Node `ServerResponse`)
 
 **Verification:**
+
 ```bash
 # Verify subscription
 grep -n "requestHandler.on('request'" lib/proxy-server.js
@@ -50,10 +59,12 @@ grep -n "readyState" lib/proxy-server.js
 ## Tests ✅
 
 ### Unit-test Requirements ✅
+
 - [x] Calling `addRequestToStream()` triggers exactly one handler
 - [x] Produces exactly one write per connected SSE client (with mocked response)
 
 **Test Coverage:**
+
 ```javascript
 // test/request-handler.test.js - Lines 1003-1100
 
@@ -91,6 +102,7 @@ describe('Milestone 4: SSE Single Source (No Double-Send)', () => {
 ## Test Results
 
 ### Manual Verification
+
 ```
 === Milestone 4: SSE Single Source Verification ===
 
@@ -104,6 +116,7 @@ describe('Milestone 4: SSE Single Source (No Double-Send)', () => {
 ```
 
 ### Integration Verification
+
 ```
 === SSE Integration Test ===
 
@@ -116,6 +129,7 @@ Test 4: Request stream buffer - ✓ PASS
 ```
 
 ### End-to-End Verification
+
 ```
 ╔════════════════════════════════════════════════════════════╗
 ║                    Test Summary                            ║

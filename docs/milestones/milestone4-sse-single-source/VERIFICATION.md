@@ -1,3 +1,8 @@
+---
+layout: default
+title: Milestone 4 Implementation Verification
+---
+
 # Milestone 4 Implementation Verification
 
 ## Summary
@@ -9,6 +14,7 @@ Milestone 4 - SSE "single source" (no double-send) has been successfully impleme
 ### 1. Removed Callback Path from RequestHandler (`lib/request-handler.js`)
 
 **Before:**
+
 ```javascript
 this.onRequestCallback = options.onRequest || null;  // SSE callback
 
@@ -20,6 +26,7 @@ if (this.onRequestCallback) {
 ```
 
 **After:**
+
 ```javascript
 // No callback storage
 
@@ -31,6 +38,7 @@ this.emit('request', normalized);
 ### 2. Updated ProxyServer to Subscribe to EventEmitter (`lib/proxy-server.js`)
 
 **Before:**
+
 ```javascript
 this.requestHandler = new RequestHandler({
     keyManager: this.keyManager,
@@ -44,6 +52,7 @@ this.requestHandler = new RequestHandler({
 ```
 
 **After:**
+
 ```javascript
 this.requestHandler = new RequestHandler({
     keyManager: this.keyManager,

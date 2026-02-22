@@ -1,3 +1,8 @@
+---
+layout: default
+title: Claude Code Setup for AI Proxy
+---
+
 # Claude Code Setup for AI Proxy
 
 This guide helps you use Claude Code (Anthropic's AI CLI) effectively with this project.

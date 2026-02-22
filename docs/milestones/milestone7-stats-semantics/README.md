@@ -1,3 +1,8 @@
+---
+layout: default
+title: Milestone 7: Stats Semantics
+---
+
 # Milestone 7: Stats Semantics
 
 **Status:** Completed | **Date:** 2024-01-27
@@ -16,7 +21,7 @@ Milestone 7 standardized statistics semantics across the system, ensuring consis
 
 | Document | Description |
 |----------|-------------|
-| [SUMMARY.md](./SUMMARY.md) | Milestone summary and achievements |
+| [SUMMARY.md](./SUMMARY/) | Milestone summary and achievements |
 
 ## Key Changes
 

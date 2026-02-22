@@ -1,16 +1,22 @@
+---
+layout: default
+title: Z.AI Model Concurrency & Availability Findings
+---
+
 # Z.AI Model Concurrency & Availability Findings
 
 **Date:** 2026-02-17/18
 **Subscription:** Coding Plan
-**Base URL:** https://api.z.ai/api/anthropic
+**Base URL:** <https://api.z.ai/api/anthropic>
 **Total Keys:** 20
 
-> **Related:** See [Z.ai Knowledge Base](../reference/zai-knowledge-base.md) for complete documentation on tiers, pricing, and API configuration.
-> **Quick Reference:** See [Z.ai Coding Subscription](../reference/zai-coding-subscription.md) for tier limits and quotas.
+> **Related:** See [Z.ai Knowledge Base](../reference/zai-knowledge-base/) for complete documentation on tiers, pricing, and API configuration.
+> **Quick Reference:** See [Z.ai Coding Subscription](../reference/zai-coding-subscription/) for tier limits and quotas.
 
 ## Key Finding: Concurrency is PER-ACCOUNT, not per-key
 
 Multi-key tests on `glm-4.7` and `glm-4.5-air` both confirm:
+
 - Spreading requests across multiple API keys does NOT increase throughput
 - All 20 keys share the same account-level concurrency quota
 - **The router's `concurrencyMultiplier` (= number of keys) is wrong and massively inflates capacity estimates**
@@ -81,6 +87,7 @@ Concurrency 11-12:  All green again (0 429s)
 ### 1. Remove unavailable models from tiers
 
 The following models must be removed from tier routing:
+
 - `glm-4-plus` (light tier)
 - `glm-4.5-airx` (medium tier)
 - `glm-4.7-flashx` (light tier)
@@ -111,6 +118,7 @@ Based on stress test results, recommended values:
 
 The proxy currently treats error 1113 (billing/subscription) the same as rate limit 429s.
 Error 1113 should be classified differently:
+
 - Don't retry (model is permanently unavailable on this subscription)
 - Don't cooldown (it's not a rate limit)
 - Mark model as "unavailable" and skip in routing

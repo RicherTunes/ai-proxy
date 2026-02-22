@@ -1,8 +1,13 @@
+---
+layout: default
+title: Configuration
+---
+
 # Configuration
 
 Complete reference for AI Proxy configuration options.
 
-> **New to configuration?** Start with the [Getting Started](./getting-started.md) guide for basic setup. You only need to read this if you want to customize advanced settings.
+> **New to configuration?** Start with the [Getting Started](./getting-started/) guide for basic setup. You only need to read this if you want to customize advanced settings.
 
 ## What Are Environment Variables?
 
@@ -11,18 +16,21 @@ Complete reference for AI Proxy configuration options.
 **How to set them:**
 
 **Mac/Linux:**
+
 ```bash
 export GLM_PORT=8080
 npm start
 ```
 
 **Windows PowerShell:**
+
 ```powershell
 $env:GLM_PORT="8080"
 npm start
 ```
 
 **Windows Command Prompt:**
+
 ```cmd
 set GLM_PORT=8080 && npm start
 ```
@@ -90,7 +98,7 @@ The `api-keys.json` file contains your API credentials:
 }
 ```
 
-> **Need API keys?** Sign up at [z.ai](https://z.ai) and create API keys in your dashboard. See [Z.ai Documentation](../reference/zai-coding-subscription.md) for tier comparisons and pricing.
+> **Need API keys?** Sign up at [z.ai](https://z.ai) and create API keys in your dashboard. See [Z.ai Documentation](../reference/zai-coding-subscription/) for tier comparisons and pricing.
 
 ### Fields
 
@@ -112,6 +120,7 @@ A **circuit breaker** is a safety feature that protects against failing API keys
 **Think of it like this:** Imagine you have 5 light bulbs in parallel, and one keeps burning out. A circuit breaker detects which bulb is faulty and turns it off, while the other 4 keep working. When the faulty bulb is replaced, the circuit breaker turns it back on.
 
 **In practice:**
+
 - If an API key starts failing (returns errors), the proxy stops using it
 - Other healthy keys continue working normally
 - After a cooldown period, the proxy tries the failed key again
@@ -167,6 +176,7 @@ When all API keys are busy handling their maximum number of concurrent requests,
 **What happens when the queue is full or timeout expires?**
 
 The client receives:
+
 - **Status:** 503 Service Unavailable
 - **Header:** `Retry-After: N` (tells the client how many seconds to wait before trying again)
 
@@ -238,8 +248,8 @@ Invoke-WebRequest -Uri http://127.0.0.1:18765/reload -Method POST
 
 ## See Also
 
-- **[Getting Started](./getting-started.md)** — Step-by-step setup guide
-- **[Monitoring](./monitoring.md)** — Health checks and statistics endpoints
+- **[Getting Started](./getting-started/)** — Step-by-step setup guide
+- **[Monitoring](./monitoring/)** — Health checks and statistics endpoints
 - **[Architecture - Circuit Breaker](../developer-guide/architecture.md#circuit-breaker)** — Circuit breaker design and diagrams
-- **[README.md](../../README.md)** — Project overview and quick start
-- **[TROUBLESHOOTING.md](../../TROUBLESHOOTING.md)** — Common issues and solutions
+- **[README.md](../../README/)** — Project overview and quick start
+- **[TROUBLESHOOTING.md](../../TROUBLESHOOTING/)** — Common issues and solutions

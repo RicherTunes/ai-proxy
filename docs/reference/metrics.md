@@ -1,3 +1,8 @@
+---
+layout: default
+title: Month 1 Metrics: 429 Efficiency & Retry Intelligence
+---
+
 # Month 1 Metrics: 429 Efficiency & Retry Intelligence
 
 Metrics added to quantify retry waste, give-up behavior, model routing effectiveness, and tier downgrade impact under 429 pressure. All counters are monotonic (Prometheus `counter` type) and reset only on proxy restart or explicit `/reset`.
@@ -39,6 +44,7 @@ Quantifies how well the pool and model router serve alternative models during re
 **JSON `/stats` path:** `retryEfficiency.sameModelRetries`, `retryEfficiency.totalModelsTriedOnFailure`, `retryEfficiency.totalModelSwitchesOnFailure`, `retryEfficiency.failedRequestsWithModelStats`
 
 **Recording sites:**
+
 - `sameModelRetries`: Inside 429 acceptance path only. A `modelWasAlreadyTried` flag is set in the model tracking block (before `attemptedModels.add()`), then checked inside the LLM 429 acceptance path (after `llm429Retries++`). This ensures the counter fires only for 429-driven retries, not on `responseStarted` breaks, cap-reached breaks, or non-429 errors.
 - `failedRequestsWithModelStats`: Fires exactly once per final failure, gated on `attemptedModels.size > 0` (excludes client disconnects that exit before any attempt completes).
 
@@ -202,6 +208,7 @@ rate(glm_proxy_tier_downgrade_shadow_total[5m])
 ```
 
 Derived values (compute in dashboards, not server-side):
+
 - Avg models tried per failure: `45 / 15 = 3.0`
 - Avg model switches per failure: `22 / 15 = 1.47`
 - Avg backoff delay: `18500 / 30 = 617ms`

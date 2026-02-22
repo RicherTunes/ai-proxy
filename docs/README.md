@@ -1,75 +1,84 @@
+---
+layout: default
+title: Documentation
+---
+
 # AI Proxy Documentation
 
-## Dashboard Preview
+Welcome to the AI Proxy documentation. This site is built with [Jekyll](https://jekyllrb.com/) and hosted on [GitHub Pages](https://pages.github.com/).
 
-The monitoring dashboard provides real-time visibility into your proxy:
+## Local Development
 
-![Dashboard Overview](./screenshots/overview.png)
+To test the documentation site locally:
 
-For a complete visual tour, see the [Dashboard Guide](./user-guide/dashboard.md) or browse the [Screenshots Gallery](./screenshots/).
+### Prerequisites
 
-## Quick Links
+- Ruby (version 2.5 or higher)
+- Bundler: `gem install bundler`
 
-- [Getting Started](./user-guide/getting-started.md) - Installation and quick start
-- [Dashboard Guide](./user-guide/dashboard.md) - Visual guide to the monitoring dashboard
-- [Configuration](./user-guide/configuration.md) - All configuration options
-- [Monitoring](./user-guide/monitoring.md) - Health checks and statistics
-- [Troubleshooting](../TROUBLESHOOTING.md) - Common issues and solutions
-- [Glossary](../README.md#glossary) - Technical terms explained
+### Build the Site
 
-> **New here?** Start with the main [README.md](../README.md) for a beginner-friendly introduction.
+1. Install dependencies:
+   ```bash
+   bundle install
+   ```
 
-## Documentation Sections
+2. Build the site:
+   ```bash
+   bundle exec jekyll build
+   ```
 
-### User Guide
-Documentation for running and monitoring AI Proxy.
+3. Serve locally (optional):
+   ```bash
+   bundle exec jekyll serve
+   ```
+   Then visit `http://localhost:4000/ai-proxy/`
 
-| Document | Description |
-|----------|-------------|
-| [Getting Started](./user-guide/getting-started.md) | Installation and quick start guide |
-| [Dashboard Guide](./user-guide/dashboard.md) | Visual tour of the monitoring dashboard with screenshots |
-| [Configuration](./user-guide/configuration.md) | Environment variables and api-keys.json options |
-| [Monitoring](./user-guide/monitoring.md) | Health checks, stats, and backpressure endpoints |
+### Quick Test
 
-### Developer Guide
-Documentation for contributors and integrators.
+Run the test script:
+```bash
+./scripts/test-build.sh
+```
 
-| Document | Description |
-|----------|-------------|
-| [Architecture](./developer-guide/architecture.md) | System architecture overview |
-| [Claude Code Setup](./developer-guide/claude-code-setup.md) | AI-assisted development setup |
-| [Events](./developer-guide/events.md) | Event system documentation |
-| [Testing](./developer-guide/testing.md) | Test strategy and coverage |
+## Adding New Documentation
 
-### Features
-Detailed documentation for specific features.
+1. Create a new markdown file in the appropriate directory under `docs/`
+2. Add front matter at the top:
+   ```yaml
+   ---
+   layout: default
+   title: Your Page Title
+   ---
+   ```
+3. Add a link to it in `docs/index.html` (without the `.md` extension)
 
-| Document | Description |
-|----------|-------------|
-| [Model Mapping](./features/model-mapping.md) | Model name mapping configuration |
-| [Model Routing](./features/model-routing.md) | Complexity-aware request routing |
-| [Chaos Mode](./features/chaos-mode.md) | Chaos testing and fault injection |
+## Link Format
 
-### Operations
-Guides for deploying and operating in production.
+- **External links in index.html**: Use directory format with trailing slash
+  - Correct: `./user-guide/getting-started/`
+  - Incorrect: `./user-guide/getting-started.md`
 
-| Document | Description |
-|----------|-------------|
-| [Security](./operations/security.md) | Security considerations and best practices |
-| [Load Testing](./operations/load-testing.md) | Performance testing procedures |
-| [Admin API](./operations/admin-api.md) | Cost tracking admin API reference |
+- **Internal markdown links**: Use directory format with trailing slash
+  - Correct: `[Getting Started](../user-guide/getting-started/)`
+  - Incorrect: `[Getting Started](../user-guide/getting-started.md)`
 
-### Reference
-API reference and metrics documentation.
+## Architecture
 
-| Document | Description |
-|----------|-------------|
-| [Metrics](./reference/metrics.md) | Month 1 metrics and performance data |
-| [Z.ai Coding Subscription](./reference/zai-coding-subscription.md) | Complete reference for Z.ai GLM Coding Plan tiers, limits, and API configuration |
-| [Z.ai Knowledge Base](./reference/zai-knowledge-base.md) | Comprehensive brain dump of all Z.ai knowledge: models, integrations, issues, history |
+- **`_layouts/default.html`**: Main layout template with styling
+- **`_config.yml`**: Jekyll configuration
+- **`docs/index.html`**: Landing page with navigation
+- **`docs/**/*.md`**: Documentation content with front matter
 
-### Milestones
-Historical documentation of completed milestones.
+## Styling
 
-- [Milestone 4: SSE Single Source](./milestones/milestone4-sse-single-source/) - SSE event consolidation
-- [Milestone 7: Stats Semantics](./milestones/milestone7-stats-semantics/) - Statistics normalization
+The documentation uses a custom gradient design with:
+- Purple gradient background (#667eea to #764ba2)
+- White content cards
+- Responsive grid layout
+- Syntax highlighting for code blocks
+
+## Deployment
+
+The site is automatically deployed to GitHub Pages when changes are pushed to the main branch. The site is available at:
+https://richtunes.github.io/ai-proxy/

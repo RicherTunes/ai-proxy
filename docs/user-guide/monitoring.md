@@ -1,8 +1,13 @@
+---
+layout: default
+title: Monitoring
+---
+
 # Monitoring
 
 Guide for monitoring GLM Proxy health and performance.
 
-> **New to Z.ai?** See [Z.ai Documentation](../reference/zai-coding-subscription.md) for understanding quotas, rate limits, and tier capabilities.
+> **New to Z.ai?** See [Z.ai Documentation](../reference/zai-coding-subscription/) for understanding quotas, rate limits, and tier capabilities.
 
 ## Dashboard Monitoring
 

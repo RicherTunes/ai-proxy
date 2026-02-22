@@ -1,10 +1,15 @@
+---
+layout: default
+title: Z.ai (Zhipu AI) - Complete Knowledge Base
+---
+
 # Z.ai (Zhipu AI) - Complete Knowledge Base
 
 > **Last Updated:** February 21, 2026 @ 16:30 EST
 > **Provider:** Zhipu AI (Z.ai / BigModel.cn)
 > **Purpose:** Comprehensive brain dump of all Z.ai knowledge for integration and reference
 >
-> **See Also:** [Z.ai Coding Subscription Quick Reference](./zai-coding-subscription.md)
+> **See Also:** [Z.ai Coding Subscription Quick Reference](./zai-coding-subscription/)
 
 ---
 
@@ -70,13 +75,13 @@ Z.ai (Zhipu AI / 智谱AI) is a Chinese AI company offering GLM (General Languag
 
 | Purpose | URL |
 |---------|-----|
-| **International Dashboard** | https://z.ai |
-| **China Dashboard** | https://open.bigmodel.cn |
-| **API Keys (Intl)** | https://z.ai/manage-apikey/apikey-list |
-| **Subscriptions (Intl)** | https://z.ai/manage-apikey/subscription |
-| **International Docs** | https://docs.z.ai/devpack/overview |
-| **China Docs** | https://docs.bigmodel.cn/cn/coding-plan/overview |
-| **Quick Start** | https://docs.z.ai/devpack/quick-start |
+| **International Dashboard** | <https://z.ai> |
+| **China Dashboard** | <https://open.bigmodel.cn> |
+| **API Keys (Intl)** | <https://z.ai/manage-apikey/apikey-list> |
+| **Subscriptions (Intl)** | <https://z.ai/manage-apikey/subscription> |
+| **International Docs** | <https://docs.z.ai/devpack/overview> |
+| **China Docs** | <https://docs.bigmodel.cn/cn/coding-plan/overview> |
+| **Quick Start** | <https://docs.z.ai/devpack/quick-start> |
 
 ---
 
@@ -87,6 +92,7 @@ Z.ai (Zhipu AI / 智谱AI) is a Chinese AI company offering GLM (General Languag
 **Target:** Individual developers using AI coding assistants
 
 **Features:**
+
 - Subscription-based pricing (not token-based)
 - 5-hour rolling window quotas
 - Compatible with 10+ coding tools
@@ -100,12 +106,14 @@ Z.ai (Zhipu AI / 智谱AI) is a Chinese AI company offering GLM (General Languag
 **Target:** Developers building applications
 
 **Features:**
+
 - Token-based pricing
 - Standard OpenAI-compatible endpoints
 - Flexible usage without quotas
 - Higher per-token cost than coding plan
 
 **Pricing Example:**
+
 - GLM-4.7: $0.60/1M tokens (input), $2.20/1M tokens (output)
 - GLM-4.7-Flash: Free tier available (1 concurrent request limit)
 
@@ -114,6 +122,7 @@ Z.ai (Zhipu AI / 智谱AI) is a Chinese AI company offering GLM (General Languag
 **Launched:** October 2025
 
 **Features:**
+
 - Custom deployments
 - Dedicated support
 - SLA guarantees
@@ -124,6 +133,7 @@ Z.ai (Zhipu AI / 智谱AI) is a Chinese AI company offering GLM (General Languag
 **Description:** Lightweight AI IDE by Zhipu AI
 
 **Features:**
+
 - Multi-agent unified scheduling (Claude Code, Codex, Gemini)
 - Dynamic thinking mechanism
 - Security control system
@@ -133,6 +143,7 @@ Z.ai (Zhipu AI / 智谱AI) is a Chinese AI company offering GLM (General Languag
 ### 5. GLM-4.7-Flash (Free Tier)
 
 **Limits:**
+
 - 1 concurrent request
 - Free for development/testing
 - Production use requires paid tier
@@ -216,6 +227,7 @@ Z.ai (Zhipu AI / 智谱AI) is a Chinese AI company offering GLM (General Languag
 #### GLM-4.7 (Current Flagship)
 
 **Strengths:**
+
 - SOTA open-source coding model
 - 128K-200K context window
 - Native 55+ tokens/second generation speed
@@ -224,6 +236,7 @@ Z.ai (Zhipu AI / 智谱AI) is a Chinese AI company offering GLM (General Languag
 - Thinking mode for complex reasoning
 
 **Best For:**
+
 - Large codebase analysis
 - Complex refactoring tasks
 - Multi-file code generation
@@ -232,12 +245,14 @@ Z.ai (Zhipu AI / 智谱AI) is a Chinese AI company offering GLM (General Languag
 #### GLM-5 (New Release)
 
 **Improvements over GLM-4.7:**
+
 - 754B parameters (2x+ GLM-4.7)
 - Approaches Claude Opus 4.5 performance
 - Better reasoning capabilities
 - Improved code understanding
 
 **Trade-offs:**
+
 - Significantly higher token consumption
 - Pro/Max only (Lite not supported yet)
 - Higher latency than GLM-4.7
@@ -245,11 +260,13 @@ Z.ai (Zhipu AI / 智谱AI) is a Chinese AI company offering GLM (General Languag
 #### GLM-4.5-Air (Cost Optimized)
 
 **Strengths:**
+
 - Lowest token cost
 - Fast response times
 - Good for simple tasks
 
 **Best For:**
+
 - Simple code completion
 - Bug fixes in small files
 - Quick queries
@@ -265,6 +282,7 @@ Z.ai (Zhipu AI / 智谱AI) is a Chinese AI company offering GLM (General Languag
 | GLM-5 | TBD | Expected 200K+ |
 
 **Context Equivalents:**
+
 - 128K ≈ 150 pages of complex documents
 - 128K ≈ 200 pages of PPT
 - 128K ≈ 1 hour of video
@@ -360,18 +378,21 @@ print(message.content[0].text)
 #### For Claude Code
 
 **macOS/Linux:**
+
 ```bash
 export ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
 export ANTHROPIC_API_KEY="your-zai-api-key"
 ```
 
 **Windows PowerShell:**
+
 ```powershell
 $env:ANTHROPIC_BASE_URL = "https://open.bigmodel.cn/api/anthropic"
 $env:ANTHROPIC_API_KEY = "your-zai-api-key"
 ```
 
 **Windows CMD:**
+
 ```cmd
 set ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic
 set ANTHROPIC_API_KEY=your-zai-api-key
@@ -404,12 +425,14 @@ export OPENAI_API_KEY="your-zai-api-key"
 ### Understanding the 5-Hour Rolling Window
 
 **How it works:**
+
 1. The system tracks all prompt usage within a sliding 5-hour window
 2. Quota used 5+ hours ago automatically releases
 3. No fixed reset times (unlike "daily" or "monthly" quotas)
 4. Dynamic recovery based on consumption patterns
 
 **Example:**
+
 - At 10:00: Use 50 prompts (70 remaining)
 - At 12:00: Use 30 prompts (40 remaining)
 - At 14:00: The 50 prompts from 10:00 "expire" from the window (90 available)
@@ -514,6 +537,7 @@ In `.claude/settings.json`:
 ```
 
 **Available Models for Claude Code:**
+
 - `glm-4.7` (recommended)
 - `glm-4.6`
 - `glm-4.5`
@@ -599,13 +623,16 @@ In `.claude/settings.json`:
 ### Issue #1: Undocumented Concurrency Limit
 
 **Description:**
+
 - GLM 4.7 appears to only allow **1 concurrent in-flight request**, even on paid tiers
 - This limit is not documented officially
 
 **Reported In:**
+
 - GitHub issue: [anomalyco/opencode#8618](https://github.com/anomalyco/opencode/issues/8618)
 
 **Workaround:**
+
 ```javascript
 // Implement queue-based request handling
 class GLMRequestQueue {
@@ -643,11 +670,13 @@ class GLMRequestQueue {
 ### Issue #2: Peak Hour Slowdowns
 
 **Description:**
+
 - Weekdays 15:00-18:00 (3-6 PM) experience significant slowdowns
 - Concurrent rate limiting errors
 - Slower model responses
 
 **Workarounds:**
+
 1. **Schedule heavy work for off-peak hours** (before 15:00, after 18:00)
 2. **Upgrade to Max tier** - guaranteed "no lag" during peak
 3. **Enable auto-renewal** - more stable resource allocation
@@ -673,11 +702,13 @@ async function callGLMWithRetry(request, maxRetries = 3) {
 ### Issue #3: GLM-5 High Token Consumption
 
 **Description:**
+
 - GLM-5 uses significantly more quota per prompt than GLM-4.7
 - Exact multiplier not documented
 - Can exhaust quota faster than expected
 
 **Workaround:**
+
 - Use GLM-4.7 for routine tasks
 - Reserve GLM-5 for complex reasoning only
 - Monitor quota usage in real-time
@@ -699,10 +730,12 @@ function selectModelForTask(complexity) {
 ### Issue #4: Daily Purchase Limits
 
 **Description:**
+
 - Since January 23, 2026, daily sales limited to 20% of capacity
 - New subscriptions may not be available every day
 
 **Workarounds:**
+
 1. **Try early in the day** - quota refreshes at 10:00
 2. **Enable auto-renewal** - unaffected by daily limits
 3. **Purchase quarterly/yearly** - lock in longer term
@@ -764,6 +797,7 @@ function selectModelForTask(complexity) {
 **Repository:** [github.com/guyinwonder168/opencode-glm-quota](https://github.com/guyinwonder168/opencode-glm-quota)
 
 **Features:**
+
 - Real-time quota monitoring
 - 5-hour token cycle tracking
 - Monthly MCP usage statistics
@@ -814,21 +848,21 @@ function selectModelForTask(complexity) {
 
 | Resource | URL |
 |----------|-----|
-| **Z.ai International Docs** | https://docs.z.ai/devpack/overview |
-| **Z.ai Quick Start** | https://docs.z.ai/devpack/quick-start |
-| **BigModel China Docs** | https://docs.bigmodel.cn/cn/coding-plan/overview |
-| **Z Code User Guide** | https://zhipu-ai.feishu.cn/wiki/VpgrwtBcyiU59zk9fMEcm2sFnee |
-| **Z Code Tutorial** | https://blog.csdn.net/YellowSun24/article/details/156856512 |
+| **Z.ai International Docs** | <https://docs.z.ai/devpack/overview> |
+| **Z.ai Quick Start** | <https://docs.z.ai/devpack/quick-start> |
+| **BigModel China Docs** | <https://docs.bigmodel.cn/cn/coding-plan/overview> |
+| **Z Code User Guide** | <https://zhipu-ai.feishu.cn/wiki/VpgrwtBcyiU59zk9fMEcm2sFnee> |
+| **Z Code Tutorial** | <https://blog.csdn.net/YellowSun24/article/details/156856512> |
 
 ### Key Management URLs
 
 | Purpose | URL |
 |---------|-----|
-| **API Keys (International)** | https://z.ai/manage-apikey/apikey-list |
-| **Subscriptions (International)** | https://z.ai/manage-apikey/subscription |
-| **API Keys (China)** | https://open.bigmodel.cn/apikey |
-| **Dashboard (International)** | https://z.ai/dashboard |
-| **Dashboard (China)** | https://open.bigmodel.cn |
+| **API Keys (International)** | <https://z.ai/manage-apikey/apikey-list> |
+| **Subscriptions (International)** | <https://z.ai/manage-apikey/subscription> |
+| **API Keys (China)** | <https://open.bigmodel.cn/apikey> |
+| **Dashboard (International)** | <https://z.ai/dashboard> |
+| **Dashboard (China)** | <https://open.bigmodel.cn> |
 
 ---
 
@@ -902,6 +936,7 @@ For the most current information, always check official sources at z.ai or open.
 | **API Pricing** | ¥4/1M input, ¥16/1M output | 50-60% cheaper than Claude |
 
 **Strengths:**
+
 - Largest context window (1M tokens expandable)
 - 370+ programming language support
 - "Agentic training" with 800K verified coding tasks
@@ -916,6 +951,7 @@ For the most current information, always check official sources at z.ai or open.
 | **General Pro** | ¥0.0008/1K tokens | 62.7% cost reduction |
 
 **Strengths:**
+
 - Figma-to-code conversion
 - Context engineering for requirements
 - Multi-modal interaction
@@ -940,13 +976,14 @@ For the most current information, always check official sources at z.ai or open.
 ### Cursor IDE - Complete Setup
 
 #### Prerequisites
+
 - Cursor IDE installed
 - Z.ai GLM Coding Plan subscription
 - API Key (format: `sk-sp-xxxxx` for Coding Plan)
 
 #### Step 1: Get Your API Key
 
-1. Visit https://z.ai or https://www.bigmodel.cn/glm-coding
+1. Visit <https://z.ai> or <https://www.bigmodel.cn/glm-coding>
 2. Go to **Personal Center** → **API Keys**
 3. Create a new API Key
 4. **Important:** Use the **Coding Plan专属 API Key** (format: `sk-sp-xxxxx`)
@@ -968,6 +1005,7 @@ Model: glm-4.7 (or glm-5 for Pro/Max subscribers)
 #### Step 3: Verify Configuration
 
 Test with a simple prompt:
+
 ```
 Can you write a Python function to calculate fibonacci numbers?
 ```
@@ -987,6 +1025,7 @@ If successful, you should see GLM-4.7 responding.
 ### Cline (VS Code Extension) - Complete Setup
 
 #### Prerequisites
+
 - VS Code installed
 - GLM Coding Plan subscription
 - API Key from Zhipu AI console
@@ -1035,6 +1074,7 @@ For optimal performance with Cline:
 ### Roo Code - Complete Setup
 
 #### Prerequisites
+
 - Roo Code VS Code extension installed
 - Z.ai GLM Coding Plan subscription
 
@@ -1076,6 +1116,7 @@ npx @z_ai/coding-helper
 ```
 
 Follow the prompts:
+
 1. Select **Coding Plan**: China version (中国版)
 2. Enter your **API Key** (`sk-sp-xxxxx`)
 3. Select **Coding Tool**: Claude Code / Roo Code / Cursor / Cline
@@ -1132,16 +1173,18 @@ For **macOS/Linux** (`~/.claude/settings.json`):
 
 | Aspect | Details |
 |--------|---------|
-| **Privacy Policy** | https://bigmodel.cn/dev/howuse/privacypolicy |
+| **Privacy Policy** | <https://bigmodel.cn/dev/howuse/privacypolicy> |
 | **Provider** | Beijing Zhipu Huazhang Technology Co., Ltd. |
 | **Effective Date** | May 20, 2025 |
 | **Data Categories** | Essential Information vs Optional Information |
 
 **Data Types Collected:**
+
 - **Essential Information:** Required for basic functionality
 - **Optional Information:** For enhanced features
 
 **User Rights:**
+
 - Access and manage personal information
 - Delete account and data
 - Opt-out of optional data collection
@@ -1158,7 +1201,7 @@ For **macOS/Linux** (`~/.claude/settings.json`):
 
 ### Recommendations for Privacy-Conscious Users
 
-1. **Review Privacy Policy Directly:** https://bigmodel.cn/dev/howuse/privacypolicy
+1. **Review Privacy Policy Directly:** <https://bigmodel.cn/dev/howuse/privacypolicy>
 2. **Contact Enterprise Sales:** For formal Data Processing Addendum
 3. **Check Data Residency:** China-based vs Singapore-based options
 4. **Consider Local Deployment:** For sensitive data (CodeGeeX offers this)
@@ -1245,6 +1288,7 @@ The Z.ai Python SDK documents these error types:
 ### "Sold Out" (售罄) Information
 
 When subscriptions show as "sold out":
+
 - **Wait until 10:00 AM next day** for quota refresh
 - **Check availability throughout the day** - cancellations may open spots
 - **Consider auto-renewal** - guaranteed renewal
@@ -1337,4 +1381,4 @@ This document aggregates information from:
 - **Claude Code + GLM Setup:** [CSDN Tutorial](https://blog.csdn.net/2603_95241649/article/details/158124858) (Feb 15, 2026)
 - **Chinese AI Comparison:** Multiple sources on 通义灵码, 豆包编程, CodeGeeX
 - **DeepSeek V3 Pricing:** Industry comparison articles (2026)
-- **Privacy Policy:** https://bigmodel.cn/dev/howuse/privacypolicy
+- **Privacy Policy:** <https://bigmodel.cn/dev/howuse/privacypolicy>

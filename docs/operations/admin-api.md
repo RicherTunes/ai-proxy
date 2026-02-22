@@ -1,3 +1,8 @@
+---
+layout: default
+title: Cost Tracking Admin API Quick Reference
+---
+
 # Cost Tracking Admin API Quick Reference
 
 ## Dashboard Visualization
@@ -28,6 +33,7 @@ curl -H "x-admin-token: YOUR_ADMIN_TOKEN" http://localhost:8080/admin/cost-track
 Get current cost tracking configuration.
 
 **Response:**
+
 - `rates` - Default pricing rates
 - `modelRates` - Per-model pricing
 - `budget` - Budget settings
@@ -35,6 +41,7 @@ Get current cost tracking configuration.
 - `persistPath` - Persistence file path
 
 **Example:**
+
 ```bash
 curl -H "x-admin-token: TOKEN" /admin/cost-tracking/config
 ```
@@ -46,6 +53,7 @@ curl -H "x-admin-token: TOKEN" /admin/cost-tracking/config
 Update cost tracking configuration.
 
 **Request Body (all fields optional):**
+
 ```json
 {
   "rates": {
@@ -68,10 +76,12 @@ Update cost tracking configuration.
 ```
 
 **Validation:**
+
 - Rates must be non-negative numbers
 - Budget thresholds must be 0-1
 
 **Example:**
+
 ```bash
 curl -X POST \
   -H "x-admin-token: TOKEN" \
@@ -87,6 +97,7 @@ curl -X POST \
 Get detailed cost tracking metrics.
 
 **Response:**
+
 ```json
 {
   "metrics": {
@@ -106,6 +117,7 @@ Get detailed cost tracking metrics.
 ```
 
 **Example:**
+
 ```bash
 curl -H "x-admin-token: TOKEN" /admin/cost-tracking/metrics
 ```
@@ -117,6 +129,7 @@ curl -H "x-admin-token: TOKEN" /admin/cost-tracking/metrics
 Force immediate save to disk.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -126,11 +139,13 @@ Force immediate save to disk.
 ```
 
 **Use when:**
+
 - Before server shutdown
 - Before backup
 - To ensure data persistence
 
 **Example:**
+
 ```bash
 curl -X POST \
   -H "x-admin-token: TOKEN" \
@@ -146,6 +161,7 @@ Reset all cost tracking data.
 **⚠️ Warning:** Destructive operation, cannot be undone.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -155,6 +171,7 @@ Reset all cost tracking data.
 ```
 
 **Example:**
+
 ```bash
 curl -X POST \
   -H "x-admin-token: TOKEN" \
