@@ -9,6 +9,18 @@ This guide helps you use Claude Code (Anthropic's AI CLI) effectively with this 
 
 > **Using Z.ai (GLM Coding Plan)?** See [Z.ai Knowledge Base](../reference/zai-knowledge-base.md#claude-code-integration) for specific setup instructions with GLM models.
 
+## Dashboard Overview
+
+The AI Proxy dashboard provides real-time visibility into your proxy operations:
+
+![Dashboard Overview](../screenshots/overview.png)
+
+### Keyboard Shortcuts
+
+Power users can navigate the dashboard efficiently using keyboard shortcuts:
+
+![Keyboard Shortcuts](../screenshots/modals/keyboard-shortcuts.png)
+
 ## Project Context
 
 AI Proxy is a high-performance API proxy written in Node.js using **CommonJS** (not ESM).

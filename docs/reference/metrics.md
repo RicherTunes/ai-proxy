@@ -9,6 +9,34 @@ Metrics added to quantify retry waste, give-up behavior, model routing effective
 
 > **Related:** See [Model Routing](../features/model-routing.md) for configuration details and [Z.ai Knowledge Base](zai-knowledge-base.md#rate-limits--quotas) for provider-specific rate limit behavior.
 
+## Dashboard Visualization
+
+The System page provides visual access to key metrics:
+
+![System Page](../screenshots/system.png)
+
+### Key Metrics Visualizations
+
+**Error Breakdown** - View error distribution including 429s and timeouts:
+
+![Error Breakdown](../screenshots/system/error-breakdown.png)
+
+**Retry Analytics** - Monitor retry behavior and success rates:
+
+![Retry Analytics](../screenshots/system/retry-analytics.png)
+
+**Health Score** - Overall system health indicator:
+
+![Health Score](../screenshots/system/health-score.png)
+
+**Request Rate Chart** - Throughput over time:
+
+![Request Rate Chart](../screenshots/components/request-rate-chart.png)
+
+**Latency Chart** - Response time distribution:
+
+![Latency Chart](../screenshots/components/latency-chart.png)
+
 ## Endpoints
 
 | Endpoint | Format | Includes Month 1? |
