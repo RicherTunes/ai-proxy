@@ -330,17 +330,11 @@ describe('Hash route normalization for dock tabs (M1.3)', () => {
         });
 
         test('switchRequestTab calls switchDockTab for logs, queue and circuit (not only live/traces)', () => {
-            // The fix: the condition must cover logs, queue and circuit too.
-            // A correct implementation will NOT have a narrow guard that only checks live/traces.
-            // We verify that switchDockTab is invoked for all five dock tabs, not just live|traces.
             const narrowGuard = /if\s*\(\s*tabName\s*===\s*['"]live['"]\s*\|\|\s*tabName\s*===\s*['"]traces['"]\s*\)/;
             expect(initSource).not.toMatch(narrowGuard);
         });
 
         test('switchRequestTab opens drawer for all dock-tab routes (logs, queue, circuit)', () => {
-            // After the fix the drawer-open logic must not be gated on live|traces only.
-            // We check that setDrawerExpanded is called within switchRequestTab for dock tabs generically.
-            // The source should contain a DOCK_TABS set/array or equivalent broad condition.
             const hasDockTabSet = /DOCK_TABS|dockTabs|dock_tabs/.test(initSource) ||
                 /includes\(tabName\)/.test(initSource) ||
                 /indexOf\(tabName\)/.test(initSource);
@@ -357,7 +351,6 @@ describe('Hash route normalization for dock tabs (M1.3)', () => {
             dom = new JSDOM(html, { runScripts: 'outside-only' });
             doc = dom.window.document;
 
-            // Relocate dock panels (mirrors init.js relocateDockPanels)
             const drawerContent = doc.getElementById('drawerContent');
             const dockContainer = doc.getElementById('dockPanelsContainer');
             if (drawerContent && dockContainer) {
@@ -369,7 +362,6 @@ describe('Hash route normalization for dock tabs (M1.3)', () => {
             }
         }
 
-        // Minimal switchDockTab simulation (mirrors init.js logic)
         function switchDockTab(tabName) {
             doc.querySelectorAll('.dock-tab').forEach(btn => {
                 const isActive = btn.dataset.dockTab === tabName;
@@ -383,7 +375,6 @@ describe('Hash route normalization for dock tabs (M1.3)', () => {
             }
         }
 
-        // Minimal switchRequestTab simulation reflecting the FIXED behaviour
         function switchRequestTab(tabName) {
             const DOCK_TABS = ['live', 'traces', 'logs', 'queue', 'circuit'];
             if (DOCK_TABS.indexOf(tabName) !== -1) {
@@ -429,5 +420,74 @@ describe('Hash route normalization for dock tabs (M1.3)', () => {
                 });
             });
         });
+    });
+});
+
+// ── M1.2: useGlobalMapping toggle — no inline handler ────────────────────
+
+describe('M1.2: useGlobalMapping checkbox uses data-action (no inline handler)', () => {
+    let doc;
+
+    beforeAll(() => {
+        const html = generateDashboard({ nonce: '', cspEnabled: false });
+        doc = new JSDOM(html).window.document;
+    });
+
+    test('useGlobalMapping checkbox exists in the DOM', () => {
+        const checkbox = doc.getElementById('useGlobalMapping');
+        expect(checkbox).not.toBeNull();
+    });
+
+    test('useGlobalMapping checkbox does NOT use inline onchange handler', () => {
+        const checkbox = doc.getElementById('useGlobalMapping');
+        expect(checkbox).not.toBeNull();
+        expect(checkbox.getAttribute('onchange')).toBeNull();
+    });
+
+    test('useGlobalMapping checkbox uses data-action="toggle-global-mapping"', () => {
+        const checkbox = doc.getElementById('useGlobalMapping');
+        expect(checkbox).not.toBeNull();
+        expect(checkbox.getAttribute('data-action')).toBe('toggle-global-mapping');
+    });
+});
+
+describe('M1.2: actions.js handles toggle-global-mapping action', () => {
+    let actionsSource;
+
+    beforeAll(() => {
+        actionsSource = fs.readFileSync(
+            path.join(__dirname, '..', 'public', 'js', 'actions.js'),
+            'utf8'
+        );
+    });
+
+    test('actions.js defines a toggleUseGlobalMapping function or equivalent logic', () => {
+        expect(actionsSource).toMatch(/toggleGlobalMapping|toggle-global-mapping/);
+    });
+
+    test('actions.js exports toggleGlobalMapping via DashboardActions', () => {
+        expect(actionsSource).toMatch(/toggleGlobalMapping/);
+        expect(actionsSource).toMatch(/useGlobalMapping/);
+        expect(actionsSource).toMatch(/currentKeyOverrides\.useGlobal/);
+        expect(actionsSource).toMatch(/addOverrideForm/);
+    });
+});
+
+describe('M1.2: init.js change-event delegation handles toggle-global-mapping', () => {
+    let initSource;
+
+    beforeAll(() => {
+        initSource = fs.readFileSync(
+            path.join(__dirname, '..', 'public', 'js', 'init.js'),
+            'utf8'
+        );
+    });
+
+    test('init.js change-event delegation handles toggle-global-mapping action', () => {
+        expect(initSource).toMatch(/toggle-global-mapping/);
+    });
+
+    test('init.js does NOT use inline toggleUseGlobalMapping call', () => {
+        expect(initSource).not.toMatch(/onchange=["']toggleUseGlobalMapping\(\)["']/);
     });
 });

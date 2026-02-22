@@ -358,6 +358,7 @@ describe('data-action handler completeness', () => {
         'close-panel', 'view-request',
         'toggle-upgrade-info', 'reload-page', 'dismiss-banner',
         'noop', 'kpi-navigate', 'enable-routing', 'toggle-routing', 'scroll-to-account-usage',
+        'toggle-global-mapping',
         // Nested sub-cases
         'sort-models', 'select-tenant',
         // Handled in context-menu.js (separate event listener)
