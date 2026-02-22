@@ -12,11 +12,11 @@
         "npmPublish": false
       }
     ],
-    "@semantic-release/git",
     [
-      "@semantic-release/exec",
+      "@semantic-release/github",
       {
-        "prepareCmd": "echo \"${nextRelease.version}\" > .version"
+        "successComment": false,
+        "failComment": false
       }
     ]
   ]
