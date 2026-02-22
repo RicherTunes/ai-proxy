@@ -1250,7 +1250,7 @@
         var searchInput = document.getElementById('globalSearchInput');
         if (searchInput && !searchInput.getAttribute('aria-label')) {
             searchInput.setAttribute('aria-label', 'Search requests');
-            searchInput.setAttribute('aria-controls', 'searchResults');
+            searchInput.setAttribute('aria-controls', 'searchHistoryDropdown');
         }
         document.querySelectorAll('.dock-tab').forEach(function(btn) {
             var isActive = btn.classList.contains('active');
