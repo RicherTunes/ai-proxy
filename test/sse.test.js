@@ -23,6 +23,15 @@ describe('sse.js - DashboardSSE module', () => {
     let document;
     let mockStore;
 
+    afterEach(() => {
+        if (window?.DashboardSSE?.cleanup) {
+            window.DashboardSSE.cleanup();
+        }
+        if (dom?.window?.close) {
+            dom.window.close();
+        }
+    });
+
     function setupDOM(html = '') {
         dom = new JSDOM(`
             <!DOCTYPE html>

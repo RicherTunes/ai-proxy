@@ -600,6 +600,7 @@
         cleanup: function() {
             if (requestPollingIntervalId) clearInterval(requestPollingIntervalId);
             if (staleCheckIntervalId) clearInterval(staleCheckIntervalId);
+            if (virtualScrollRAF) { cancelAnimationFrame(virtualScrollRAF); virtualScrollRAF = null; }
         }
     };
 

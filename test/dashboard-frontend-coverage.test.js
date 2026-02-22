@@ -51,6 +51,10 @@ describe('Page navigation (switchPage)', () => {
         doc = new JSDOM(html).window.document;
     });
 
+    afterEach(() => {
+        if (doc && doc.defaultView) doc.defaultView.close();
+    });
+
     test('four page nav buttons exist: overview, routing, requests, system', () => {
         const btns = doc.querySelectorAll('.page-nav-btn');
         const pages = Array.from(btns).map(b => b.dataset.page);
@@ -182,6 +186,10 @@ describe('Routing tab switching (switchRoutingTab)', () => {
         doc = new JSDOM(html).window.document;
     });
 
+    afterEach(() => {
+        if (doc && doc.defaultView) doc.defaultView.close();
+    });
+
     test('four routing tab buttons exist', () => {
         const btns = doc.querySelectorAll('.routing-tab-btn');
         const tabNames = Array.from(btns).map(b => b.dataset.routingTab);
@@ -279,6 +287,10 @@ describe('Dock tab and panel completeness', () => {
         doc = new JSDOM(html).window.document;
     });
 
+    afterAll(() => {
+        if (doc && doc.defaultView) doc.defaultView.close();
+    });
+
     const DOCK_TABS = ['live', 'traces', 'logs', 'queue', 'circuit'];
 
     test('all five dock tab buttons exist in drawer', () => {
@@ -370,6 +382,10 @@ describe('data-action handler completeness', () => {
         doc = new JSDOM(html).window.document;
     });
 
+    afterAll(() => {
+        if (doc && doc.defaultView) doc.defaultView.close();
+    });
+
     test('every data-action in HTML has a handler in init.js', () => {
         const elements = doc.querySelectorAll('[data-action]');
         const usedActions = new Set();
@@ -412,6 +428,10 @@ describe('Space-separated data-belongs-to integrity', () => {
 
     beforeAll(() => {
         doc = new JSDOM(html).window.document;
+    });
+
+    afterAll(() => {
+        if (doc && doc.defaultView) doc.defaultView.close();
     });
 
     test('all data-belongs-to values reference valid page names', () => {
@@ -549,6 +569,10 @@ describe('Critical element IDs referenced by JS exist in HTML', () => {
         doc = new JSDOM(html).window.document;
     });
 
+    afterAll(() => {
+        if (doc && doc.defaultView) doc.defaultView.close();
+    });
+
     // IDs referenced by init.js
     const INIT_JS_IDS = [
         'bottomDrawer', 'drawerContent',
@@ -588,6 +612,10 @@ describe('Keyboard shortcut targets', () => {
 
     beforeAll(() => {
         doc = new JSDOM(html).window.document;
+    });
+
+    afterAll(() => {
+        if (doc && doc.defaultView) doc.defaultView.close();
     });
 
     test('shortcuts modal exists', () => {

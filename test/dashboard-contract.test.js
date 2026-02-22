@@ -11,6 +11,10 @@ describe('Dashboard HTML contract', () => {
     doc = new JSDOM(html).window.document;
   });
 
+  afterAll(() => {
+    if (doc && doc.defaultView) doc.defaultView.close();
+  });
+
   test('health ribbon exists', () => {
     const ribbon = doc.querySelector('[data-testid="health-ribbon"]');
     expect(ribbon).not.toBeNull();

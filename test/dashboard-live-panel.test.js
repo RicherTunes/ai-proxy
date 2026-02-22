@@ -25,6 +25,10 @@ describe('Bottom drawer HTML contract', () => {
         doc = new JSDOM(html).window.document;
     });
 
+    afterAll(() => {
+        if (doc && doc.defaultView) doc.defaultView.close();
+    });
+
     test('bottom drawer element exists', () => {
         const drawer = doc.getElementById('bottomDrawer');
         expect(drawer).not.toBeNull();
@@ -196,6 +200,10 @@ describe('Canonical dock panels inside #drawerContent (JSDOM, M5)', () => {
         doc = new JSDOM(html).window.document;
     });
 
+    afterEach(() => {
+        if (doc && doc.defaultView) doc.defaultView.close();
+    });
+
     test('tab-content is already inside drawerContent (no relocation needed)', () => {
         const drawerContent = doc.getElementById('drawerContent');
         const tabContent = drawerContent.querySelector('.tab-content');
@@ -359,6 +367,10 @@ describe('Hash route normalization for dock tabs (M1.3)', () => {
             buildSimulatedEnv();
         });
 
+        afterEach(() => {
+            if (dom && dom.window) dom.window.close();
+        });
+
         DOCK_TAB_HASHES.forEach(tab => {
             test(`#requests/${tab} opens drawer`, () => {
                 switchRequestTab(tab);
@@ -400,6 +412,10 @@ describe('M1.2: useGlobalMapping checkbox uses data-action (no inline handler)',
     beforeAll(() => {
         const html = generateDashboard({ nonce: '', cspEnabled: false });
         doc = new JSDOM(html).window.document;
+    });
+
+    afterAll(() => {
+        if (doc && doc.defaultView) doc.defaultView.close();
     });
 
     test('useGlobalMapping checkbox exists in the DOM', () => {
