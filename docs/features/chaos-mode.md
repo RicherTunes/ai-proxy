@@ -5,6 +5,12 @@ title: Chaos Mode: Cross-Model Concurrent Throughput Maximization
 
 # Chaos Mode: Cross-Model Concurrent Throughput Maximization
 
+> **Related:**
+> - [Model Routing](./model-routing.md) - Core model selection and tier management
+> - [Z.ai Knowledge Base](../reference/zai-knowledge-base.md#rate-limits--quotas) - Provider-specific rate limit behavior
+> - [Model Concurrency Findings](../model-concurrency-findings.md) - Empirical concurrency test results
+> - [Metrics Reference](../reference/metrics.md) - Related Prometheus metrics
+
 ## Dashboard Visualization
 
 The Model Routing page shows available models and their configurations:
@@ -17,11 +23,16 @@ The Model Routing page shows available models and their configurations:
 
 ## Problem Statement
 
+> **Context:** See [Model Concurrency Findings](../../model-concurrency-findings.md) for empirical test results showing that concurrency is **per-account, not per-key** on Z.ai.
+
 With z.ai's per-model concurrency limits, a single model bottlenecks at its limit (e.g., glm-4.7 at 3 concurrent). When running parallel Claude Code agents (oh-my-claudecode's ultrawork/swarm modes), requests queue behind the same model's rate limit even though other models have spare capacity.
 
 **Chaos mode** distributes requests across ALL available GLM models to maximize aggregate concurrent throughput, treating the entire z.ai model catalog as a single pool rather than routing everything to one model per tier.
 
 ## Rate Limit Reference (z.ai Subscription)
+
+> **Source:** [Z.ai Coding Subscription](../reference/zai-coding-subscription.md#tier-comparison) for detailed tier limits and quotas.
+> **Note:** Concurrency values below reflect empirical findings from [Model Concurrency Findings](../../model-concurrency-findings.md), not advertised limits.
 
 | Model | Concurrent | Tier | Cost (in/out per 1M) |
 |-------|-----------|------|---------------------|
@@ -337,6 +348,8 @@ Phase 1 (ChaosPool + tests) → Phase 2 (ModelRouter) → Phase 3 (Config/API)
 Phases 1-3 are the critical path. Phase 4 is small. Phase 5 is cosmetic. Phase 6 validates everything.
 
 ## Quality Floor Matrix
+
+> **Configuration:** See [Configuration Guide](../user-guide/configuration.md#model-routing) for setup instructions.
 
 Shows which models are eligible for each incoming request tier:
 

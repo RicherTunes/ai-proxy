@@ -7,6 +7,11 @@ title: Testing
 
 Test strategy and coverage information for GLM Proxy.
 
+> **Related:**
+> - [Load Testing Guide](../operations/load-testing.md) - Performance baseline validation
+> - [Troubleshooting Guide](../../TROUBLESHOOTING.md) - Common test failures and solutions
+> - [Configuration Guide](../user-guide/configuration.md) - Test environment setup
+
 ## E2E Testing with Screenshots
 
 The project uses Playwright for E2E testing, including automated screenshot generation for documentation:
@@ -70,6 +75,8 @@ test/
 
 ## Coverage Tracking
 
+> **Performance Testing:** See [Load Testing Guide](../operations/load-testing.md) for baseline validation and performance targets.
+
 Current coverage status is tracked in:
 
 - **`test/COVERAGE_DEBT.md`** - Coverage gaps and improvement plan
@@ -116,6 +123,8 @@ Tests that are temporarily disabled are tracked in:
 - **`test/quarantine/QUARANTINE_EXIT.md`** - Quarantined tests and exit criteria
 
 ## Continuous Integration
+
+> **Release Process:** See [Release Process](../releases.md) for automated release workflow and commit conventions.
 
 Tests run automatically on:
 

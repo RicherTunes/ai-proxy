@@ -2,6 +2,11 @@
 
 This directory contains the search index for the AI Proxy documentation.
 
+> **Related:**
+> - [Dashboard Screenshots](../screenshots/README.md) - Visual documentation
+> - [Testing Guide](../developer-guide/testing.md) - Test coverage and CI
+> - [Getting Started Guide](../user-guide/getting-started.md) - Quick start documentation
+
 ## How It Works
 
 The search functionality uses **Fuse.js**, a lightweight fuzzy search library that runs entirely in the browser. This means:
