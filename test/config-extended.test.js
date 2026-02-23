@@ -355,6 +355,13 @@ describe('Config Extended - Convenience Getters', () => {
         expect(at.initialMs).toBe(DEFAULT_CONFIG.adaptiveTimeout.initialMs);
     });
 
+    test('should return usageMonitor config via getter', () => {
+        const config = new Config();
+        const um = config.usageMonitor;
+        expect(um).toBeDefined();
+        expect(um.enabled).toBe(DEFAULT_CONFIG.usageMonitor.enabled);
+    });
+
     test('should return connectionHealth config via getter', () => {
         const config = new Config();
         const ch = config.connectionHealth;

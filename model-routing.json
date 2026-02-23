@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "enabled": true,
+  "enabled": false,
   "defaultModel": null,
   "tiers": {
     "light": {
@@ -21,8 +21,7 @@
     "heavy": {
       "models": [
         "glm-5",
-        "glm-4.7",
-        "glm-4.6"
+        "glm-4.7"
       ],
       "strategy": "quality"
     }
@@ -110,7 +109,7 @@
   },
   "logDecisions": true,
   "failover": {
-    "maxModelSwitchesPerRequest": 3,
+    "maxModelSwitchesPerRequest": 2,
     "max429AttemptsPerRequest": 3,
     "max429RetryWindowMs": 15000,
     "allowTierDowngrade": false,
