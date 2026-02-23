@@ -64,6 +64,7 @@ set GLM_PORT=8080 && npm start
 | `GLM_REQUEST_TIMEOUT` | `300000` | Request timeout (ms) | How long (in milliseconds) to wait for a request to complete |
 | `GLM_LOG_LEVEL` | `INFO` | Log level | How much detail to show in logs: `DEBUG` (most), `INFO`, `WARN`, `ERROR` (least) |
 | `GLM_ADAPTIVE_CONCURRENCY_MODE` | `observe_only` | Adaptive concurrency mode | `observe_only` (compute windows but don't enforce) or `enforce` (apply computed limits). Invalid values are coerced to `observe_only` |
+| `GLM_TRANSIENT_OVERFLOW_RETRY` | `false` | Enable transient overflow retry | When enabled, the proxy will retry requests that receive 429 responses due to temporary model capacity issues instead of immediately returning 503. Uses exponential backoff with up to 4 retries |
 
 ### Additional Environment Variables
 
@@ -168,6 +169,27 @@ The proxy uses a **token bucket algorithm** to manage rate limits. Here's what t
 - **Burst:** Allows short bursts above the rate limit temporarily
 
 **Think of it like this:** You have a bucket that fills up with "tokens" over time. Each request uses one token. If the bucket is empty, you have to wait for more tokens. But the bucket can hold some extra tokens, allowing short bursts of activity.
+
+## Transient Overflow Retry
+
+### What is Transient Overflow Retry?
+
+When enabled via `GLM_TRANSIENT_OVERFLOW_RETRY=true`, the proxy will retry requests that receive 429 responses due to temporary model capacity issues. Instead of immediately returning a 503 Service Unavailable to the client, the proxy applies exponential backoff and retries up to 4 times.
+
+**When is this useful?**
+
+This is especially helpful for high-throughput deployments where brief capacity spikes are common. Rather than failing requests due to temporary model overload, the proxy can absorb the spike and eventually get the request through.
+
+**How it works:**
+
+1. Request is sent to upstream API
+2. API returns 429 (capacity exceeded)
+3. Proxy applies exponential backoff (increasing wait times)
+4. Proxy retries up to 4 times
+5. If successful, request completes normally
+6. If all retries fail, proxy returns 503 to client
+
+**Default:** Disabled (safe for canary rollout)
 
 ## Request Queue
 

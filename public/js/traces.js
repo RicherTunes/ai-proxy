@@ -125,8 +125,8 @@
         if (panel) panel.style.display = 'block';
 
         document.getElementById('traceDetailId').textContent = traceId;
-        var fields = ['traceDetailStatus', 'traceDetailModel', 'traceDetailDuration', 'traceDetailAttempts', 'traceDetailQueue', 'traceDetailKey'];
-        var defaults = ['Loading...', '-', '-', '-', '-', '-'];
+        var fields = ['traceDetailStatus', 'traceDetailModel', 'traceDetailDuration', 'traceDetailAttempts', 'traceDetailQueue', 'traceDetailKey', 'traceDetailCost'];
+        var defaults = ['Loading...', '-', '-', '-', '-', '-', '-'];
         for (var i = 0; i < fields.length; i++) {
             var el = document.getElementById(fields[i]);
             if (el) el.textContent = defaults[i];
@@ -164,6 +164,8 @@
                 var lastAttempt = trace.attempts && trace.attempts.length > 0 ? trace.attempts[trace.attempts.length - 1] : null;
                 var keyEl = document.getElementById('traceDetailKey');
                 if (keyEl) keyEl.textContent = lastAttempt ? '#' + lastAttempt.keyIndex + ' (' + (lastAttempt.keyId || 'unknown').substring(0, 12) + ')' : '-';
+                var costEl = document.getElementById('traceDetailCost');
+                if (costEl) costEl.textContent = trace.estimatedCostUsd != null ? '$' + trace.estimatedCostUsd.toFixed(6) : '-';
                 renderTraceTimeline(trace);
                 renderTraceAttempts(trace);
                 if (!trace.success && trace.finalError) {

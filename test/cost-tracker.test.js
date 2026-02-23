@@ -790,6 +790,125 @@ describe('CostTracker', () => {
         });
     });
 
+    describe('costPer1kTokens derivation', () => {
+        test('costPer1kTokens is 0 when no tokens recorded', () => {
+            const ct = new CostTracker();
+            const stats = ct.getStats('today');
+            expect(stats.costPer1kTokens).toBe(0);
+        });
+
+        test('costPer1kTokens is 0 for every period when no tokens recorded', () => {
+            const ct = new CostTracker();
+            for (const period of ['today', 'this_week', 'this_month', 'all_time']) {
+                const stats = ct.getStats(period);
+                expect(stats.costPer1kTokens).toBe(0);
+            }
+        });
+
+        test('costPer1kTokens correctly derives from recorded usage', () => {
+            const ct = new CostTracker();
+            // Record 10,000 input + 5,000 output tokens with default rates
+            // (model='claude-sonnet' falls back to DEFAULT_RATES: $3/1M input, $15/1M output)
+            ct.recordUsage('key1', 10000, 5000, 'claude-sonnet');
+
+            // Expected cost:
+            //   input:  10000 / 1_000_000 * 3.00  = 0.03
+            //   output:  5000 / 1_000_000 * 15.00 = 0.075
+            //   total cost = 0.105 (rounded to 6dp in calculateCost)
+            const expectedCost = ct.calculateCost(10000, 5000, 'claude-sonnet');
+            const totalTokens = 15000;
+            const expectedPer1k = Math.round((expectedCost / (totalTokens / 1000)) * 1000000) / 1000000;
+
+            const stats = ct.getStats('today');
+            expect(stats.costPer1kTokens).toBe(expectedPer1k);
+            // Sanity-check the actual number: 0.105 / 15 = 0.007
+            expect(stats.costPer1kTokens).toBe(0.007);
+        });
+
+        test('costPer1kTokens uses model-specific rates for a known model', () => {
+            const ct = new CostTracker();
+            // claude-opus-4: $15/1M input, $75/1M output
+            ct.recordUsage('key1', 2000, 1000, 'claude-opus-4');
+
+            const expectedCost = ct.calculateCost(2000, 1000, 'claude-opus-4');
+            // input:  2000 / 1M * 15 = 0.03
+            // output: 1000 / 1M * 75 = 0.075
+            // cost = 0.105
+            const totalTokens = 3000;
+            const expectedPer1k = Math.round((expectedCost / (totalTokens / 1000)) * 1000000) / 1000000;
+
+            const stats = ct.getStats('today');
+            expect(stats.costPer1kTokens).toBe(expectedPer1k);
+            expect(stats.costPer1kTokens).toBe(0.035);
+        });
+
+        test('costPer1kTokens reflects per-model rates for mixed traffic', () => {
+            const ct = new CostTracker();
+
+            // Record cheap model: claude-haiku-3 ($0.25 input, $1.25 output per 1M)
+            // 4000 input + 2000 output = 6000 total tokens
+            ct.recordUsage('key1', 4000, 2000, 'claude-haiku-3');
+            const haikuCost = ct.calculateCost(4000, 2000, 'claude-haiku-3');
+            // input:  4000 / 1M * 0.25 = 0.001
+            // output: 2000 / 1M * 1.25 = 0.0025
+            // haikuCost = 0.0035
+
+            // Record expensive model: claude-opus-4 ($15 input, $75 output per 1M)
+            // 4000 input + 2000 output = 6000 total tokens
+            ct.recordUsage('key2', 4000, 2000, 'claude-opus-4');
+            const opusCost = ct.calculateCost(4000, 2000, 'claude-opus-4');
+            // input:  4000 / 1M * 15 = 0.06
+            // output: 2000 / 1M * 75 = 0.15
+            // opusCost = 0.21
+
+            const combinedCost = haikuCost + opusCost;
+            const totalTokens = 12000; // 6000 + 6000
+            const expectedPer1k = Math.round((combinedCost / (totalTokens / 1000)) * 1000000) / 1000000;
+
+            const stats = ct.getStats('today');
+            // The blended rate must sit between pure-haiku and pure-opus rates
+            const pureHaikuPer1k = Math.round((haikuCost / (6000 / 1000)) * 1000000) / 1000000;
+            const pureOpusPer1k = Math.round((opusCost / (6000 / 1000)) * 1000000) / 1000000;
+
+            expect(stats.costPer1kTokens).toBe(expectedPer1k);
+            expect(stats.costPer1kTokens).toBeGreaterThan(pureHaikuPer1k);
+            expect(stats.costPer1kTokens).toBeLessThan(pureOpusPer1k);
+        });
+
+        test('costPer1kTokens is consistent across all periods after a single record', () => {
+            const ct = new CostTracker();
+            ct.recordUsage('key1', 5000, 5000, 'claude-sonnet-4-5');
+
+            const todayStats = ct.getStats('today');
+            const weekStats = ct.getStats('this_week');
+            const monthStats = ct.getStats('this_month');
+            const allTimeStats = ct.getStats('all_time');
+
+            // All periods should have the same costPer1kTokens since they share the same data
+            expect(todayStats.costPer1kTokens).toBe(weekStats.costPer1kTokens);
+            expect(weekStats.costPer1kTokens).toBe(monthStats.costPer1kTokens);
+            expect(monthStats.costPer1kTokens).toBe(allTimeStats.costPer1kTokens);
+            expect(todayStats.costPer1kTokens).toBeGreaterThan(0);
+        });
+
+        test('costPer1kTokens updates after additional recordings', () => {
+            const ct = new CostTracker();
+
+            // First record: cheap model
+            ct.recordUsage('key1', 5000, 5000, 'claude-haiku-3');
+            const statsAfterFirst = ct.getStats('today');
+            const per1kAfterCheap = statsAfterFirst.costPer1kTokens;
+
+            // Second record: expensive model (same token counts)
+            ct.recordUsage('key1', 5000, 5000, 'claude-opus-4');
+            const statsAfterSecond = ct.getStats('today');
+            const per1kAfterMixed = statsAfterSecond.costPer1kTokens;
+
+            // The blended rate should be higher after adding expensive model usage
+            expect(per1kAfterMixed).toBeGreaterThan(per1kAfterCheap);
+        });
+    });
+
     describe('edge cases', () => {
         test('should handle very small token counts', () => {
             const ct = new CostTracker();

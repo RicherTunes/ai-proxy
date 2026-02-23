@@ -1159,4 +1159,264 @@ describe('AdaptiveConcurrencyController', () => {
             expect(controller.getEffectiveConcurrency('glm-4.5')).toBeLessThan(5);
         });
     });
+
+    // ---------------------------------------------------------------
+    // Quota 429 Integration (Roadmap Item 4.7)
+    // ---------------------------------------------------------------
+
+    describe('quota 429 integration (item 4.7)', () => {
+        test('multiple quota 429s do not shrink window', () => {
+            createController({ minHoldMs: 0, growthCleanTicks: 1, recoveryDelayMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 10);
+
+            // Send 3 quota 429s with tick after each
+            for (let i = 0; i < 3; i++) {
+                controller.recordCongestion('glm-4.5', { retryAfterMs: 120000 });
+                controller._tick();
+                expect(w.effectiveMax).toBe(10);
+                expect(w.lastAdjustReason).toBe('quota_skip');
+            }
+        });
+
+        test('quota then congestion: only congestion shrinks', () => {
+            createController({ minHoldMs: 0, growthCleanTicks: 1, recoveryDelayMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 10);
+
+            // Quota 429 — no shrink
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 120000 });
+            controller._tick();
+            expect(w.effectiveMax).toBe(10);
+            expect(w.lastAdjustReason).toBe('quota_skip');
+
+            // Congestion 429 — should shrink
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();
+            expect(w.effectiveMax).toBe(5);  // 10 * 0.5 = 5
+        });
+
+        test('mixed quota+congestion in same tick: quota takes precedence', () => {
+            createController({ minHoldMs: 0, growthCleanTicks: 1, recoveryDelayMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 10);
+
+            // Record both quota and congestion in same tick window
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 120000 });
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();
+
+            expect(w.effectiveMax).toBe(10);  // Quota takes precedence, no shrink
+        });
+
+        test('errorCode quota_exceeded overrides normal retryAfterMs', () => {
+            createController({ minHoldMs: 0, growthCleanTicks: 1, recoveryDelayMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 10);
+
+            // Low retryAfterMs would normally be congestion, but errorCode overrides
+            controller.recordCongestion('glm-4.5', {
+                retryAfterMs: 2000,
+                errorCode: 'quota_exceeded'
+            });
+            controller._tick();
+
+            expect(w.effectiveMax).toBe(10);  // No shrink — quota_skip
+        });
+    });
+
+    // ---------------------------------------------------------------
+    // Oscillation Detection (Roadmap Item 4.4)
+    // ---------------------------------------------------------------
+
+    describe('oscillation detection (item 4.4)', () => {
+        test('no oscillation with few adjustments', () => {
+            createController({ minHoldMs: 0, growthCleanTicks: 1, recoveryDelayMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 10);
+            w.effectiveMax = 8;
+            w.lastCongestionAt = 0;
+
+            // Trigger 2 adjustments: one decrease + one increase
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();  // 8 → 4 (decrease)
+
+            // Advance 1ms so recovery delay (now - lastCongestionAt > 0) is satisfied
+            jest.advanceTimersByTime(1);
+            controller.recordSuccess('glm-4.5');
+            controller._tick();  // 4 → 5 (increase)
+
+            const snapshot = controller.getSnapshot();
+            expect(snapshot.models['glm-4.5'].isOscillating).toBe(false);
+        });
+
+        test('oscillation detected after 4+ adjustments in 30s', () => {
+            createController({ minHoldMs: 0, growthCleanTicks: 1, recoveryDelayMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 10);
+            w.lastCongestionAt = 0;
+
+            // Cycle 1: decrease then increase
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();  // 10 → 5
+
+            jest.advanceTimersByTime(1);
+            controller.recordSuccess('glm-4.5');
+            controller._tick();  // 5 → 6
+
+            // Cycle 2: decrease then increase
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();  // 6 → 3
+
+            jest.advanceTimersByTime(1);
+            controller.recordSuccess('glm-4.5');
+            controller._tick();  // 3 → 4
+
+            // 4 adjustments recorded, threshold is >3 → oscillating
+            const snapshot = controller.getSnapshot();
+            expect(snapshot.models['glm-4.5'].isOscillating).toBe(true);
+        });
+
+        test('oscillation clears after 30s window expires', () => {
+            createController({ minHoldMs: 0, growthCleanTicks: 1, recoveryDelayMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 10);
+            w.lastCongestionAt = 0;
+
+            // Trigger 4 adjustments to create oscillation
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();  // 10 → 5
+
+            jest.advanceTimersByTime(1);
+            controller.recordSuccess('glm-4.5');
+            controller._tick();  // 5 → 6
+
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();  // 6 → 3
+
+            jest.advanceTimersByTime(1);
+            controller.recordSuccess('glm-4.5');
+            controller._tick();  // 3 → 4
+
+            // Confirm oscillation is active
+            let snapshot = controller.getSnapshot();
+            expect(snapshot.models['glm-4.5'].isOscillating).toBe(true);
+
+            // Advance past the 30s oscillation window
+            jest.advanceTimersByTime(31000);
+
+            // Snapshot should show oscillation cleared (timestamps now older than 30s)
+            snapshot = controller.getSnapshot();
+            expect(snapshot.models['glm-4.5'].isOscillating).toBe(false);
+        });
+    });
+
+    // ---------------------------------------------------------------
+    // Per-model Window History (Item 4.5)
+    // ---------------------------------------------------------------
+
+    describe('per-model window history (item 4.5)', () => {
+        test('records decrease events in history', () => {
+            createController({ minHoldMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 10);
+
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();
+
+            expect(w.history).toHaveLength(1);
+            expect(w.history[0]).toEqual(expect.objectContaining({
+                from: 10,
+                to: 5,
+                reason: 'decrease_congestion',
+                classification: 'congestion'
+            }));
+            expect(typeof w.history[0].ts).toBe('number');
+        });
+
+        test('records increase events in history', () => {
+            createController({ minHoldMs: 0, growthCleanTicks: 1, recoveryDelayMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 10);
+            w.effectiveMax = 5;
+            w.lastCongestionAt = 0;
+
+            controller.recordSuccess('glm-4.5');
+            controller._tick();
+
+            expect(w.history).toHaveLength(1);
+            expect(w.history[0]).toEqual(expect.objectContaining({
+                from: 5,
+                to: 6,
+                reason: 'additive_increase',
+                classification: null
+            }));
+            expect(typeof w.history[0].ts).toBe('number');
+        });
+
+        test('records idle decay events in history', () => {
+            createController({ idleTimeoutMs: 300000, minHoldMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 10);
+            w.effectiveMax = 5;
+            w.lastTrafficAt = Date.now() - 400000;
+
+            controller._tick();
+
+            expect(w.history).toHaveLength(1);
+            expect(w.history[0]).toEqual(expect.objectContaining({
+                from: 5,
+                to: 6,
+                reason: 'idle_decay',
+                classification: null
+            }));
+        });
+
+        test('history is capped at 100 entries', () => {
+            createController({ minHoldMs: 0, growthCleanTicks: 1, recoveryDelayMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 200);
+            w.effectiveMax = 1;
+            w.lastCongestionAt = 0;
+
+            // Trigger 105 increase adjustments (1 -> 2 -> ... -> 106)
+            for (let i = 0; i < 105; i++) {
+                controller.recordSuccess('glm-4.5');
+                controller._tick();
+            }
+
+            expect(w.history).toHaveLength(100);
+            // First 5 entries were shifted out; earliest remaining should be from=6, to=7
+            expect(w.history[0].from).toBe(6);
+            expect(w.history[0].to).toBe(7);
+        });
+
+        test('history exposed in snapshot', () => {
+            createController({ minHoldMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 10);
+
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();
+
+            const snapshot = controller.getSnapshot();
+            expect(snapshot.models['glm-4.5'].history).toBeDefined();
+            expect(Array.isArray(snapshot.models['glm-4.5'].history)).toBe(true);
+            expect(snapshot.models['glm-4.5'].history).toHaveLength(1);
+            expect(snapshot.models['glm-4.5'].history[0]).toEqual(expect.objectContaining({
+                from: 10,
+                to: 5,
+                reason: 'decrease_congestion'
+            }));
+        });
+
+        test('snapshot history is capped at last 20 entries', () => {
+            createController({ minHoldMs: 0, growthCleanTicks: 1, recoveryDelayMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 100);
+            w.effectiveMax = 1;
+            w.lastCongestionAt = 0;
+
+            // Trigger 30 increase adjustments
+            for (let i = 0; i < 30; i++) {
+                controller.recordSuccess('glm-4.5');
+                controller._tick();
+            }
+
+            expect(w.history).toHaveLength(30);  // Full history has 30
+
+            const snapshot = controller.getSnapshot();
+            expect(snapshot.models['glm-4.5'].history).toHaveLength(20);  // Snapshot capped at 20
+            // Should be the last 20 entries (from=11->to=12 through from=30->to=31)
+            expect(snapshot.models['glm-4.5'].history[0].from).toBe(11);
+            expect(snapshot.models['glm-4.5'].history[0].to).toBe(12);
+        });
+    });
 });

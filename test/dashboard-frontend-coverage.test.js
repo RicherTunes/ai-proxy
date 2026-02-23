@@ -598,6 +598,7 @@ describe('Critical element IDs referenced by JS exist in HTML', () => {
         'reqPageTotal', 'reqPageSuccessRate', 'reqPageAvgLatency',
         'reqPageErrors', 'reqPageInFlight',
         'statusDot',
+        'contextOverflowTransient',
     ];
 
     test.each(STAT_IDS)('stat element id="%s" exists', (id) => {
