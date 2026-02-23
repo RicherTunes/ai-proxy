@@ -385,3 +385,79 @@ describe('StubServer Integration: stats counters', () => {
         expect(stats.rateLimitTracking.llm429Retries).toBeGreaterThanOrEqual(1);
     }, 30000);
 });
+
+// ═══════════════════════════════════════════════════════════════════════
+// M4.2: /adaptive-concurrency API endpoint
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('StubServer Integration: /adaptive-concurrency API (M4.2)', () => {
+    let stub;
+    let proxy;
+
+    beforeEach(async () => {
+        stub = new StubServer();
+        await stub.start();
+    });
+
+    afterEach(async () => {
+        if (proxy) { await proxy.shutdown(); proxy = null; }
+        if (stub) { await stub.stop(); stub = null; }
+        resetConfig();
+        resetLogger();
+    });
+
+    test('GET /adaptive-concurrency returns AIMD snapshot', async () => {
+        proxy = await createProxyWithStub(stub.url, {
+            adaptiveConcurrency: { enabled: true, mode: 'observe_only' }
+        });
+
+        const res = await request(`${proxy.proxyUrl}/adaptive-concurrency`);
+
+        expect(res.statusCode).toBe(200);
+        const body = res.json();
+        expect(body.mode).toBe('observe_only');
+        expect(body.models).toBeDefined();
+    }, 15000);
+
+    test('PUT /adaptive-concurrency toggles mode to enforce', async () => {
+        proxy = await createProxyWithStub(stub.url, {
+            adaptiveConcurrency: { enabled: true, mode: 'observe_only' }
+        });
+
+        const res = await request(`${proxy.proxyUrl}/adaptive-concurrency`, {
+            method: 'PUT',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ mode: 'enforce' })
+        });
+
+        expect(res.statusCode).toBe(200);
+        const body = res.json();
+        expect(body.success).toBe(true);
+        expect(body.previousMode).toBe('observe_only');
+        expect(body.currentMode).toBe('enforce');
+    }, 15000);
+
+    test('PUT /adaptive-concurrency rejects invalid mode', async () => {
+        proxy = await createProxyWithStub(stub.url, {
+            adaptiveConcurrency: { enabled: true, mode: 'observe_only' }
+        });
+
+        const res = await request(`${proxy.proxyUrl}/adaptive-concurrency`, {
+            method: 'PUT',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ mode: 'invalid' })
+        });
+
+        expect(res.statusCode).toBe(400);
+    }, 15000);
+
+    test('GET returns 503 when adaptive concurrency is disabled', async () => {
+        proxy = await createProxyWithStub(stub.url, {
+            adaptiveConcurrency: { enabled: false }
+        });
+
+        const res = await request(`${proxy.proxyUrl}/adaptive-concurrency`);
+
+        expect(res.statusCode).toBe(503);
+    }, 15000);
+});
