@@ -520,6 +520,49 @@ describe('AdaptiveConcurrencyController', () => {
     });
 
     // ---------------------------------------------------------------
+    // setMode() atomic transitions
+    // ---------------------------------------------------------------
+
+    describe('setMode() atomic transitions', () => {
+        test('setMode("enforce") pushes windows to keyManager', () => {
+            createController({ mode: 'observe_only' });
+            const w = seedModel(controller, 'glm-4.5', 10);
+            w.effectiveMax = 7;
+
+            const result = controller.setMode('enforce');
+            expect(result.previousMode).toBe('observe_only');
+            expect(result.currentMode).toBe('enforce');
+            expect(mockKeyManager.setEffectiveModelLimit).toHaveBeenCalledWith('glm-4.5', 7);
+        });
+
+        test('setMode("observe_only") restores static limits', () => {
+            createController({ mode: 'enforce' });
+            seedModel(controller, 'glm-4.5', 10);
+
+            const result = controller.setMode('observe_only');
+            expect(result.previousMode).toBe('enforce');
+            expect(result.currentMode).toBe('observe_only');
+            expect(mockKeyManager.restoreStaticLimits).toHaveBeenCalled();
+        });
+
+        test('setMode throws on invalid mode', () => {
+            createController({ mode: 'observe_only' });
+            expect(() => controller.setMode('garbage')).toThrow('Invalid mode');
+        });
+
+        test('setMode same-mode is a no-op', () => {
+            createController({ mode: 'observe_only' });
+            seedModel(controller, 'glm-4.5', 10);
+
+            const result = controller.setMode('observe_only');
+            expect(result.previousMode).toBe('observe_only');
+            expect(result.currentMode).toBe('observe_only');
+            expect(mockKeyManager.setEffectiveModelLimit).not.toHaveBeenCalled();
+            expect(mockKeyManager.restoreStaticLimits).not.toHaveBeenCalled();
+        });
+    });
+
+    // ---------------------------------------------------------------
     // Shrink-while-inflight
     // ---------------------------------------------------------------
 

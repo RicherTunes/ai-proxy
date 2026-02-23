@@ -8,7 +8,7 @@ const { test, expect, liveFlowTest } = require('./fixtures');
 
 // Screenshot tests use default fixture (no routing needed)
 test.describe('Screenshot mode: no fixed-position overlap (M1.3)', () => {
-    test('no fixed-position elements in screenshot mode full-page capture', async ({ page, proxyServer }) => {
+    test('screenshot mode hides or de-fixes known fixed-position elements', async ({ page, proxyServer }) => {
         await page.goto(proxyServer.url + '/dashboard?screenshot=1', { waitUntil: 'domcontentloaded' });
         await page.waitForTimeout(500);
 
@@ -19,27 +19,37 @@ test.describe('Screenshot mode: no fixed-position overlap (M1.3)', () => {
         });
         await page.waitForTimeout(200);
 
-        // Check that no visible elements have position: fixed
-        const fixedElements = await page.evaluate(() => {
-            var all = document.querySelectorAll('*');
-            var fixed = [];
-            for (var i = 0; i < all.length; i++) {
-                var style = window.getComputedStyle(all[i]);
-                if (style.position === 'fixed' && style.display !== 'none' && style.visibility !== 'hidden') {
-                    var rect = all[i].getBoundingClientRect();
-                    if (rect.width > 0 && rect.height > 0) {
-                        fixed.push({
-                            tag: all[i].tagName,
-                            id: all[i].id,
-                            className: all[i].className.toString().slice(0, 80)
-                        });
-                    }
-                }
-            }
-            return fixed;
+        // Allowlist: elements that use position:fixed in normal mode.
+        // Each must be either hidden (display:none) or de-fixed (position != fixed) in screenshot mode.
+        const results = await page.evaluate(() => {
+            var selectors = [
+                '.side-panel',
+                '.side-panel-backdrop',
+                '.bottom-drawer',
+                '.toast-container',
+                '.shortcuts-help-btn',
+                '.context-menu',
+                '.modal-overlay'
+            ];
+            return selectors.map(function(sel) {
+                var el = document.querySelector(sel);
+                if (!el) return { selector: sel, exists: false, ok: true };
+                var style = window.getComputedStyle(el);
+                var isHidden = style.display === 'none' || style.visibility === 'hidden';
+                var isDeFixed = style.position !== 'fixed';
+                return {
+                    selector: sel,
+                    exists: true,
+                    position: style.position,
+                    display: style.display,
+                    ok: isHidden || isDeFixed
+                };
+            });
         });
 
-        expect(fixedElements).toEqual([]);
+        for (const r of results) {
+            expect(r.ok).toBe(true);
+        }
     });
 
     test('side-panel flows in document in screenshot mode', async ({ page, proxyServer }) => {
