@@ -374,6 +374,62 @@ Common terms used in the dashboard:
 | **Health Score** | Composite metric indicating overall system health (0-100) |
 | **AIMD** | Additive Increase/Multiplicative Decrease - adaptive concurrency algorithm |
 
+## Dashboard States
+
+### Normal Operation
+
+When everything is working correctly:
+- All key cells show green in the heatmap
+- Success rate is above 95%
+- Connection status shows green dot
+- No circuit breakers are OPEN
+
+### Error States
+
+**Connection Issues:**
+
+When the proxy cannot connect to the upstream API:
+- Connection status shows red dot
+- Keys may transition to OPEN state
+- Error count increases in the system page
+
+**Rate Limited (429):**
+
+When API rate limits are hit:
+- Keys show yellow/warning in heatmap
+- Retry count increases
+- Queue may fill up with waiting requests
+
+**All Keys Unhealthy:**
+
+When all API keys are failing:
+- All keys show red in heatmap
+- Dashboard displays warning banner
+- Requests return 503 Service Unavailable
+
+### Interpreting the Health Score
+
+The system page shows an overall health score (0-100):
+
+| Score Range | Status | Action |
+|-------------|--------|--------|
+| 90-100 | Excellent | No action needed |
+| 70-89 | Good | Monitor for trends |
+| 50-69 | Degraded | Check error breakdown |
+| 0-49 | Critical | Immediate attention required |
+
+### Troubleshooting with the Dashboard
+
+> **See Also:** [Troubleshooting Guide](../../TROUBLESHOOTING.md) for detailed problem solving.
+
+**Common diagnostic steps:**
+
+1. **Check Keys Heatmap** - Identify which keys are unhealthy
+2. **View Error Breakdown** - Understand what types of errors are occurring
+3. **Check Retry Analytics** - See if retries are succeeding
+4. **Review Logs Tab** - Get detailed error messages
+5. **Check Queue Status** - See if requests are backing up
+
 ## Next Steps
 
 > **More Guides:**

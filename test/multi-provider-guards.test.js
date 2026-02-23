@@ -94,7 +94,7 @@ describe('GUARD-02: Non-configured provider rejection', () => {
         }
     });
 
-    test('config providers section does not exist yet', () => {
+    test('config providers defaults to null (backward compat path uses global target)', () => {
         const config = new Config({
             configDir: __dirname,
             useCluster: false,

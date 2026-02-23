@@ -262,6 +262,16 @@
             costHtml = '<span class="request-cost empty" title="No cost captured">\u2014</span>';
         }
 
+        // Provider badge (only shown when non-default or metered/premium)
+        var providerBadge = '';
+        if (request.provider && request.provider !== 'z.ai') {
+            var tierClass = (request.costTier === 'premium') ? 'provider-premium' :
+                            (request.costTier === 'metered') ? 'provider-metered' : 'provider-free';
+            providerBadge = '<span class="provider-badge ' + tierClass + '" title="Provider: ' +
+                escapeHtml(request.provider) + ' (' + (request.costTier || 'metered') + ')">' +
+                escapeHtml(request.provider) + '</span>';
+        }
+
         return '<div class="request-row" data-action="view-request" data-request-id="' + escapeHtml(requestId) + '" data-testid="request-row"' +
             ' data-status="' + statusClass + '" data-key-index="' + (request.keyIndex ?? '') + '" data-model="' + escapeHtml(model) + '"' +
             (request.provider ? ' data-provider="' + escapeHtml(request.provider) + '"' : '') + '>' +
