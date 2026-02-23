@@ -23,6 +23,7 @@
     var capitalize = DS.capitalize;
     var fetchJSON = DS.fetchJSON;
     var showToast = window.showToast;
+    var _getId = window.RequestIds.getRequestId;
     var errorBoundary = window.DashboardErrorBoundary?.errorBoundary;
 
     // Note: Interval IDs are managed in data.js. init.js calls DashboardData.cleanup() for them.
@@ -1131,7 +1132,7 @@
         if (!body) return;
         var targetId = String(requestId);
         var request = STATE.requestsHistory.find(function(r) {
-            return String(window.RequestIds.getRequestId(r)) === targetId;
+            return String(_getId(r)) === targetId;
         });
         if (!request) {
             body.innerHTML = '<div style="color: var(--text-secondary);">Request not found in the current live buffer.</div>';
