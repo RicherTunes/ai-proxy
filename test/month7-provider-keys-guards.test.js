@@ -413,3 +413,80 @@ describe('GUARD-14: Unknown provider yields null resolution', () => {
         km.destroy?.();
     });
 });
+
+// ═══════════════════════════════════════════════════════════════════════
+// GUARD-15: Duplicate key collision across providers
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('GUARD-15: Duplicate key collision across providers', () => {
+    let km;
+
+    afterEach(() => {
+        if (km) {
+            km.destroy?.();
+            km = null;
+        }
+    });
+
+    test('same key in two provider pools is deduplicated (first wins)', () => {
+        km = new KeyManager({ maxConcurrencyPerKey: 5 });
+        // Same key string "shared.secret" in both z.ai and anthropic pools
+        km.loadKeys({ 'z.ai': ['shared.secret'], 'anthropic': ['shared.secret'] });
+        // Should only have 1 key (duplicate skipped)
+        expect(km.keys).toHaveLength(1);
+        expect(km.keys[0].provider).toBe('z.ai'); // first occurrence wins
+    });
+
+    test('different keys across providers are all loaded', () => {
+        km = new KeyManager({ maxConcurrencyPerKey: 5 });
+        km.loadKeys({ 'z.ai': ['zkey.s1'], 'anthropic': ['antkey.s2'] });
+        expect(km.keys).toHaveLength(2);
+        expect(km.keys[0].keyId).toBe('zkey');
+        expect(km.keys[1].keyId).toBe('antkey');
+    });
+
+    test('duplicate within same provider is deduplicated', () => {
+        km = new KeyManager({ maxConcurrencyPerKey: 5 });
+        km.loadKeys({ 'z.ai': ['zkey.s1', 'zkey.s1'] });
+        expect(km.keys).toHaveLength(1);
+    });
+
+    test('flat array with duplicates is deduplicated', () => {
+        km = new KeyManager({ maxConcurrencyPerKey: 5 });
+        km.loadKeys(['key1.s1', 'key2.s2', 'key1.s1']);
+        expect(km.keys).toHaveLength(2);
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// GUARD-16: Error semantics — no_keys_configured vs all_keys_busy
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('GUARD-16: Error semantics for provider key availability', () => {
+    test('hasKeysForProvider returns true when tagged keys exist', () => {
+        const km = new KeyManager({ maxConcurrencyPerKey: 5 });
+        km.loadKeys({ 'z.ai': ['zkey.s1'], 'anthropic': ['antkey.s2'] });
+        expect(km.hasKeysForProvider('z.ai')).toBe(true);
+        expect(km.hasKeysForProvider('anthropic')).toBe(true);
+        expect(km.hasKeysForProvider('openai')).toBe(false);
+        km.destroy?.();
+    });
+
+    test('hasKeysForProvider returns false for untagged keys', () => {
+        // Flat array keys are NOT tracked in _providerKeyIndices
+        const km = new KeyManager({ maxConcurrencyPerKey: 5 });
+        km.loadKeys(['key1.s1', 'key2.s2']);
+        expect(km.hasKeysForProvider('z.ai')).toBe(false);
+        expect(km.hasKeysForProvider('anthropic')).toBe(false);
+        km.destroy?.();
+    });
+
+    test('getKeysForProvider returns indices only for tagged keys', () => {
+        const km = new KeyManager({ maxConcurrencyPerKey: 5 });
+        km.loadKeys({ 'z.ai': ['zkey.s1', 'zkey2.s2'], 'anthropic': ['antkey.s3'] });
+        expect(km.getKeysForProvider('z.ai')).toEqual([0, 1]);
+        expect(km.getKeysForProvider('anthropic')).toEqual([2]);
+        expect(km.getKeysForProvider('openai')).toEqual([]);
+        km.destroy?.();
+    });
+});
