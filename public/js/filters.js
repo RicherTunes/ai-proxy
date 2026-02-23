@@ -787,11 +787,8 @@
         return Array.from(models).sort();
     }
 
-    // ========== SHARED REQUEST ID ==========
-    function getRequestId(req) {
-        if (!req) return null;
-        return req.requestId || req.id || (req.timestamp + '-' + (req.keyIndex ?? 0));
-    }
+    // ========== REQUEST ID (delegated to request-ids.js) ==========
+    var getRequestId = window.RequestIds.getRequestId;
 
     // ========== REQUEST LIST NAVIGATION ==========
     function navigateRequestList(direction) {
@@ -945,7 +942,6 @@
         populateModelFilter: populateModelFilter,
         createModelSelectElement: createModelSelectElement,
         getAvailableModels: getAvailableModels,
-        getRequestId: getRequestId,
         navigateRequestList: navigateRequestList,
         clearRequestListSelection: clearRequestListSelection,
         toggleAutoScroll: toggleAutoScroll,

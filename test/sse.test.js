@@ -88,6 +88,12 @@ describe('sse.js - DashboardSSE module', () => {
             debugEnabled: false
         };
 
+        window.RequestIds = {
+            getRequestId: function(req) {
+                if (!req) return null;
+                return req.requestId || req.id || (req.timestamp + '-' + (req.keyIndex ?? 0));
+            }
+        };
         window.DashboardStore = mockStore;
         window.showToast = jest.fn();
         window.DashboardInit = {
