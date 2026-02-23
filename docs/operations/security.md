@@ -7,6 +7,12 @@ title: Security Configuration Guide
 
 This document describes security settings for the GLM Proxy and provides guidance for safe deployment.
 
+> **Related:**
+> - [Configuration Guide](../user-guide/configuration.md) - Environment variables and settings
+> - [Dashboard Guide](../user-guide/dashboard.md) - Visual monitoring and key health
+> - [Monitoring Guide](../user-guide/monitoring.md) - Health checks and alerts
+> - [Load Testing Guide](./load-testing.md) - Performance validation
+
 ## Dashboard Security
 
 The dashboard provides visibility into system health and security status:

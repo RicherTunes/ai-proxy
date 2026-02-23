@@ -7,6 +7,12 @@ title: Load Testing Guide
 
 This document describes how to run load tests and validate performance baselines for the GLM Proxy.
 
+> **Related:**
+> - [Monitoring Guide](../user-guide/monitoring.md) - Health checks and stats endpoints
+> - [Architecture](../developer-guide/architecture.md) - System components and data flow
+> - [Z.ai Knowledge Base](../reference/zai-knowledge-base.md) - Provider-specific rate limits
+> - [Testing Guide](../developer-guide/testing.md) - Test strategy and coverage
+
 ## Dashboard Monitoring During Load Tests
 
 The dashboard provides real-time visibility into system performance during load tests. Key sections to monitor:

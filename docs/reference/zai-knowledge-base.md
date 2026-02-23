@@ -9,6 +9,12 @@ title: Z.ai (Zhipu AI) - Complete Knowledge Base
 > **Provider:** Zhipu AI (Z.ai / BigModel.cn)
 > **Purpose:** Comprehensive brain dump of all Z.ai knowledge for integration and reference
 >
+> **Related:**
+> - [Z.ai Coding Subscription](./zai-coding-subscription.md) - Quick tier reference and pricing
+> - [Model Routing](../features/model-routing.md) - Configuring complexity-aware routing
+> - [Configuration Guide](../user-guide/configuration.md) - API key setup and baseUrl
+> - [Model Concurrency Findings](../model-concurrency-findings.md) - Real-world concurrency behavior
+>
 > **See Also:** [Z.ai Coding Subscription Quick Reference](./zai-coding-subscription.md)
 
 ---

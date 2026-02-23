@@ -1152,6 +1152,13 @@
                 '<div class="detail-row"><span class="detail-label">Timestamp</span><span class="detail-value">' + formatTimestamp(request.timestamp, {full: true}) + '</span></div>' +
                 '<div class="detail-row"><span class="detail-label">Model</span><span class="detail-value">' + escapeHtml(request.originalModel || request.model || 'N/A') + copyBtn(request.originalModel || request.model) + '</span></div>' +
                 '<div class="detail-row"><span class="detail-label">Mapped To</span><span class="detail-value">' + escapeHtml(request.mappedModel || 'N/A') + copyBtn(request.mappedModel) + '</span></div>' +
+                (request.provider
+                    ? '<div class="detail-row"><span class="detail-label">Provider</span><span class="detail-value">' +
+                      '<span class="provider-badge ' + (request.costTier === 'premium' ? 'provider-premium' : request.costTier === 'metered' ? 'provider-metered' : 'provider-free') + '">' +
+                      escapeHtml(request.provider) + '</span>' +
+                      (request.costTier && request.costTier !== 'free' ? ' <span class="text-secondary" style="color: var(--warning)">(' + escapeHtml(request.costTier) + ')</span>' : '') +
+                      '</span></div>'
+                    : '') +
                 '<div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" style="color: var(--' + statusClass + ')">' + statusCode + '</span></div>' +
                 '<div class="detail-row"><span class="detail-label">Latency</span><span class="detail-value">' + (request.latency || request.latencyMs || 'N/A') + 'ms</span></div>' +
                 '<div class="detail-row"><span class="detail-label">Key</span><span class="detail-value">K' + (request.keyIndex ?? 'N/A') + '</span></div>' +

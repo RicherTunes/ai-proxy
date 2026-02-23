@@ -576,10 +576,9 @@ describe('StubServer Integration: header stripping (M3.4)', () => {
         });
 
         const upstreamHeaders = stub.stats.requestHeaders[0];
+        // Default z.ai provider uses x-api-key auth only (GUARD-05 key isolation)
         expect(upstreamHeaders['x-api-key']).toBeDefined();
         expect(upstreamHeaders['x-api-key']).not.toBe('old-key');
-        expect(upstreamHeaders['authorization']).toBeDefined();
-        expect(upstreamHeaders['authorization']).not.toBe('Bearer old-token');
     }, 30000);
 });
 
