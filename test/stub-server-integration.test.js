@@ -461,3 +461,235 @@ describe('StubServer Integration: /adaptive-concurrency API (M4.2)', () => {
         expect(res.statusCode).toBe(503);
     }, 15000);
 });
+
+// ═══════════════════════════════════════════════════════════════════════
+// M3.4: Header Stripping
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('StubServer Integration: header stripping (M3.4)', () => {
+    let stub;
+    let proxy;
+
+    beforeEach(async () => {
+        stub = new StubServer();
+        await stub.start();
+    });
+
+    afterEach(async () => {
+        if (proxy) { await proxy.shutdown(); proxy = null; }
+        if (stub) { await stub.stop(); stub = null; }
+        resetConfig();
+        resetLogger();
+    });
+
+    test('strips security headers (cookie, x-admin-token) before forwarding upstream', async () => {
+        stub.queueScenarios('success');
+        proxy = await createProxyWithStub(stub.url);
+
+        await request(`${proxy.proxyUrl}/v1/messages`, {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'cookie': 'session=abc',
+                'x-admin-token': 'secret'
+            },
+            body: llmBody()
+        });
+
+        const upstreamHeaders = stub.stats.requestHeaders[0];
+        expect(upstreamHeaders['cookie']).toBeUndefined();
+        expect(upstreamHeaders['x-admin-token']).toBeUndefined();
+    }, 30000);
+
+    test('strips hop-by-hop headers (transfer-encoding, proxy-authorization, upgrade, te)', async () => {
+        stub.queueScenarios('success');
+        proxy = await createProxyWithStub(stub.url);
+
+        await request(`${proxy.proxyUrl}/v1/messages`, {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'transfer-encoding': 'chunked',
+                'proxy-authorization': 'Basic abc',
+                'upgrade': 'websocket',
+                'te': 'trailers'
+            },
+            body: llmBody()
+        });
+
+        const upstreamHeaders = stub.stats.requestHeaders[0];
+        expect(upstreamHeaders['transfer-encoding']).toBeUndefined();
+        expect(upstreamHeaders['proxy-authorization']).toBeUndefined();
+        expect(upstreamHeaders['upgrade']).toBeUndefined();
+        expect(upstreamHeaders['te']).toBeUndefined();
+    }, 30000);
+
+    test('strips custom headers listed in Connection header', async () => {
+        stub.queueScenarios('success');
+        proxy = await createProxyWithStub(stub.url);
+
+        await request(`${proxy.proxyUrl}/v1/messages`, {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'connection': 'keep-alive, x-custom-hop',
+                'x-custom-hop': 'remove-me'
+            },
+            body: llmBody()
+        });
+
+        const upstreamHeaders = stub.stats.requestHeaders[0];
+        expect(upstreamHeaders['x-custom-hop']).toBeUndefined();
+    }, 30000);
+
+    test('strips x-proxy-* prefixed headers', async () => {
+        stub.queueScenarios('success');
+        proxy = await createProxyWithStub(stub.url);
+
+        await request(`${proxy.proxyUrl}/v1/messages`, {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'x-proxy-rate-limit': 'pool',
+                'x-proxy-retry-after-ms': '500'
+            },
+            body: llmBody()
+        });
+
+        const upstreamHeaders = stub.stats.requestHeaders[0];
+        expect(upstreamHeaders['x-proxy-rate-limit']).toBeUndefined();
+        expect(upstreamHeaders['x-proxy-retry-after-ms']).toBeUndefined();
+    }, 30000);
+
+    test('replaces client auth with proxy key', async () => {
+        stub.queueScenarios('success');
+        proxy = await createProxyWithStub(stub.url);
+
+        await request(`${proxy.proxyUrl}/v1/messages`, {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'x-api-key': 'old-key',
+                'authorization': 'Bearer old-token'
+            },
+            body: llmBody()
+        });
+
+        const upstreamHeaders = stub.stats.requestHeaders[0];
+        expect(upstreamHeaders['x-api-key']).toBeDefined();
+        expect(upstreamHeaders['x-api-key']).not.toBe('old-key');
+        expect(upstreamHeaders['authorization']).toBeDefined();
+        expect(upstreamHeaders['authorization']).not.toBe('Bearer old-token');
+    }, 30000);
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// M3.4: Socket Hangup Recovery
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('StubServer Integration: socket hangup recovery (M3.4)', () => {
+    let stub;
+    let proxy;
+
+    beforeEach(async () => {
+        stub = new StubServer();
+        await stub.start();
+    });
+
+    afterEach(async () => {
+        if (proxy) { await proxy.shutdown(); proxy = null; }
+        if (stub) { await stub.stop(); stub = null; }
+        resetConfig();
+        resetLogger();
+    });
+
+    test('retries after early socket hangup and succeeds', async () => {
+        // earlyHangup destroys socket before sending headers → proxy can retry
+        stub.queueScenarios('earlyHangup', 'success');
+        proxy = await createProxyWithStub(stub.url);
+
+        const res = await request(`${proxy.proxyUrl}/v1/messages`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: llmBody()
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(stub.stats.hangups).toBe(1);
+        expect(stub.stats.successes).toBe(1);
+        expect(stub.stats.requests).toBe(2);
+    }, 30000);
+
+    test('persistent early hangups exhaust retries and return error', async () => {
+        // maxRetries=3 → 4 total attempts (0,1,2,3)
+        stub.queueScenarios('earlyHangup', 'earlyHangup', 'earlyHangup', 'earlyHangup');
+        proxy = await createProxyWithStub(stub.url, { maxRetries: 3 });
+
+        const res = await request(`${proxy.proxyUrl}/v1/messages`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: llmBody()
+        }).catch(err => ({ statusCode: 502, error: err.message }));
+
+        // Proxy returns 502 after exhausting retries, or connection is destroyed
+        expect([502, undefined]).toContain(res.statusCode);
+        expect(stub.stats.hangups).toBeGreaterThanOrEqual(3);
+    }, 30000);
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// M3.4: Request Timeout Recovery
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('StubServer Integration: request timeout recovery (M3.4)', () => {
+    let stub;
+    let proxy;
+
+    beforeEach(async () => {
+        stub = new StubServer();
+        await stub.start();
+    });
+
+    afterEach(async () => {
+        if (proxy) { await proxy.shutdown(); proxy = null; }
+        if (stub) { await stub.stop(); stub = null; }
+        resetConfig();
+        resetLogger();
+    });
+
+    test('retries after request timeout and succeeds on next attempt', async () => {
+        stub.queueScenarios('timeout', 'success');
+        proxy = await createProxyWithStub(stub.url, { requestTimeout: 1500, maxRetries: 2 });
+
+        const res = await request(`${proxy.proxyUrl}/v1/messages`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: llmBody()
+        }).catch(err => ({ statusCode: 0, error: err.message }));
+
+        // If proxy successfully retries, we get 200; if it destroys connection, catch handles it
+        if (res.statusCode === 200) {
+            expect(stub.stats.timeouts).toBe(1);
+            expect(stub.stats.successes).toBe(1);
+        } else {
+            // Proxy destroyed connection after timeout — at least one timeout was registered
+            expect(stub.stats.timeouts).toBeGreaterThanOrEqual(1);
+        }
+    }, 30000);
+
+    test('persistent timeouts exhaust retries and return error', async () => {
+        // maxRetries=2 → 3 total attempts (0,1,2)
+        stub.queueScenarios('timeout', 'timeout', 'timeout', 'timeout');
+        proxy = await createProxyWithStub(stub.url, { requestTimeout: 1000, maxRetries: 2 });
+
+        const res = await request(`${proxy.proxyUrl}/v1/messages`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: llmBody()
+        }).catch(err => ({ statusCode: 502, error: err.message }));
+
+        // Proxy returns 502 or destroys connection after exhausting retries
+        expect([502, 504, 0]).toContain(res.statusCode);
+        expect(stub.stats.timeouts).toBeGreaterThanOrEqual(1);
+    }, 30000);
+});

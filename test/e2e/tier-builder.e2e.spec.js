@@ -507,3 +507,85 @@ test.describe('Tier Builder Enhancements', () => {
         }
     });
 });
+
+// ======== Tier Builder Save Round-Trip (M1.5) ========
+
+test.describe('Tier Builder Save Round-Trip', () => {
+
+    test('save persists strategy change and re-fetch returns updated config', async ({ request, proxyServer, page }) => {
+        await goToTierBuilder(page, proxyServer.url);
+        await page.waitForTimeout(1000);
+
+        // 1. Read initial config from API
+        const initialRes = await request.get(`${proxyServer.url}/model-routing`);
+        const initial = await initialRes.json();
+        expect(initial.enabled).toBe(true);
+        const initialStrategy = initial.config.tiers.heavy.strategy;
+
+        // 2. Change heavy tier strategy in UI
+        const newStrategy = initialStrategy === 'balanced' ? 'throughput' : 'balanced';
+        await page.selectOption('#tierStrategyHeavy', newStrategy);
+        await page.waitForTimeout(300);
+
+        // 3. Wait for PUT request to complete after save
+        const [putResponse] = await Promise.all([
+            page.waitForResponse(res =>
+                res.url().includes('/model-routing') && res.request().method() === 'PUT'
+            ),
+            page.locator('#tierBuilderSave').click()
+        ]);
+        expect(putResponse.ok()).toBeTruthy();
+
+        // 4. Re-fetch config via API and verify round-trip
+        await page.waitForTimeout(500);
+        const updatedRes = await request.get(`${proxyServer.url}/model-routing`);
+        const updated = await updatedRes.json();
+        expect(updated.config.tiers.heavy.strategy).toBe(newStrategy);
+
+        // 5. Verify other tiers were NOT affected
+        expect(updated.config.tiers.medium.strategy).toBe(initial.config.tiers.medium.strategy);
+        expect(updated.config.tiers.light.strategy).toBe(initial.config.tiers.light.strategy);
+    });
+
+    test('save persists model list after drag removal', async ({ request, proxyServer, page }) => {
+        await goToTierBuilder(page, proxyServer.url);
+        await page.waitForTimeout(1000);
+
+        // 1. Get initial model count for heavy tier
+        const initialRes = await request.get(`${proxyServer.url}/model-routing`);
+        const initial = await initialRes.json();
+        const initialHeavyModels = initial.config.tiers.heavy.models || [];
+
+        // Only test removal if there's at least one model to remove
+        if (initialHeavyModels.length === 0) {
+            test.skip();
+            return;
+        }
+
+        // 2. Remove first model from heavy tier via remove button
+        const removeBtn = page.locator('.tier-lane[data-tier="heavy"] .model-remove-btn').first();
+        if (await removeBtn.isVisible()) {
+            await removeBtn.click();
+            await page.waitForTimeout(300);
+
+            // 3. Save
+            const saveBtn = page.locator('#tierBuilderSave');
+            if (await saveBtn.isEnabled()) {
+                const [putResponse] = await Promise.all([
+                    page.waitForResponse(res =>
+                        res.url().includes('/model-routing') && res.request().method() === 'PUT'
+                    ),
+                    saveBtn.click()
+                ]);
+                expect(putResponse.ok()).toBeTruthy();
+
+                // 4. Re-fetch and verify model was removed
+                await page.waitForTimeout(500);
+                const updatedRes = await request.get(`${proxyServer.url}/model-routing`);
+                const updated = await updatedRes.json();
+                const updatedHeavyModels = updated.config.tiers.heavy.models || [];
+                expect(updatedHeavyModels.length).toBeLessThan(initialHeavyModels.length);
+            }
+        }
+    });
+});

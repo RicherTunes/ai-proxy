@@ -42,6 +42,34 @@ Follow conventional commits:
 4. Submit a PR with description
 5. Respond to review feedback
 
+## Visual / Screenshot Testing
+
+The project uses Playwright snapshot tests for dashboard documentation screenshots.
+
+### How It Works
+
+- `npm run screenshots:generate` — Regenerates baseline snapshots (uses `--update-snapshots`)
+- `npm run screenshots:extract` — Extracts screenshots to `docs/screenshots/`
+- CI runs `--ignore-snapshots` to avoid accidental snapshot updates
+
+### Updating Snapshots
+
+When UI changes affect screenshots:
+
+1. Run `npm run screenshots:generate` locally
+2. Review the updated images in `test/e2e/` snapshot directories
+3. Run `npm run screenshots:extract` to copy to docs
+4. Commit both the snapshot updates and extracted docs screenshots
+
+### Playwright Version
+
+The Playwright version is pinned exactly in `package.json` to prevent CI drift. When upgrading:
+
+1. Update the version in `package.json`
+2. Run `npx playwright install --with-deps chromium`
+3. Regenerate snapshots: `npm run screenshots:generate`
+4. Verify all E2E tests: `npm run test:e2e`
+
 ## Getting Help
 
 - Open an issue for bugs or feature requests
