@@ -179,6 +179,8 @@ class StubServer {
                 return this._respond403(req, res);
             case 'hangup':
                 return this._respondHangup(req, res);
+            case 'earlyHangup':
+                return this._respondEarlyHangup(req, res);
             case 'timeout':
                 return this._respondTimeout(req, res);
             case 'streaming':
@@ -308,6 +310,14 @@ class StubServer {
         setTimeout(() => {
             req.socket.destroy();
         }, 10);
+    }
+
+    /**
+     * Early socket hangup (destroy before any response headers — proxy can retry)
+     */
+    _respondEarlyHangup(req, res) {
+        this.stats.hangups++;
+        req.socket.destroy();
     }
 
     /**
