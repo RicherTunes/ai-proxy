@@ -8,8 +8,8 @@ title: Dashboard Screenshots
 This directory contains screenshots generated from E2E tests for documentation purposes.
 
 > **Related:**
+> - [Dashboard Guide](../user-guide/dashboard.md) - Complete dashboard walkthrough
 > - [Testing Guide](../developer-guide/testing.md#e2e-testing-with-screenshots) - E2E test and screenshot generation
-> - [Dashboard Guide](../user-guide/dashboard.md) - Dashboard feature documentation
 > - [Search Functionality](../search/README.md) - Documentation search index
 
 ## Usage
@@ -33,83 +33,104 @@ npm run screenshots:extract
 
 ### Main Views
 
-- [overview](./overview.png)
-- [routing](./routing.png)
-- [requests](./requests.png)
-- [system](./system.png)
+| Screenshot | Description |
+|------------|-------------|
+| [overview](./overview.png) | Dashboard overview page with all key metrics |
+| [routing](./routing.png) | Model routing configuration page |
+| [requests](./requests.png) | Requests monitoring page |
+| [system](./system.png) | System diagnostics and analytics page |
 
 ### Themes
 
-- [dark-theme](./themes/dark-theme.png)
-- [light-theme](./themes/light-theme.png)
+| Screenshot | Description |
+|------------|-------------|
+| [dark-theme](./themes/dark-theme.png) | Dark theme (default) - optimized for low-light |
+| [light-theme](./themes/light-theme.png) | Light theme - better for bright environments |
 
-### Density
+### Density Modes
 
-- [compact](./density/compact.png)
-- [comfortable](./density/comfortable.png)
+| Screenshot | Description |
+|------------|-------------|
+| [compact](./density/compact.png) | Compact density - more information in less space |
+| [comfortable](./density/comfortable.png) | Comfortable density - balanced spacing (default) |
 
 ### Dashboard Sections
 
-- [health-ribbon](./sections/health-ribbon.png)
-- [keys-heatmap](./sections/keys-heatmap.png)
-- [cost-panel](./sections/cost-panel.png)
-- [charts](./sections/charts.png)
+| Screenshot | Description |
+|------------|-------------|
+| [health-ribbon](./sections/health-ribbon.png) | Top ribbon with key health metrics |
+| [keys-heatmap](./sections/keys-heatmap.png) | Visual API key health status |
+| [cost-panel](./sections/cost-panel.png) | Real-time cost tracking panel |
+| [charts](./sections/charts.png) | Request rate and latency charts |
 
 ### Live Stream Panel
 
-- [live-collapsed](./panels/live-collapsed.png)
-- [live-expanded](./panels/live-expanded.png)
-- [live-content](./panels/live-content.png)
+| Screenshot | Description |
+|------------|-------------|
+| [live-collapsed](./panels/live-collapsed.png) | Collapsed live stream drawer |
+| [live-expanded](./panels/live-expanded.png) | Expanded live stream drawer |
+| [live-content](./panels/live-content.png) | Live request content view |
 
 ### Dock Tabs
 
-- [traces](./dock-tabs/traces.png)
-- [logs](./dock-tabs/logs.png)
-- [queue](./dock-tabs/queue.png)
-- [circuit](./dock-tabs/circuit.png)
+| Screenshot | Description |
+|------------|-------------|
+| [traces](./dock-tabs/traces.png) | Request traces table |
+| [logs](./dock-tabs/logs.png) | Application logs viewer |
+| [queue](./dock-tabs/queue.png) | Request queue status |
+| [circuit](./dock-tabs/circuit.png) | Circuit breaker states |
 
 ### Model Routing
 
-- [tier-builder](./routing/tier-builder.png)
+| Screenshot | Description |
+|------------|-------------|
+| [tier-builder](./routing/tier-builder.png) | Drag-and-drop tier configuration |
 
 ### Modals
 
-- [keyboard-shortcuts](./modals/keyboard-shortcuts.png)
+| Screenshot | Description |
+|------------|-------------|
+| [keyboard-shortcuts](./modals/keyboard-shortcuts.png) | Keyboard shortcuts reference |
 
-### System Page
+### System Page Components
 
-- [error-breakdown](./system/error-breakdown.png)
-- [retry-analytics](./system/retry-analytics.png)
-- [health-score](./system/health-score.png)
+| Screenshot | Description |
+|------------|-------------|
+| [error-breakdown](./system/error-breakdown.png) | Categorized error analysis |
+| [retry-analytics](./system/retry-analytics.png) | Retry performance metrics |
+| [health-score](./system/health-score.png) | Overall system health indicator |
 
 ### Progressive Disclosure
 
-- [advanced-stats-collapsed](./progressive/advanced-stats-collapsed.png)
-- [advanced-stats-expanded](./progressive/advanced-stats-expanded.png)
-- [process-health-collapsed](./progressive/process-health-collapsed.png)
-- [process-health-expanded](./progressive/process-health-expanded.png)
+| Screenshot | Description |
+|------------|-------------|
+| [advanced-stats-collapsed](./progressive/advanced-stats-collapsed.png) | Collapsed advanced statistics |
+| [advanced-stats-expanded](./progressive/advanced-stats-expanded.png) | Expanded lifetime stats and predictions |
+| [process-health-collapsed](./progressive/process-health-collapsed.png) | Collapsed process health section |
+| [process-health-expanded](./progressive/process-health-expanded.png) | Expanded system health details |
 
 ### Responsive Layouts
 
-- [mobile-375px](./responsive/mobile-375px.png)
-- [tablet-768px](./responsive/tablet-768px.png)
-- [desktop-1920px](./responsive/desktop-1920px.png)
+| Screenshot | Description |
+|------------|-------------|
+| [mobile-375px](./responsive/mobile-375px.png) | Mobile phone view (375px width) |
+| [tablet-768px](./responsive/tablet-768px.png) | Tablet view (768px width) |
+| [desktop-1920px](./responsive/desktop-1920px.png) | Desktop view (1920px width) |
 
 ### UI Components (Focused)
 
-- [page-nav-tabs](./components/page-nav-tabs.png)
-- [theme-toggle](./components/theme-toggle.png)
-- [density-selector](./components/density-selector.png)
-- [time-range-selector](./components/time-range-selector.png)
-- [connection-status](./components/connection-status.png)
-- [pause-button](./components/pause-button.png)
-- [keys-heatmap](./components/keys-heatmap.png)
-- [key-cell-healthy](./components/key-cell-healthy.png)
-- [key-cell-warning](./components/key-cell-warning.png)
-- [model-card](./components/model-card.png)
-- [model-list](./components/model-list.png)
-- [trace-table](./components/trace-table.png)
-- [log-entries](./components/log-entries.png)
-- [circuit-indicators](./components/circuit-indicators.png)
-- [request-rate-chart](./components/request-rate-chart.png)
-- [latency-chart](./components/latency-chart.png)
+| Screenshot | Description |
+|------------|-------------|
+| [page-nav-tabs](./components/page-nav-tabs.png) | Main page navigation tabs |
+| [theme-toggle](./components/theme-toggle.png) | Dark/light theme toggle button |
+| [density-selector](./components/density-selector.png) | Layout density selector |
+| [time-range-selector](./components/time-range-selector.png) | Chart time range picker |
+| [connection-status](./components/connection-status.png) | Upstream connection indicator |
+| [pause-button](./components/pause-button.png) | Proxy pause/resume control |
+| [keys-heatmap](./components/keys-heatmap.png) | Focused key health visualization |
+| [model-list](./components/model-list.png) | Available models list |
+| [trace-table](./components/trace-table.png) | Request traces table |
+| [log-entries](./components/log-entries.png) | Log entry display |
+| [circuit-indicators](./components/circuit-indicators.png) | Circuit breaker state indicators |
+| [request-rate-chart](./components/request-rate-chart.png) | Request rate over time |
+| [latency-chart](./components/latency-chart.png) | Response latency distribution |

@@ -213,12 +213,31 @@ Switch between different views:
 
 ### Themes
 
-Toggle between dark and light themes using the theme button:
+The dashboard supports both **dark** and **light** themes to match your preference and environment:
 
 ![Theme Toggle](../screenshots/components/theme-toggle.png)
 
+**Dark Theme** (default):
+
 ![Dark Theme](../screenshots/themes/dark-theme.png)
+
+- Reduces eye strain in low-light environments
+- Better for long coding sessions
+- Lower power consumption on OLED displays
+
+**Light Theme**:
+
 ![Light Theme](../screenshots/themes/light-theme.png)
+
+- Better visibility in bright environments
+- Matches traditional light-mode applications
+- Higher contrast for some users
+
+**How to Toggle:**
+
+- Click the theme toggle button (🌙/☀️) in the header
+- Use keyboard shortcut: Press `T`
+- Theme preference is saved in your browser
 
 ### Density Modes
 
@@ -284,19 +303,36 @@ System health and scheduler metrics:
 
 ## Responsive Design
 
-The dashboard adapts to different screen sizes:
+The dashboard is fully responsive and adapts to different screen sizes:
 
 ### Mobile (375px)
 
 ![Mobile View](../screenshots/responsive/mobile-375px.png)
 
+**Mobile-specific behavior:**
+- Navigation collapses into a hamburger menu
+- Charts resize to fit narrow screens
+- Live stream panel becomes full-width when expanded
+- Keyboard shortcuts adapted for touch screens
+
 ### Tablet (768px)
 
 ![Tablet View](../screenshots/responsive/tablet-768px.png)
 
+**Tablet behavior:**
+- Side-by-side layout for some panels
+- Touch-friendly button sizes
+- Optimized chart dimensions
+
 ### Desktop (1920px)
 
 ![Desktop View](../screenshots/responsive/desktop-1920px.png)
+
+**Desktop features:**
+- Full multi-column layout
+- Wider charts with more data points
+- Side-by-side panels and widgets
+- Maximum information density
 
 ## Navigation
 
@@ -314,6 +350,29 @@ Sub-pages are also supported:
 - `/dashboard#requests/logs` - Logs tab
 - `/dashboard#requests/queue` - Queue tab
 - `/dashboard#requests/circuit` - Circuit tab
+
+## Dashboard Glossary
+
+Common terms used in the dashboard:
+
+| Term | Definition |
+|------|------------|
+| **Circuit Breaker** | Safety mechanism that temporarily disables failing API keys |
+| **CLOSED** | Circuit breaker state indicating healthy operation |
+| **OPEN** | Circuit breaker state indicating the key is disabled due to failures |
+| **HALF_OPEN** | Circuit breaker testing if a previously failed key has recovered |
+| **In-Flight** | Requests currently being processed (not yet completed) |
+| **P50/P95/P99** | Latency percentiles (50%, 95%, 99% of requests are faster than this) |
+| **RPM** | Requests Per Minute - throughput metric |
+| **Tier** | Model classification (Light/Medium/Heavy) based on capability and cost |
+| **Upstream** | The target API service (e.g., Z.ai) that the proxy forwards requests to |
+| **Downstream** | Your application making requests through the proxy |
+| **SSE** | Server-Sent Events - real-time push from server to dashboard |
+| **Backpressure** | System load indicator showing how many requests are queued/processing |
+| **Keys Heatmap** | Visual grid showing health status of all API keys |
+| **Trace** | Detailed record of a single request's lifecycle |
+| **Health Score** | Composite metric indicating overall system health (0-100) |
+| **AIMD** | Additive Increase/Multiplicative Decrease - adaptive concurrency algorithm |
 
 ## Next Steps
 
