@@ -209,6 +209,34 @@ describe('GUARD-05: Key isolation per provider', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════
+// Default provider injection warning
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('Default provider injection', () => {
+    test('sets _silentDefaultInjected when providers configured but default missing', () => {
+        const registry = new ProviderRegistry({
+            'anthropic': { costTier: 'metered' }
+        });
+        expect(registry._silentDefaultInjected).toBe(true);
+        // z.ai was silently injected
+        expect(registry.hasProvider('z.ai')).toBe(true);
+    });
+
+    test('does not set _silentDefaultInjected when default provider is included', () => {
+        const registry = new ProviderRegistry({
+            'z.ai': { costTier: 'free' },
+            'anthropic': { costTier: 'metered' }
+        });
+        expect(registry._silentDefaultInjected).toBeUndefined();
+    });
+
+    test('does not set _silentDefaultInjected when no providers configured', () => {
+        const registry = new ProviderRegistry();
+        expect(registry._silentDefaultInjected).toBeUndefined();
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
 // Provider management
 // ═══════════════════════════════════════════════════════════════════════
 
