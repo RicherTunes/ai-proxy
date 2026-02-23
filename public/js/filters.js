@@ -787,37 +787,80 @@
         return Array.from(models).sort();
     }
 
+    // ========== SHARED REQUEST ID ==========
+    function getRequestId(req) {
+        if (!req) return null;
+        return req.requestId || req.id || (req.timestamp + '-' + (req.keyIndex ?? 0));
+    }
+
     // ========== REQUEST LIST NAVIGATION ==========
     function navigateRequestList(direction) {
-        var rows = document.querySelectorAll('#liveStreamRequestList .request-row');
-        if (rows.length === 0) return;
+        var viewport = document.querySelector('.virtual-scroll-viewport');
+        var filtered = getFilteredRequests();
+        if (!viewport || !filtered || filtered.length === 0) return;
 
-        // Find current selection in rendered rows
-        var currentIndex = -1;
-        rows.forEach(function(row, i) {
-            if (row.classList.contains('selected')) currentIndex = i;
-        });
+        var ordering = window.DashboardInit?.getTabOrdering ? window.DashboardInit.getTabOrdering('live') : 'desc';
+        var isDescending = ordering === 'desc';
 
-        var nextIndex = currentIndex + direction;
-        if (nextIndex < 0) nextIndex = rows.length - 1;
-        if (nextIndex >= rows.length) nextIndex = 0;
+        function findArrayIndexById(requestId) {
+            if (!requestId) return -1;
+            for (var i = 0; i < filtered.length; i++) {
+                if (getRequestId(filtered[i]) === requestId) return i;
+            }
+            return -1;
+        }
 
-        // Remove old selection
-        rows.forEach(function(row) { row.classList.remove('selected'); });
+        var arrayIdx = findArrayIndexById(STATE.selectedRequestId);
+        var currentDisplayIdx = -1;
+        if (arrayIdx !== -1) {
+            currentDisplayIdx = isDescending ? (filtered.length - 1 - arrayIdx) : arrayIdx;
+        }
 
-        // Apply new selection
-        var targetRow = rows[nextIndex];
-        if (targetRow) {
-            targetRow.classList.add('selected');
-            targetRow.scrollIntoView({ block: 'nearest' });
-            STATE.selectedRequestId = targetRow.dataset.requestId || null;
-            STATE.selectedListIndex = nextIndex;
+        var nextDisplayIdx = currentDisplayIdx + direction;
+        if (nextDisplayIdx < 0) nextDisplayIdx = filtered.length - 1;
+        if (nextDisplayIdx >= filtered.length) nextDisplayIdx = 0;
+
+        var nextArrayIdx = isDescending ? (filtered.length - 1 - nextDisplayIdx) : nextDisplayIdx;
+        var nextReq = filtered[nextArrayIdx];
+        var nextId = getRequestId(nextReq);
+
+        if (window.DashboardStore?.store?.dispatch && window.DashboardStore?.Actions?.selectRequest) {
+            window.DashboardStore.store.dispatch(window.DashboardStore.Actions.selectRequest(nextId));
+        } else {
+            STATE.selectedRequestId = nextId;
+        }
+        STATE.selectedListIndex = nextDisplayIdx;
+
+        var rowHeight = window.DashboardSSE?.VIRTUAL_ROW_HEIGHT || 28;
+        // Ensure the virtual list has a deterministic scroll height even before the next RAF render.
+        // This prevents scrollTop assignments from being clamped to 0 when the content height isn't set yet.
+        var container = document.getElementById('liveStreamRequestList');
+        if (container) {
+            container.style.height = (filtered.length * rowHeight) + 'px';
+            container.style.position = 'relative';
+        }
+        var rowTop = nextDisplayIdx * rowHeight;
+        var rowBottom = rowTop + rowHeight;
+        var currentTop = viewport.scrollTop;
+        var currentBottom = currentTop + viewport.clientHeight;
+        if (rowTop < currentTop) {
+            viewport.scrollTop = rowTop;
+        } else if (rowBottom > currentBottom) {
+            viewport.scrollTop = Math.max(0, rowBottom - viewport.clientHeight);
+        }
+
+        if (window.DashboardSSE?.scheduleVirtualRender) {
+            window.DashboardSSE.scheduleVirtualRender();
         }
     }
 
     function clearRequestListSelection() {
         STATE.selectedListIndex = -1;
-        document.querySelectorAll('#liveStreamRequestList .request-row.selected').forEach(function(r) { r.classList.remove('selected'); });
+        if (window.DashboardStore?.store?.dispatch && window.DashboardStore?.Actions?.selectRequest) {
+            window.DashboardStore.store.dispatch(window.DashboardStore.Actions.selectRequest(null));
+        } else {
+            STATE.selectedRequestId = null;
+        }
     }
 
     // ========== AUTO-SCROLL TOGGLE ==========
@@ -833,10 +876,18 @@
 
     function jumpToLatest() {
         var viewport = document.querySelector('.virtual-scroll-viewport');
-        if (viewport) {
+        if (!viewport) return;
+        var ordering = window.DashboardInit?.getTabOrdering
+            ? window.DashboardInit.getTabOrdering('live') : 'desc';
+        if (ordering === 'asc') {
+            viewport.scrollTop = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+        } else {
             viewport.scrollTop = 0;
-            if (typeof window.showToast === 'function') window.showToast('Jumped to latest', 'info');
         }
+        if (window.DashboardSSE?.scheduleVirtualRender) {
+            window.DashboardSSE.scheduleVirtualRender();
+        }
+        if (typeof window.showToast === 'function') window.showToast('Jumped to latest', 'info');
     }
 
     // ========== COPY TO CLIPBOARD ==========
@@ -894,6 +945,7 @@
         populateModelFilter: populateModelFilter,
         createModelSelectElement: createModelSelectElement,
         getAvailableModels: getAvailableModels,
+        getRequestId: getRequestId,
         navigateRequestList: navigateRequestList,
         clearRequestListSelection: clearRequestListSelection,
         toggleAutoScroll: toggleAutoScroll,

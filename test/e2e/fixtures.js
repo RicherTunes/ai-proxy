@@ -475,6 +475,7 @@ async function startTestServerWithRouting() {
     adminAuth: { enabled: false },
     enableHotReload: false,
     security: { rateLimit: { enabled: false } },
+    usageMonitor: { enabled: false },
     modelRouting: {
       version: '2.0',
       enabled: true,

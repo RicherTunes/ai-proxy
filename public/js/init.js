@@ -307,7 +307,8 @@
         }
 
         var sidePanel = document.getElementById('sidePanel');
-        if (sidePanel && sidePanel.classList.contains('open')) {
+        var isDesktopDock = window.matchMedia && window.matchMedia('(min-width: 1024px)').matches;
+        if (isDesktopDock && sidePanel && sidePanel.classList.contains('open')) {
             rightInset = sidePanel.getBoundingClientRect().width;
         }
 
@@ -920,13 +921,9 @@
             case 'j': e.preventDefault(); if (window.DashboardFilters) window.DashboardFilters.navigateRequestList(1); break;
             case 'k': e.preventDefault(); if (window.DashboardFilters) window.DashboardFilters.navigateRequestList(-1); break;
             case 'enter':
-                if (STATE.selectedListIndex >= 0) {
+                if (STATE.selectedRequestId) {
                     e.preventDefault();
-                    var rows = document.querySelectorAll('#liveStreamRequestList .request-row');
-                    if (rows[STATE.selectedListIndex]) {
-                        var requestId = rows[STATE.selectedListIndex].dataset.requestId;
-                        if (requestId) openSidePanel(requestId);
-                    }
+                    openSidePanel(STATE.selectedRequestId);
                 }
                 break;
             case 'p': if (window.DashboardData && window.DashboardData.controlAction) { window.DashboardData.controlAction(STATE.settings.paused ? 'resume' : 'pause'); } break;
@@ -1133,9 +1130,9 @@
         var body = document.getElementById('sidePanelBody');
         if (!body) return;
         var targetId = String(requestId);
+        var _getId = window.DashboardFilters?.getRequestId || function(r) { return r.requestId || r.id || (r.timestamp + '-' + (r.keyIndex ?? 0)); };
         var request = STATE.requestsHistory.find(function(r) {
-            var rowId = r.requestId || r.traceId || r.id || (r.timestamp + '-' + (r.keyIndex ?? 0));
-            return String(rowId) === targetId;
+            return String(_getId(r)) === targetId;
         });
         if (!request) {
             body.innerHTML = '<div style="color: var(--text-secondary);">Request not found in the current live buffer.</div>';

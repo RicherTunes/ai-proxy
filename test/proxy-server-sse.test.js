@@ -295,6 +295,8 @@ describe('SSE request-complete Event Tests', () => {
         activeEventSources.length = 0;
         if (proxyServer) {
             await proxyServer.shutdown();
+            // Grace period for stats-aggregator save callbacks to complete
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
         if (testDir) {
             fs.rmSync(testDir, { recursive: true, force: true });
