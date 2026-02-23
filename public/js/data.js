@@ -1113,7 +1113,8 @@
         if (au.partial) stateBits.push('partial');
         if (au.stale) stateBits.push('stale');
         var stateSuffix = stateBits.length ? ' (' + stateBits.join(', ') + ')' : '';
-        pill.title = 'z.ai usage — Token: ' + tokenPct + '%, Tools: ' + toolPct + '%' + stateSuffix;
+        var planTierName = au.quota && au.quota.level ? au.quota.level : 'z.ai';
+        pill.title = planTierName + ' — Token: ' + tokenPct + '%, Tools: ' + toolPct + '%' + stateSuffix;
     }
 
     function updateAccountUsage(stats) {
@@ -2224,6 +2225,16 @@
                 }
                 var budgetLabel = document.getElementById('budgetLabel');
                 if (budgetLabel) budgetLabel.textContent = pct + '% of $' + data.budget.limit + ' budget';
+
+                // Update header cost alert badge
+                var costAlert = document.getElementById('headerCostAlert');
+                if (costAlert) {
+                    var showAlert = pct > 80;
+                    costAlert.style.display = showAlert ? '' : 'none';
+                    if (showAlert) {
+                        costAlert.title = 'Cost alert: ' + pct + '% of budget used';
+                    }
+                }
             }
 
             // Cache and render cost chart with viewport

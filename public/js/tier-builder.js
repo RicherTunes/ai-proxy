@@ -580,6 +580,14 @@
                     showToast('Tier configuration updated (runtime only)', 'warning');
                 }
                 await fetchModelRouting();
+                // Verify save round-trip (roadmap 2.4)
+                var submitted = JSON.stringify(payload.tiers || {});
+                var returned = JSON.stringify((modelRoutingData && modelRoutingData.config && modelRoutingData.config.tiers) || {});
+                if (submitted !== returned) {
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('Warning: saved config differs from submitted — check for server-side normalization', 'warning');
+                    }
+                }
             } else {
                 var err = await res.json().catch(function() { return {}; });
                 var errMessage = err.message || err.error || res.statusText || 'Unknown error';
