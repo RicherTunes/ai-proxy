@@ -1159,4 +1159,65 @@ describe('AdaptiveConcurrencyController', () => {
             expect(controller.getEffectiveConcurrency('glm-4.5')).toBeLessThan(5);
         });
     });
+
+    // ---------------------------------------------------------------
+    // Quota 429 Integration (Roadmap Item 4.7)
+    // ---------------------------------------------------------------
+
+    describe('quota 429 integration (item 4.7)', () => {
+        test('multiple quota 429s do not shrink window', () => {
+            createController({ minHoldMs: 0, growthCleanTicks: 1, recoveryDelayMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 10);
+
+            // Send 3 quota 429s with tick after each
+            for (let i = 0; i < 3; i++) {
+                controller.recordCongestion('glm-4.5', { retryAfterMs: 120000 });
+                controller._tick();
+                expect(w.effectiveMax).toBe(10);
+                expect(w.lastAdjustReason).toBe('quota_skip');
+            }
+        });
+
+        test('quota then congestion: only congestion shrinks', () => {
+            createController({ minHoldMs: 0, growthCleanTicks: 1, recoveryDelayMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 10);
+
+            // Quota 429 — no shrink
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 120000 });
+            controller._tick();
+            expect(w.effectiveMax).toBe(10);
+            expect(w.lastAdjustReason).toBe('quota_skip');
+
+            // Congestion 429 — should shrink
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();
+            expect(w.effectiveMax).toBe(5);  // 10 * 0.5 = 5
+        });
+
+        test('mixed quota+congestion in same tick: quota takes precedence', () => {
+            createController({ minHoldMs: 0, growthCleanTicks: 1, recoveryDelayMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 10);
+
+            // Record both quota and congestion in same tick window
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 120000 });
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();
+
+            expect(w.effectiveMax).toBe(10);  // Quota takes precedence, no shrink
+        });
+
+        test('errorCode quota_exceeded overrides normal retryAfterMs', () => {
+            createController({ minHoldMs: 0, growthCleanTicks: 1, recoveryDelayMs: 0 });
+            const w = seedModel(controller, 'glm-4.5', 10);
+
+            // Low retryAfterMs would normally be congestion, but errorCode overrides
+            controller.recordCongestion('glm-4.5', {
+                retryAfterMs: 2000,
+                errorCode: 'quota_exceeded'
+            });
+            controller._tick();
+
+            expect(w.effectiveMax).toBe(10);  // No shrink — quota_skip
+        });
+    });
 });
