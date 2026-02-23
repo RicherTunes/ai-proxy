@@ -2302,39 +2302,6 @@
         }
     }
 
-    // AIMD mode toggle handler
-    (function initAimdToggle() {
-        document.addEventListener('click', function(e) {
-            if (e.target && e.target.id === 'aimdToggleBtn') {
-                var badge = document.getElementById('aimdMode');
-                var currentMode = badge ? badge.textContent.trim() : 'observe_only';
-                var newMode = currentMode === 'enforce' ? 'observe_only' : 'enforce';
-                e.target.disabled = true;
-                e.target.textContent = 'Switching...';
-                fetch('/adaptive-concurrency', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ mode: newMode })
-                }).then(function(r) { return r.json(); }).then(function(data) {
-                    if (data.success) {
-                        if (badge) badge.textContent = data.currentMode;
-                        e.target.textContent = data.currentMode === 'enforce' ? 'Switch to Observe' : 'Switch to Enforce';
-                        if (typeof window.showToast === 'function') {
-                            window.showToast('AIMD mode: ' + data.currentMode, 'info');
-                        }
-                    }
-                    e.target.disabled = false;
-                }).catch(function() {
-                    e.target.disabled = false;
-                    e.target.textContent = currentMode === 'enforce' ? 'Switch to Observe' : 'Switch to Enforce';
-                    if (typeof window.showToast === 'function') {
-                        window.showToast('Failed to toggle AIMD mode', 'error');
-                    }
-                });
-            }
-        });
-    })();
-
     // ========== PREDICTIONS ==========
     function fetchPredictions() {
         return fetchJSON('/predictions').then(function(data) {

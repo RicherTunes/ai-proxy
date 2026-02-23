@@ -57,6 +57,7 @@ failed-requests.json
 cost-data.json
 usage-cache.json
 model-routing-overrides.json
+config/model-routing.json
 history.json
 history.jsonl
 test/test-history.json

@@ -498,6 +498,28 @@ describe('AdaptiveConcurrencyController', () => {
     });
 
     // ---------------------------------------------------------------
+    // Invalid mode coercion
+    // ---------------------------------------------------------------
+
+    describe('invalid mode coercion', () => {
+        test('garbage mode string is coerced to observe_only', () => {
+            createController({ mode: 'invalid_garbage' });
+            expect(controller.config.mode).toBe('observe_only');
+        });
+
+        test('empty string mode is coerced to observe_only', () => {
+            createController({ mode: '' });
+            expect(controller.config.mode).toBe('observe_only');
+        });
+
+        test('getEffectiveConcurrency returns null for coerced invalid mode', () => {
+            createController({ mode: 'not_a_real_mode' });
+            seedModel(controller, 'glm-4.5', 10);
+            expect(controller.getEffectiveConcurrency('glm-4.5')).toBeNull();
+        });
+    });
+
+    // ---------------------------------------------------------------
     // Shrink-while-inflight
     // ---------------------------------------------------------------
 
