@@ -17,6 +17,7 @@
     var chipModelName = DS.chipModelName;
     var formatTimestamp = DS.formatTimestamp;
     var renderEmptyState = DS.renderEmptyState;
+    var _getId = window.RequestIds.getRequestId;
 
     var requestPollingIntervalId = null;
     var staleCheckIntervalId = null;
@@ -213,7 +214,7 @@
         var statusClass = request.error ? 'error' : request.status === 'completed' ? 'success' : 'pending';
         var statusText = request.error ? 'ERR' : request.latency ? request.latency + 'ms' : '...';
         var safePath = escapeHtml(request.path || '/v1/messages');
-        var requestId = window.RequestIds.getRequestId(request);
+        var requestId = _getId(request);
         var model = request.originalModel || request.mappedModel || '';
 
         var rd = request.routingDecision;
@@ -367,11 +368,11 @@
         }
 
         var existingById = new Map(STATE.requestsHistory.map(function(r) {
-            return [window.RequestIds.getRequestId(r), r];
+            return [_getId(r), r];
         }));
         for (var i = 0; i < requests.length; i++) {
             var req = requests[i];
-            var id = window.RequestIds.getRequestId(req);
+            var id = _getId(req);
             if (!existingById.has(id)) {
                 existingById.set(id, req);
             }

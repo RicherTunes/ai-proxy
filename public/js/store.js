@@ -8,6 +8,8 @@
 (function(window) {
     'use strict';
 
+    var _getId = window.RequestIds.getRequestId;
+
     // ========== SECURITY UTILITIES ==========
     var escapeHtml = window.DashboardUtils?.escapeHtml || function(str) {
         if (str === null || str === undefined) return '';
@@ -192,11 +194,11 @@
                     STATE.sse.connected = true;
                     if (action.payload.recentRequests && action.payload.recentRequests.length > 0) {
                         var existingById = new Map(STATE.requestsHistory.map(function(r) {
-                            return [window.RequestIds.getRequestId(r), r];
+                            return [_getId(r), r];
                         }));
                         for (var i = 0; i < action.payload.recentRequests.length; i++) {
                             var req = action.payload.recentRequests[i];
-                            var id = window.RequestIds.getRequestId(req);
+                            var id = _getId(req);
                             if (!existingById.has(id)) {
                                 existingById.set(id, req);
                             }
