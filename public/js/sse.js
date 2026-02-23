@@ -213,7 +213,7 @@
         var statusClass = request.error ? 'error' : request.status === 'completed' ? 'success' : 'pending';
         var statusText = request.error ? 'ERR' : request.latency ? request.latency + 'ms' : '...';
         var safePath = escapeHtml(request.path || '/v1/messages');
-        var requestId = (window.DashboardFilters?.getRequestId || function(r) { return r.requestId || r.id || (r.timestamp + '-' + (r.keyIndex ?? 0)); })(request);
+        var requestId = window.RequestIds.getRequestId(request);
         var model = request.originalModel || request.mappedModel || '';
 
         var rd = request.routingDecision;
@@ -366,13 +366,12 @@
             return;
         }
 
-        var _getId = window.DashboardFilters?.getRequestId || function(r) { return r.requestId || r.id || (r.timestamp + '-' + (r.keyIndex ?? 0)); };
         var existingById = new Map(STATE.requestsHistory.map(function(r) {
-            return [_getId(r), r];
+            return [window.RequestIds.getRequestId(r), r];
         }));
         for (var i = 0; i < requests.length; i++) {
             var req = requests[i];
-            var id = _getId(req);
+            var id = window.RequestIds.getRequestId(req);
             if (!existingById.has(id)) {
                 existingById.set(id, req);
             }

@@ -1130,9 +1130,8 @@
         var body = document.getElementById('sidePanelBody');
         if (!body) return;
         var targetId = String(requestId);
-        var _getId = window.DashboardFilters?.getRequestId || function(r) { return r.requestId || r.id || (r.timestamp + '-' + (r.keyIndex ?? 0)); };
         var request = STATE.requestsHistory.find(function(r) {
-            return String(_getId(r)) === targetId;
+            return String(window.RequestIds.getRequestId(r)) === targetId;
         });
         if (!request) {
             body.innerHTML = '<div style="color: var(--text-secondary);">Request not found in the current live buffer.</div>';

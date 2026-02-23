@@ -74,7 +74,7 @@ describe('Dashboard HTML contract', () => {
     const jsScripts = doc.querySelectorAll('script[src*="/dashboard/js/"]');
 
     expect(cssLinks.length).toBeGreaterThan(0);
-    expect(jsScripts.length).toBe(15);
+    expect(jsScripts.length).toBe(16);
   });
 
   test('keyboard shortcuts modal', () => {
