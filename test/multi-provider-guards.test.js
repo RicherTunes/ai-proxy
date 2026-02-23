@@ -197,11 +197,10 @@ describe('GUARD-04: Auth headers use current provider format', () => {
 // ═══════════════════════════════════════════════════════════════════════
 
 describe('GUARD-05: Key isolation', () => {
-    test('all keys belong to a single provider in current implementation', () => {
-        // This test documents the invariant: in the current single-provider
-        // architecture, all keys are for the same provider. When multi-provider
-        // is implemented, keys must be tagged with their provider and NEVER
-        // sent to a different provider's endpoint.
+    test('flat array keys are untagged (provider=null), usable by any provider', () => {
+        // In the single-provider architecture, all keys are loaded from a flat array
+        // and have provider=null. These untagged keys work for any provider filter,
+        // preserving backward compatibility.
 
         const { KeyManager } = require('../lib/key-manager');
 
@@ -211,15 +210,14 @@ describe('GUARD-05: Key isolation', () => {
             rateLimitCooldownMs: 1000
         });
 
-        // All keys have the same structure (no provider field)
+        // Flat array keys have provider=null (untagged)
         for (const key of km.keys) {
             expect(key.key).toBeDefined();
-            // No provider field exists yet
-            expect(key.provider).toBeUndefined();
+            expect(key.provider).toBeNull();
         }
     });
 
-    test('keys array has no provider field on key objects', () => {
+    test('flat array keys have null provider (backward compat)', () => {
         const { KeyManager } = require('../lib/key-manager');
 
         const km = new KeyManager({
@@ -228,12 +226,11 @@ describe('GUARD-05: Key isolation', () => {
         });
         km.loadKeys(['key1.secret1', 'key2.secret2']);
 
-        // Keys are in a flat array — no provider grouping
+        // Keys from flat array have provider=null (untagged, work for any provider)
         expect(km.keys).toHaveLength(2);
         for (const key of km.keys) {
             expect(key.key).toBeDefined();
-            // No provider field on key objects (single-provider architecture)
-            expect(key.provider).toBeUndefined();
+            expect(key.provider).toBeNull();
         }
     });
 });
