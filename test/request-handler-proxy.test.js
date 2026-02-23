@@ -526,9 +526,9 @@ describe('_makeProxyRequest', () => {
         // Original client headers should be stripped
         expect(callOptions.headers['cookie']).toBeUndefined();
         expect(callOptions.headers['x-admin-token']).toBeUndefined();
-        // New auth headers set from keyInfo
+        // New auth headers set from keyInfo (single scheme per provider — GUARD-05)
         expect(callOptions.headers['x-api-key']).toBe(keyInfo.key);
-        expect(callOptions.headers['authorization']).toBe(`Bearer ${keyInfo.key}`);
+        expect(callOptions.headers['authorization']).toBeUndefined();
     });
 
     test('final headers exclude hop-by-hop headers', async () => {
@@ -613,7 +613,7 @@ describe('_makeProxyRequest', () => {
         expect(callOptions.headers['x-proxy-retry-after-ms']).toBeUndefined();
     });
 
-    test('final headers include host, x-api-key, authorization with key, x-request-id', async () => {
+    test('final headers include host, x-api-key, x-request-id (single auth scheme)', async () => {
         const proxyReq = createMockProxyReq();
         const proxyRes = createMockProxyRes(200);
         setupHttpsMock(proxyReq, proxyRes);
@@ -630,7 +630,8 @@ describe('_makeProxyRequest', () => {
         const callOptions = https.request.mock.calls[0][0];
         expect(callOptions.headers['host']).toBe('api.z.ai');
         expect(callOptions.headers['x-api-key']).toBe(keyInfo.key);
-        expect(callOptions.headers['authorization']).toBe(`Bearer ${keyInfo.key}`);
+        // Single auth scheme per provider (GUARD-05) — no Authorization header for x-api-key providers
+        expect(callOptions.headers['authorization']).toBeUndefined();
         expect(callOptions.headers['x-request-id']).toBe('req-id-abc');
     });
 

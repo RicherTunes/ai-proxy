@@ -1154,9 +1154,8 @@
                 '<div class="detail-row"><span class="detail-label">Mapped To</span><span class="detail-value">' + escapeHtml(request.mappedModel || 'N/A') + copyBtn(request.mappedModel) + '</span></div>' +
                 (request.provider
                     ? '<div class="detail-row"><span class="detail-label">Provider</span><span class="detail-value">' +
-                      '<span class="provider-badge ' + (request.costTier === 'premium' ? 'provider-premium' : request.costTier === 'metered' ? 'provider-metered' : 'provider-free') + '">' +
-                      escapeHtml(request.provider) + '</span>' +
-                      (request.costTier && request.costTier !== 'free' ? ' <span class="text-secondary" style="color: var(--warning)">(' + escapeHtml(request.costTier) + ')</span>' : '') +
+                      '<span class="provider-badge' + (request.costTier ? ' provider-' + escapeHtml(request.costTier) : '') + '">' + escapeHtml(request.provider) + '</span>' +
+                      (request.costTier && request.costTier !== 'free' ? ' <span style="color: var(--warning); font-size: 0.8em;">(' + escapeHtml(request.costTier) + ')</span>' : '') +
                       '</span></div>'
                     : '') +
                 '<div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" style="color: var(--' + statusClass + ')">' + statusCode + '</span></div>' +

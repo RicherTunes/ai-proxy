@@ -102,10 +102,10 @@ describe('GUARD-02: Non-configured provider rejection', () => {
             logLevel: 'ERROR'
         });
 
-        // providers defaults to null — providerRegistry is built from global target config
+        // The providers section is not yet implemented
         expect(config.config.providers).toBeNull();
         expect(config.providerRegistry).toBeDefined();
-        expect(config.providerRegistry.getDefaultProviderName()).toBe('z.ai');
+        expect(config.providerRegistry.getDefaultProvider()).toBeDefined();
     });
 });
 

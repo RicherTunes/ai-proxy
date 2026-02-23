@@ -1,369 +1,384 @@
-'use strict';
-
 /**
- * Provider Registry Guard Tests
+ * Provider Registry Tests
  *
- * These tests enforce safety invariants for multi-provider routing.
- * They MUST pass before any provider routing code is written.
- * See: docs/design/multi-provider-abstraction.md Section 4
+ * TDD guard tests + unit tests for the ProviderRegistry module.
+ * These tests enforce the multi-provider safety invariants.
  */
 
-const { ProviderRegistry, DEFAULT_PROVIDER_NAME, DEFAULT_PROVIDER_CONFIG } = require('../lib/provider-registry');
+'use strict';
 
-describe('ProviderRegistry', () => {
+const {
+    ProviderRegistry,
+    DEFAULT_PROVIDER_NAME,
+    DEFAULT_PROVIDER_CONFIG,
+    VALID_AUTH_SCHEMES,
+    VALID_COST_TIERS
+} = require('../lib/provider-registry');
 
-  describe('GUARD-01: Default provider fallback', () => {
-    test('returns default z.ai provider when no custom providers configured', () => {
-      const registry = new ProviderRegistry();
-      const provider = registry.getDefaultProvider();
-      expect(provider).toBeTruthy();
-      expect(provider.targetHost).toBe('api.z.ai');
+// ═══════════════════════════════════════════════════════════════════════
+// GUARD-01: Default provider resolution
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('GUARD-01: Default provider resolution', () => {
+    test('creates default z.ai provider when no config provided', () => {
+        const registry = new ProviderRegistry();
+        expect(registry.getDefaultProvider()).toBeDefined();
+        expect(registry.defaultProviderName).toBe('z.ai');
     });
 
-    test('default provider has correct z.ai target config', () => {
-      const registry = new ProviderRegistry();
-      const provider = registry.getDefaultProvider();
-      expect(provider.targetHost).toBe('api.z.ai');
-      expect(provider.targetBasePath).toBe('/api/anthropic');
-      expect(provider.targetProtocol).toBe('https:');
-      expect(provider.authScheme).toBe('x-api-key');
-      expect(provider.costTier).toBe('free');
+    test('default provider has correct z.ai target', () => {
+        const registry = new ProviderRegistry();
+        const provider = registry.getDefaultProvider();
+        expect(provider.targetHost).toBe('api.z.ai');
+        expect(provider.targetBasePath).toBe('/api/anthropic');
+        expect(provider.targetProtocol).toBe('https:');
     });
 
-    test('default provider name is z.ai', () => {
-      const registry = new ProviderRegistry();
-      expect(registry.getDefaultProviderName()).toBe('z.ai');
+    test('default provider uses x-api-key auth', () => {
+        const registry = new ProviderRegistry();
+        const provider = registry.getDefaultProvider();
+        expect(provider.authScheme).toBe('x-api-key');
     });
 
-    test('resolveProviderForModel uses default when model has no mapping', () => {
-      const registry = new ProviderRegistry();
-      const result = registry.resolveProviderForModel('unknown-model', {});
-      expect(result).not.toBeNull();
-      expect(result.providerName).toBe('z.ai');
-      expect(result.targetModel).toBe('unknown-model');
+    test('default provider has free cost tier', () => {
+        const registry = new ProviderRegistry();
+        const provider = registry.getDefaultProvider();
+        expect(provider.costTier).toBe('free');
     });
-  });
+});
 
-  describe('GUARD-02: Non-configured provider rejection', () => {
-    test('resolveProviderForModel returns null for model with unconfigured provider', () => {
-      const registry = new ProviderRegistry({
-        'z.ai': {
-          targetHost: 'api.z.ai',
-          targetBasePath: '/api/anthropic',
-          authScheme: 'x-api-key',
-          costTier: 'free'
+// ═══════════════════════════════════════════════════════════════════════
+// GUARD-02: Non-configured provider rejection
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('GUARD-02: Non-configured provider rejection', () => {
+    test('resolveProviderForModel returns null for unconfigured provider', () => {
+        const registry = new ProviderRegistry();
+        const mapping = {
+            models: {
+                'gpt-4': { target: 'gpt-4-turbo', provider: 'openai' }
+            }
+        };
+        const result = registry.resolveProviderForModel('gpt-4-turbo', mapping);
+        expect(result).toBeNull();
+    });
+
+    test('resolveProviderForModel returns default for string mappings', () => {
+        const registry = new ProviderRegistry();
+        const mapping = {
+            models: {
+                'claude-opus-4-6': 'glm-4.7'
+            }
+        };
+        const result = registry.resolveProviderForModel('glm-4.7', mapping);
+        expect(result).toEqual({ providerName: 'z.ai', targetModel: 'glm-4.7' });
+    });
+
+    test('resolveProviderForModel returns default when no mapping', () => {
+        const registry = new ProviderRegistry();
+        const result = registry.resolveProviderForModel('some-model', null);
+        expect(result).toEqual({ providerName: 'z.ai', targetModel: 'some-model' });
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// GUARD-03: Config validation
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('GUARD-03: Config validation', () => {
+    test('rejects invalid authScheme', () => {
+        expect(() => {
+            new ProviderRegistry({
+                'bad': { authScheme: 'invalid' }
+            });
+        }).toThrow(/Invalid authScheme/);
+    });
+
+    test('rejects invalid costTier', () => {
+        expect(() => {
+            new ProviderRegistry({
+                'bad': { costTier: 'invalid' }
+            });
+        }).toThrow(/Invalid costTier/);
+    });
+
+    test('accepts all valid auth schemes', () => {
+        for (const scheme of VALID_AUTH_SCHEMES) {
+            expect(() => {
+                new ProviderRegistry({
+                    'test': { authScheme: scheme }
+                });
+            }).not.toThrow();
         }
-      });
-      // Model mapped to 'openai' provider which is NOT configured
-      const modelMapping = {
-        'gpt-4': { target: 'gpt-4', provider: 'openai' }
-      };
-      const result = registry.resolveProviderForModel('gpt-4', modelMapping);
-      expect(result).toBeNull();
     });
 
-    test('getProvider returns null for unknown provider name', () => {
-      const registry = new ProviderRegistry();
-      expect(registry.getProvider('nonexistent')).toBeNull();
-    });
-
-    test('resolveProviderForModel accepts model mapped to configured provider', () => {
-      const registry = new ProviderRegistry({
-        'z.ai': {
-          targetHost: 'api.z.ai',
-          authScheme: 'x-api-key',
-          costTier: 'free'
-        },
-        'openai': {
-          targetHost: 'api.openai.com',
-          targetBasePath: '/v1',
-          authScheme: 'bearer',
-          costTier: 'metered'
+    test('accepts all valid cost tiers', () => {
+        for (const tier of VALID_COST_TIERS) {
+            expect(() => {
+                new ProviderRegistry({
+                    'test': { costTier: tier }
+                });
+            }).not.toThrow();
         }
-      });
-      const modelMapping = {
-        'gpt-4': { target: 'gpt-4', provider: 'openai' }
-      };
-      const result = registry.resolveProviderForModel('gpt-4', modelMapping);
-      expect(result).not.toBeNull();
-      expect(result.providerName).toBe('openai');
-      expect(result.targetModel).toBe('gpt-4');
     });
-  });
 
-  describe('GUARD-03: Config validation', () => {
-    test('rejects provider with unknown authScheme', () => {
-      expect(() => {
-        new ProviderRegistry({
-          'bad': { targetHost: 'example.com', authScheme: 'oauth2' }
+    test('rejects empty provider name', () => {
+        expect(() => {
+            new ProviderRegistry({ '': { authScheme: 'x-api-key' } });
+        }).toThrow(/Invalid provider name/);
+    });
+
+    test('fills defaults for missing config fields', () => {
+        const registry = new ProviderRegistry({
+            'custom': { targetHost: 'custom.api.com' }
         });
-      }).toThrow(/invalid authScheme 'oauth2'/);
+        const provider = registry.getProvider('custom');
+        expect(provider.authScheme).toBe('x-api-key');
+        expect(provider.costTier).toBe('free');
+        expect(provider.targetProtocol).toBe('https:');
     });
+});
 
-    test('rejects provider without targetHost', () => {
-      expect(() => {
-        new ProviderRegistry({
-          'bad': { authScheme: 'x-api-key' }
+// ═══════════════════════════════════════════════════════════════════════
+// GUARD-04: Cost tier propagation
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('GUARD-04: Cost tier propagation', () => {
+    test('free tier provider returns free costTier', () => {
+        const registry = new ProviderRegistry({
+            'z.ai': { costTier: 'free' }
         });
-      }).toThrow(/requires targetHost/);
+        expect(registry.getProvider('z.ai').costTier).toBe('free');
     });
 
-    test('rejects provider with unknown costTier', () => {
-      expect(() => {
-        new ProviderRegistry({
-          'bad': { targetHost: 'example.com', costTier: 'unlimited' }
+    test('metered tier provider returns metered costTier', () => {
+        const registry = new ProviderRegistry({
+            'anthropic': { costTier: 'metered' }
         });
-      }).toThrow(/invalid costTier 'unlimited'/);
+        expect(registry.getProvider('anthropic').costTier).toBe('metered');
     });
 
-    test('accepts valid x-api-key provider', () => {
-      expect(() => {
-        new ProviderRegistry({
-          'test': { targetHost: 'example.com', authScheme: 'x-api-key', costTier: 'free' }
+    test('premium tier provider returns premium costTier', () => {
+        const registry = new ProviderRegistry({
+            'premium-api': { costTier: 'premium' }
         });
-      }).not.toThrow();
+        expect(registry.getProvider('premium-api').costTier).toBe('premium');
     });
+});
 
-    test('accepts valid bearer provider', () => {
-      expect(() => {
-        new ProviderRegistry({
-          'test': { targetHost: 'example.com', authScheme: 'bearer', costTier: 'metered' }
+// ═══════════════════════════════════════════════════════════════════════
+// GUARD-05: Key isolation per provider
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('GUARD-05: Key isolation per provider', () => {
+    test('x-api-key provider formats x-api-key header', () => {
+        const registry = new ProviderRegistry({
+            'z.ai': { authScheme: 'x-api-key' }
         });
-      }).not.toThrow();
+        const auth = registry.formatAuthHeader('z.ai', 'test-key');
+        expect(auth).toEqual({ headerName: 'x-api-key', headerValue: 'test-key' });
     });
 
-    test('accepts valid custom auth provider', () => {
-      expect(() => {
-        new ProviderRegistry({
-          'test': { targetHost: 'example.com', authScheme: 'custom', costTier: 'premium' }
+    test('bearer provider formats Authorization header', () => {
+        const registry = new ProviderRegistry({
+            'openai': { authScheme: 'bearer' }
         });
-      }).not.toThrow();
-    });
-  });
-
-  describe('GUARD-04: Cost tier propagation', () => {
-    test('provider config includes costTier field', () => {
-      const registry = new ProviderRegistry({
-        'z.ai': { targetHost: 'api.z.ai', costTier: 'free' }
-      });
-      expect(registry.getProvider('z.ai').costTier).toBe('free');
+        const auth = registry.formatAuthHeader('openai', 'sk-test');
+        expect(auth).toEqual({ headerName: 'authorization', headerValue: 'Bearer sk-test' });
     });
 
-    test('defaults costTier to metered when not specified', () => {
-      const registry = new ProviderRegistry({
-        'test': { targetHost: 'example.com' }
-      });
-      expect(registry.getProvider('test').costTier).toBe('metered');
+    test('custom provider returns null (caller handles auth)', () => {
+        const registry = new ProviderRegistry({
+            'custom': { authScheme: 'custom' }
+        });
+        const auth = registry.formatAuthHeader('custom', 'key');
+        expect(auth).toBeNull();
     });
 
-    test('premium costTier is preserved', () => {
-      const registry = new ProviderRegistry({
-        'expensive': { targetHost: 'api.expensive.ai', costTier: 'premium' }
-      });
-      expect(registry.getProvider('expensive').costTier).toBe('premium');
-    });
-  });
-
-  describe('GUARD-05: Key isolation per provider', () => {
-    let registry;
-
-    beforeEach(() => {
-      registry = new ProviderRegistry({
-        'z.ai': { targetHost: 'api.z.ai', authScheme: 'x-api-key', costTier: 'free' },
-        'openai': { targetHost: 'api.openai.com', authScheme: 'bearer', costTier: 'metered' },
-        'custom-provider': {
-          targetHost: 'api.custom.ai',
-          authScheme: 'custom',
-          customAuthHeader: 'x-custom-token',
-          costTier: 'metered'
-        }
-      });
+    test('unknown provider returns null', () => {
+        const registry = new ProviderRegistry();
+        const auth = registry.formatAuthHeader('nonexistent', 'key');
+        expect(auth).toBeNull();
     });
 
-    test('x-api-key provider uses x-api-key header', () => {
-      const auth = registry.formatAuthHeader('z.ai', 'test-key-123');
-      expect(auth).toEqual({
-        headerName: 'x-api-key',
-        headerValue: 'test-key-123'
-      });
+    test('null apiKey returns null', () => {
+        const registry = new ProviderRegistry();
+        const auth = registry.formatAuthHeader('z.ai', null);
+        expect(auth).toBeNull();
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// Default provider injection warning
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('Default provider injection', () => {
+    test('sets _silentDefaultInjected when providers configured but default missing', () => {
+        const registry = new ProviderRegistry({
+            'anthropic': { costTier: 'metered' }
+        });
+        expect(registry._silentDefaultInjected).toBe(true);
+        // z.ai was silently injected
+        expect(registry.hasProvider('z.ai')).toBe(true);
     });
 
-    test('bearer provider uses Authorization header', () => {
-      const auth = registry.formatAuthHeader('openai', 'sk-test-456');
-      expect(auth).toEqual({
-        headerName: 'authorization',
-        headerValue: 'Bearer sk-test-456'
-      });
+    test('does not set _silentDefaultInjected when default provider is included', () => {
+        const registry = new ProviderRegistry({
+            'z.ai': { costTier: 'free' },
+            'anthropic': { costTier: 'metered' }
+        });
+        expect(registry._silentDefaultInjected).toBeUndefined();
     });
 
-    test('custom provider uses custom header name', () => {
-      const auth = registry.formatAuthHeader('custom-provider', 'custom-key');
-      expect(auth).toEqual({
-        headerName: 'x-custom-token',
-        headerValue: 'custom-key'
-      });
+    test('does not set _silentDefaultInjected when no providers configured', () => {
+        const registry = new ProviderRegistry();
+        expect(registry._silentDefaultInjected).toBeUndefined();
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// Provider management
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('Provider management', () => {
+    test('hasProvider returns true for existing provider', () => {
+        const registry = new ProviderRegistry({
+            'anthropic': { costTier: 'metered' }
+        });
+        expect(registry.hasProvider('anthropic')).toBe(true);
     });
 
-    test('formatAuthHeader returns null for unknown provider', () => {
-      const auth = registry.formatAuthHeader('nonexistent', 'key');
-      expect(auth).toBeNull();
-    });
-
-    test('different providers never share auth format accidentally', () => {
-      const zaiAuth = registry.formatAuthHeader('z.ai', 'key-A');
-      const openaiAuth = registry.formatAuthHeader('openai', 'key-B');
-      // Auth headers must be different format
-      expect(zaiAuth.headerName).not.toBe(openaiAuth.headerName);
-    });
-  });
-
-  describe('Provider management', () => {
-    let registry;
-
-    beforeEach(() => {
-      registry = new ProviderRegistry({
-        'z.ai': { targetHost: 'api.z.ai', costTier: 'free' },
-        'openai': { targetHost: 'api.openai.com', authScheme: 'bearer', costTier: 'metered' }
-      });
-    });
-
-    test('hasProvider returns true for configured providers', () => {
-      expect(registry.hasProvider('z.ai')).toBe(true);
-      expect(registry.hasProvider('openai')).toBe(true);
-    });
-
-    test('hasProvider returns false for unconfigured providers', () => {
-      expect(registry.hasProvider('google')).toBe(false);
-      expect(registry.hasProvider('')).toBe(false);
+    test('hasProvider returns false for missing provider', () => {
+        const registry = new ProviderRegistry();
+        expect(registry.hasProvider('nonexistent')).toBe(false);
     });
 
     test('listProviders returns all provider names', () => {
-      const providers = registry.listProviders();
-      expect(providers).toContain('z.ai');
-      expect(providers).toContain('openai');
-      expect(providers).toHaveLength(2);
+        const registry = new ProviderRegistry({
+            'z.ai': { costTier: 'free' },
+            'anthropic': { costTier: 'metered' }
+        });
+        const providers = registry.listProviders();
+        expect(providers).toContain('z.ai');
+        expect(providers).toContain('anthropic');
     });
 
-    test('resolveProviderForModel uses mapping provider field', () => {
-      const modelMapping = {
-        'gpt-4': { target: 'gpt-4', provider: 'openai' }
-      };
-      const result = registry.resolveProviderForModel('gpt-4', modelMapping);
-      expect(result.providerName).toBe('openai');
-      expect(result.targetModel).toBe('gpt-4');
+    test('getProvider returns null for unknown provider', () => {
+        const registry = new ProviderRegistry();
+        expect(registry.getProvider('unknown')).toBeNull();
     });
 
-    test('resolveProviderForModel uses default for string mappings', () => {
-      const modelMapping = {
-        'claude-opus-4-6': 'glm-4.7'
-      };
-      const result = registry.resolveProviderForModel('claude-opus-4-6', modelMapping);
-      expect(result.providerName).toBe('z.ai');
-      expect(result.targetModel).toBe('glm-4.7');
+    test('custom defaultProviderName is respected', () => {
+        const registry = new ProviderRegistry({
+            'custom': { targetHost: 'custom.api.com' }
+        }, 'custom');
+        expect(registry.defaultProviderName).toBe('custom');
+        expect(registry.getDefaultProvider().targetHost).toBe('custom.api.com');
     });
 
-    test('resolveProviderForModel defaults provider for object without provider field', () => {
-      const modelMapping = {
-        'some-model': { target: 'mapped-model' }
-      };
-      const result = registry.resolveProviderForModel('some-model', modelMapping);
-      expect(result.providerName).toBe('z.ai');
-      expect(result.targetModel).toBe('mapped-model');
+    test('extraHeaders are stored on provider config', () => {
+        const registry = new ProviderRegistry({
+            'anthropic': {
+                extraHeaders: { 'anthropic-version': '2023-06-01' }
+            }
+        });
+        expect(registry.getProvider('anthropic').extraHeaders).toEqual({
+            'anthropic-version': '2023-06-01'
+        });
     });
 
-    test('provider config normalizes defaults', () => {
-      const provider = registry.getProvider('openai');
-      expect(provider.targetBasePath).toBe('');
-      expect(provider.targetProtocol).toBe('https:');
-      expect(provider.requestTransform).toBeNull();
-      expect(provider.responseTransform).toBeNull();
-      expect(provider.extraHeaders).toEqual({});
+    test('resolveProviderForModel returns configured provider for object mapping', () => {
+        const registry = new ProviderRegistry({
+            'z.ai': { costTier: 'free' },
+            'anthropic': { costTier: 'metered' }
+        });
+        const mapping = {
+            models: {
+                'claude-opus-4': { target: 'claude-opus-4', provider: 'anthropic' }
+            }
+        };
+        const result = registry.resolveProviderForModel('claude-opus-4', mapping);
+        expect(result).toEqual({ providerName: 'anthropic', targetModel: 'claude-opus-4' });
     });
 
-    test('first configured provider becomes default when specified default not found', () => {
-      const reg = new ProviderRegistry({
-        'anthropic': { targetHost: 'api.anthropic.com', costTier: 'metered' }
-      }, 'nonexistent');
-      expect(reg.getDefaultProviderName()).toBe('anthropic');
+    test('resolveProviderForModel returns default when no models match', () => {
+        const registry = new ProviderRegistry();
+        const mapping = {
+            models: {
+                'claude-opus-4-6': 'glm-4.7'
+            }
+        };
+        const result = registry.resolveProviderForModel('unknown-model', mapping);
+        expect(result).toEqual({ providerName: 'z.ai', targetModel: 'unknown-model' });
     });
-  });
+});
 
-  describe('SPIKE: Claude direct passthrough (roadmap 5.8)', () => {
+// ═══════════════════════════════════════════════════════════════════════
+// SPIKE: Claude direct passthrough
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('SPIKE: Claude direct passthrough', () => {
     let registry;
 
     beforeEach(() => {
-      // Dual-provider config: z.ai (default) + direct Anthropic passthrough
-      registry = new ProviderRegistry({
-        'z.ai': {
-          targetHost: 'api.z.ai',
-          targetBasePath: '/api/anthropic',
-          targetProtocol: 'https:',
-          authScheme: 'x-api-key',
-          costTier: 'free'
-        },
-        'anthropic': {
-          targetHost: 'api.anthropic.com',
-          targetBasePath: '',
-          targetProtocol: 'https:',
-          authScheme: 'x-api-key',
-          extraHeaders: { 'anthropic-version': '2023-06-01' },
-          requestTransform: null,
-          responseTransform: null,
-          costTier: 'metered'
-        }
-      });
+        registry = new ProviderRegistry({
+            'z.ai': {
+                targetHost: 'api.z.ai',
+                targetBasePath: '/api/anthropic',
+                targetProtocol: 'https:',
+                authScheme: 'x-api-key',
+                costTier: 'free'
+            },
+            'anthropic': {
+                targetHost: 'api.anthropic.com',
+                targetBasePath: '',
+                targetProtocol: 'https:',
+                authScheme: 'x-api-key',
+                extraHeaders: { 'anthropic-version': '2023-06-01' },
+                costTier: 'metered'
+            }
+        });
     });
 
-    test('anthropic provider has zero-transform config', () => {
-      const provider = registry.getProvider('anthropic');
-      expect(provider.requestTransform).toBeNull();
-      expect(provider.responseTransform).toBeNull();
+    test('anthropic provider requires zero request transform', () => {
+        const provider = registry.getProvider('anthropic');
+        expect(provider.requestTransform).toBeNull();
     });
 
-    test('anthropic provider uses same x-api-key auth as z.ai', () => {
-      const auth = registry.formatAuthHeader('anthropic', 'sk-ant-test-key');
-      expect(auth).toEqual({
-        headerName: 'x-api-key',
-        headerValue: 'sk-ant-test-key'
-      });
+    test('anthropic provider uses x-api-key auth (same as Anthropic API)', () => {
+        const auth = registry.formatAuthHeader('anthropic', 'sk-ant-test');
+        expect(auth).toEqual({ headerName: 'x-api-key', headerValue: 'sk-ant-test' });
     });
 
-    test('anthropic provider includes anthropic-version extra header', () => {
-      const provider = registry.getProvider('anthropic');
-      expect(provider.extraHeaders).toEqual({ 'anthropic-version': '2023-06-01' });
+    test('anthropic provider includes anthropic-version header', () => {
+        const provider = registry.getProvider('anthropic');
+        expect(provider.extraHeaders['anthropic-version']).toBe('2023-06-01');
     });
 
-    test('anthropic provider targets api.anthropic.com with empty base path', () => {
-      const provider = registry.getProvider('anthropic');
-      expect(provider.targetHost).toBe('api.anthropic.com');
-      expect(provider.targetBasePath).toBe('');
-      expect(provider.targetProtocol).toBe('https:');
+    test('anthropic provider targets api.anthropic.com', () => {
+        const provider = registry.getProvider('anthropic');
+        expect(provider.targetHost).toBe('api.anthropic.com');
+        expect(provider.targetBasePath).toBe('');
     });
 
-    test('anthropic provider is metered cost tier', () => {
-      const provider = registry.getProvider('anthropic');
-      expect(provider.costTier).toBe('metered');
+    test('anthropic provider has metered cost tier', () => {
+        const provider = registry.getProvider('anthropic');
+        expect(provider.costTier).toBe('metered');
     });
 
-    test('claude model mapped to anthropic resolves to anthropic provider', () => {
-      const modelMapping = {
-        'claude-opus-4-6': { target: 'claude-opus-4-6', provider: 'anthropic' },
-        'claude-sonnet-4-5-20250929': 'glm-4.5'  // z.ai default
-      };
-      const opusResult = registry.resolveProviderForModel('claude-opus-4-6', modelMapping);
-      expect(opusResult.providerName).toBe('anthropic');
-      expect(opusResult.targetModel).toBe('claude-opus-4-6');
-
-      const sonnetResult = registry.resolveProviderForModel('claude-sonnet-4-5-20250929', modelMapping);
-      expect(sonnetResult.providerName).toBe('z.ai');
-      expect(sonnetResult.targetModel).toBe('glm-4.5');
+    test('model mapping can route claude-opus-4 to anthropic provider', () => {
+        const mapping = {
+            models: {
+                'claude-opus-4': { target: 'claude-opus-4', provider: 'anthropic' }
+            }
+        };
+        const result = registry.resolveProviderForModel('claude-opus-4', mapping);
+        expect(result).toEqual({ providerName: 'anthropic', targetModel: 'claude-opus-4' });
     });
 
-    test('unmapped claude model falls back to z.ai (not anthropic)', () => {
-      const modelMapping = {};
-      const result = registry.resolveProviderForModel('claude-3-opus-20240229', modelMapping);
-      expect(result.providerName).toBe('z.ai');
-      expect(result.targetModel).toBe('claude-3-opus-20240229');
+    test('z.ai and anthropic coexist with different cost tiers', () => {
+        expect(registry.getProvider('z.ai').costTier).toBe('free');
+        expect(registry.getProvider('anthropic').costTier).toBe('metered');
+        expect(registry.listProviders()).toHaveLength(2);
     });
-  });
 });

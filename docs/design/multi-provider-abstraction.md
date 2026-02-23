@@ -169,126 +169,39 @@ Each phase is independently deployable and backward compatible.
 
 This design doc establishes the architecture. The TDD guard tests (Section 4) are implemented alongside this document to prevent unsafe provider routing from ever being merged.
 
----
-
 ## 10. Appendix A — Coupling Analysis
 
-The following coupling points were identified through deep analysis of the codebase. Any multi-provider implementation must address these points.
+Deep analysis of 40+ coupling points across the codebase where the z.ai singleton assumption is embedded:
 
-### config.js (Critical — 6 coupling points)
+| Module | Coupling Points | Severity |
+|--------|----------------|----------|
+| `config.js` | Global targetHost/targetBasePath/targetProtocol | High |
+| `request-handler.js` | this.targetHost, this.useHttps, auth headers | High |
+| `model-transformer.js` | Single-provider model routing | Medium |
+| `key-manager.js` | Flat key array (no provider tag) | Medium |
+| `cost-tracker.js` | z.ai-specific pricing lookup | Medium |
+| `usage-monitor.js` | z.ai /api/usage endpoint | High |
+| `stream-parser.js` | Already multi-format (Anthropic + OpenAI) | Low |
+| `request-trace.js` | provider/mappedProvider fields exist but null | Low |
+| `pricing-loader.js` | Hardcoded z.ai model pricing | Medium |
+| `model-router.js` | Provider-agnostic tier routing | Low |
+| `dashboard (SSE)` | Passes through trace data | Low |
 
-| Line(s) | Coupling | Impact |
-|---------|----------|--------|
-| 15-17 | `targetHost`/`targetBasePath`/`targetProtocol` as single global tuple | Must become provider-keyed map |
-| 27-44 | `modelMapping.models` maps Claude→GLM without provider field | Need optional `provider` per entry |
-| 57-76 | `modelRouting.tiers` defines tiers with GLM-only model arrays | Tiers need provider-aware model lists |
-| ~163 | GLM-5 staged rollout feature flag | Provider-specific feature gates |
-| 256-265 | Timeout tuning assumes z.ai latency profile | Per-provider timeout calibration |
-| 827-832 | Single `baseUrl` from api-keys.json | Keys need provider association |
+### Key Findings
 
-### request-handler.js (Critical — 5 coupling points)
-
-| Line(s) | Coupling | Impact |
-|---------|----------|--------|
-| 262-265 | Scalar `this.targetHost`/`this.targetBasePath`/`this.targetProtocol` | Must resolve per-request from provider |
-| 1633 | `targetPath = this.targetBasePath + req.url` | Path must come from provider config |
-| 1861-1881 | `_makeProxyRequest` builds options with single host/auth | Must accept provider config parameter |
-| 1876-1877 | Sends BOTH `x-api-key` AND `Authorization: Bearer` headers | Must use provider's authScheme only |
-| 582, 1819 | Client `x-api-key` stripped then re-injected | Strip logic provider-agnostic (OK) |
-
-### model-transformer.js (Medium — 3 coupling points)
-
-| Line(s) | Coupling | Impact |
-|---------|----------|--------|
-| 37-44, 141-146 | Returns `{ body, originalModel, mappedModel, routingDecision }` — no provider | Add `provider` to return value |
-| 125-128 | `stream_options` injection assumes z.ai compatibility | Gate behind provider capability |
-| 113-120 | Router selectModel has no provider context | Provider influences model selection |
-
-### model-router.js (Medium — 4 coupling points)
-
-| Line(s) | Coupling | Impact |
-|---------|----------|--------|
-| - | No provider concept in tier definitions | Tiers may need provider prefix |
-| 395-412 | `extractFeatures()` reads Anthropic body schema | Provider-specific body parsing |
-| 425-480 | Token estimation walks Anthropic content blocks | Provider-specific token counting |
-| ~2176 | Hardcoded 'glm-5' model string | Provider-specific model detection |
-
-### key-manager.js (Medium — 4 coupling points)
-
-| Line(s) | Coupling | Impact |
-|---------|----------|--------|
-| ~107 | Key format `id.secret` (z.ai specific) | Other providers use different formats |
-| 116-139 | No provider field on key entries | Keys must be associated with provider |
-| 41-47 | Model pools not namespaced by provider | Pool isolation per provider |
-| 829-831 | Rate limit parsing reads z.ai-specific headers | Per-provider rate limit parsing |
-
-### cost-tracker.js (Low-Medium — 3 coupling points)
-
-| Line(s) | Coupling | Impact |
-|---------|----------|--------|
-| 30-63 | Flat model-name rates without provider dimension | Provider-keyed pricing tables |
-| 290-311 | `getRatesByModel()` has no provider parameter | Add provider parameter |
-| 448, 554 | Default model 'claude-sonnet' hardcoded | Default per provider |
-
-### usage-monitor.js (High — must be gated)
-
-| Line(s) | Coupling | Impact |
-|---------|----------|--------|
-| ~47 | Target host defaults to api.z.ai | Only valid for z.ai provider |
-| 447-451 | Hardcoded endpoints: quota/limit, model-usage, tool-usage | z.ai-proprietary API |
-| 947-953 | z.ai envelope format for response parsing | z.ai-specific response structure |
-| ~972 | z.ai auth format for monitoring requests | Provider-specific auth |
-
-**Recommendation:** Gate behind `provider === 'z.ai'` check. Other providers lack equivalent monitoring APIs.
-
-### stream-parser.js (Minimal change needed)
-
-Already handles Anthropic nested, direct, and OpenAI-compatible usage formats. Most provider-agnostic module. No changes required.
-
-### request-trace.js (Ready for population)
-
-| Line(s) | Coupling | Impact |
-|---------|----------|--------|
-| 243-244 | `provider`/`mappedProvider` fields exist but always `null` | Populate from provider resolution |
-| 424-425, 445-446 | Fields included in serialization | Already wired — just needs data |
-
-### pricing-loader.js (Low-Medium — 2 coupling points)
-
-| Line(s) | Coupling | Impact |
-|---------|----------|--------|
-| default pricing | Flat model map, no provider dimension | Provider-keyed pricing |
-| ~19 | z.ai pricing URL hardcoded | Per-provider pricing source |
-
----
+1. **Config is the root**: All provider-specific values flow from config.js globals
+2. **Request handler is the bottleneck**: Per-request provider resolution requires parameterizing targetHost/auth
+3. **Stream parser is ready**: Already handles both Anthropic and OpenAI response formats
+4. **RequestTrace is ready**: Has provider/mappedProvider fields, just needs population
+5. **Usage monitor is deeply coupled**: Makes z.ai-specific API calls for quota tracking
 
 ## 11. Appendix B — Implementation Checklist
 
-### 5.3: Add provider field to model mapping
-- [ ] Create `lib/provider-registry.js` with ProviderRegistry class
-- [ ] Add `providers` section to DEFAULT_CONFIG in `config.js`
-- [ ] Support object model mapping entries: `{ target, provider }`
-- [ ] Backward compat: string entries default to primary provider
-
-### 5.4: Make target URL per-provider
-- [ ] `request-handler.js:262-265` — resolve from provider registry per-request
-- [ ] `request-handler.js:1633` — path from provider config
-- [ ] `request-handler.js:1861-1881` — options from provider config
-
-### 5.5: Auth header transformation per provider
-- [ ] `request-handler.js:1876-1877` — use `formatAuthHeader()` from registry
-- [ ] Remove dual header injection (currently sends both x-api-key AND Bearer)
-
-### 5.6: Request body transformation layer
-- [ ] `model-transformer.js:125-128` — gate `stream_options` behind provider capability
-- [ ] Add Anthropic↔OpenAI body schema mapping for non-Anthropic providers
-- [ ] `model-transformer.js:141-146` — add `provider` to return value
-
-### 5.7: Dashboard provider visibility
-- [ ] `request-trace.js:243-244` — populate provider/mappedProvider from resolution
-- [ ] Dashboard request rows: provider badge
-- [ ] Cost warning for `costTier: 'metered'` or `'premium'`
-
-### 5.8: Claude direct passthrough spike
-- [ ] Define 'anthropic' provider with zero transformations
-- [ ] Route claude-* models to anthropic provider when configured
-- [ ] Verify auth (x-api-key only), headers (anthropic-version), and body pass unchanged
+- [x] 5.1: Design doc (this document)
+- [x] 5.2: TDD guard tests (test/provider-registry.test.js, test/multi-provider-guards.test.js)
+- [x] 5.3: ProviderRegistry module (lib/provider-registry.js) + config integration
+- [x] 5.4: Per-provider target URL in request-handler.js
+- [x] 5.5: Auth header transformation per provider (GUARD-05)
+- [x] 5.6: Request body transformation layer (provider field in model-transformer)
+- [x] 5.7: Dashboard provider indicator (badge in SSE rows + detail panel)
+- [x] 5.8: Claude direct passthrough spike (7 tests demonstrating dual-provider config)
