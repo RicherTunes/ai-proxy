@@ -307,7 +307,8 @@
         }
 
         var sidePanel = document.getElementById('sidePanel');
-        if (sidePanel && sidePanel.classList.contains('open')) {
+        var isDesktopDock = window.matchMedia && window.matchMedia('(min-width: 1024px)').matches;
+        if (isDesktopDock && sidePanel && sidePanel.classList.contains('open')) {
             rightInset = sidePanel.getBoundingClientRect().width;
         }
 
@@ -920,13 +921,9 @@
             case 'j': e.preventDefault(); if (window.DashboardFilters) window.DashboardFilters.navigateRequestList(1); break;
             case 'k': e.preventDefault(); if (window.DashboardFilters) window.DashboardFilters.navigateRequestList(-1); break;
             case 'enter':
-                if (STATE.selectedListIndex >= 0) {
+                if (STATE.selectedRequestId) {
                     e.preventDefault();
-                    var rows = document.querySelectorAll('#liveStreamRequestList .request-row');
-                    if (rows[STATE.selectedListIndex]) {
-                        var requestId = rows[STATE.selectedListIndex].dataset.requestId;
-                        if (requestId) openSidePanel(requestId);
-                    }
+                    openSidePanel(STATE.selectedRequestId);
                 }
                 break;
             case 'p': if (window.DashboardData && window.DashboardData.controlAction) { window.DashboardData.controlAction(STATE.settings.paused ? 'resume' : 'pause'); } break;

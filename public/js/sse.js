@@ -593,6 +593,7 @@
         addRequestToStream: addRequestToStream,
         renderRequestRow: renderRequestRow,
         scheduleVirtualRender: scheduleVirtualRender,
+        VIRTUAL_ROW_HEIGHT: VIRTUAL_ROW_HEIGHT,
         updateRequestCountBadge: updateRequestCountBadge,
         updateRecentRequestsTable: updateRecentRequestsTable,
         updateLiveSummary: updateLiveSummary,
