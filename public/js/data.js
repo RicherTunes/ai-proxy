@@ -990,6 +990,7 @@
         var rlt = stats.rateLimitTracking || {};
         el = document.getElementById('rlUpstream429s'); if (el) el.textContent = rlt.upstream429s || 0;
         el = document.getElementById('rlLocal429s'); if (el) el.textContent = rlt.local429s || 0;
+        el = document.getElementById('contextOverflowTransient'); if (el) el.textContent = rlt.contextOverflowTransient || 0;
 
         // Health score distribution — hide when no selections yet
         var scoreDist = stats.healthScoreDistribution || {};
@@ -2270,36 +2271,58 @@
     // ========== AIMD CONCURRENCY ==========
     function updateAIMD(stats) {
         var ac = stats && stats.adaptiveConcurrency;
-        var setEl = function(id, val) { var e = document.getElementById(id); if (e) e.textContent = val; };
-        setEl('aimdMode', ac ? ac.mode || '-' : '-');
+        var modeEl = document.getElementById('aimdMode');
         var list = document.getElementById('aimdModelsList');
         var hint = document.getElementById('aimdEmptyHint');
+        var toggleBtn = document.getElementById('aimdToggleBtn');
+
+        if (modeEl) modeEl.textContent = ac ? ac.mode || '-' : '-';
+
+        // Show toggle button when AIMD data is present
+        if (toggleBtn) toggleBtn.style.display = ac && ac.mode ? '' : 'none';
+        if (toggleBtn && ac && ac.mode) {
+            toggleBtn.textContent = ac.mode === 'enforce' ? 'Switch to Observe' : 'Switch to Enforce';
+        }
+
         if (!ac || !ac.models || Object.keys(ac.models).length === 0) {
             if (list) list.innerHTML = '';
             if (hint) hint.style.display = '';
             return;
         }
         if (hint) hint.style.display = 'none';
+
         var models = ac.models;
-        var html = '<div class="info-grid">';
         var names = Object.keys(models);
+        var html = '<div class="info-grid">';
+
         for (var i = 0; i < names.length; i++) {
-            var m = models[names[i]];
+            var name = names[i];
+            var m = models[name];
+            var pct = m.staticMax > 0 ? Math.round((m.effectiveMax / m.staticMax) * 100) : 0;
+            var barColor = m.isOscillating ? 'var(--warning)' : (m.isIdle ? 'var(--text-secondary)' : 'var(--accent)');
+
+            var statusBadge = '';
+            if (m.isOscillating) statusBadge = ' <span class="badge badge-warning text-xs">oscillating</span>';
+            else if (m.isIdle) statusBadge = ' <span class="badge badge-secondary text-xs">idle</span>';
+
             html += '<div class="info-item">' +
-                '<div class="label">' + escapeHtml(names[i]) + '</div>' +
-                '<div class="value">' + (m.effectiveMax || m.staticMax || '-') + '</div>' +
-                '<div class="info-note">floor=' + (m.floor || 0) + ' 429s=' + ((m.congestion429 || 0) + (m.quota429 || 0)) + '</div>' +
+                '<div class="label">' + escapeHtml(name) + statusBadge + '</div>' +
+                '<div class="progress-bar" style="margin:4px 0;" title="' + m.effectiveMax + '/' + m.staticMax + '">' +
+                    '<div class="progress-fill" style="width:' + pct + '%;background:' + barColor + ';">' +
+                        '<span class="progress-fill-text">' + m.effectiveMax + '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="info-note">' +
+                    'floor=' + (m.floor || 0) +
+                    ' static=' + (m.staticMax || 0) +
+                    ' | \u2191' + (m.adjustmentsUp || 0) + ' \u2193' + (m.adjustmentsDown || 0) +
+                    (m.lastAdjustReason && m.lastAdjustReason !== 'init' ? ' | ' + m.lastAdjustReason : '') +
+                '</div>' +
                 '</div>';
         }
+
         html += '</div>';
         if (list) list.innerHTML = html;
-
-        // Show toggle button when AIMD is active
-        var toggleBtn = document.getElementById('aimdToggleBtn');
-        if (toggleBtn) {
-            toggleBtn.style.display = '';
-            toggleBtn.textContent = ac.mode === 'enforce' ? 'Switch to Observe' : 'Switch to Enforce';
-        }
     }
 
     // ========== PREDICTIONS ==========
