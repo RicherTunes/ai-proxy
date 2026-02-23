@@ -787,6 +787,12 @@
         return Array.from(models).sort();
     }
 
+    // ========== SHARED REQUEST ID ==========
+    function getRequestId(req) {
+        if (!req) return null;
+        return req.requestId || req.id || (req.timestamp + '-' + (req.keyIndex ?? 0));
+    }
+
     // ========== REQUEST LIST NAVIGATION ==========
     function navigateRequestList(direction) {
         var viewport = document.querySelector('.virtual-scroll-viewport');
@@ -795,11 +801,6 @@
 
         var ordering = window.DashboardInit?.getTabOrdering ? window.DashboardInit.getTabOrdering('live') : 'desc';
         var isDescending = ordering === 'desc';
-
-        function getRequestId(req) {
-            if (!req) return null;
-            return req.requestId || (req.timestamp + '-' + (req.keyIndex ?? 0));
-        }
 
         function findArrayIndexById(requestId) {
             if (!requestId) return -1;
@@ -875,10 +876,18 @@
 
     function jumpToLatest() {
         var viewport = document.querySelector('.virtual-scroll-viewport');
-        if (viewport) {
+        if (!viewport) return;
+        var ordering = window.DashboardInit?.getTabOrdering
+            ? window.DashboardInit.getTabOrdering('live') : 'desc';
+        if (ordering === 'asc') {
+            viewport.scrollTop = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+        } else {
             viewport.scrollTop = 0;
-            if (typeof window.showToast === 'function') window.showToast('Jumped to latest', 'info');
         }
+        if (window.DashboardSSE?.scheduleVirtualRender) {
+            window.DashboardSSE.scheduleVirtualRender();
+        }
+        if (typeof window.showToast === 'function') window.showToast('Jumped to latest', 'info');
     }
 
     // ========== COPY TO CLIPBOARD ==========
@@ -936,6 +945,7 @@
         populateModelFilter: populateModelFilter,
         createModelSelectElement: createModelSelectElement,
         getAvailableModels: getAvailableModels,
+        getRequestId: getRequestId,
         navigateRequestList: navigateRequestList,
         clearRequestListSelection: clearRequestListSelection,
         toggleAutoScroll: toggleAutoScroll,

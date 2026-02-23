@@ -570,4 +570,120 @@ test.describe('Virtualization-native Filtering (M4)', () => {
         // All rendered rows should be from the filtered set
         expect(renderedCount).toBeLessThanOrEqual(result.filteredCount);
     });
+
+    test('click request row opens inspector with correct details', async ({ page, proxyServer }) => {
+        await page.goto(proxyServer.url + '/dashboard?debug=1', { waitUntil: 'domcontentloaded' });
+        await page.waitForTimeout(1000);
+        await ensureDrawerExpanded(page);
+
+        await page.evaluate(() => {
+            var STATE = window.DashboardStore?.STATE;
+            if (!STATE) return;
+            STATE.requestsHistory = [];
+            for (var i = 0; i < 5; i++) {
+                STATE.requestsHistory.push({
+                    requestId: 'click-test-' + i,
+                    timestamp: Date.now() - i * 1000,
+                    keyIndex: 0,
+                    path: '/v1/messages',
+                    originalModel: 'claude-sonnet-4-20250514',
+                    mappedModel: 'claude-sonnet-4-20250514',
+                    status: 'completed',
+                    error: null,
+                    latency: 100 + i * 10
+                });
+            }
+            if (window.DashboardSSE?.scheduleVirtualRender) {
+                window.DashboardSSE.scheduleVirtualRender();
+            }
+        });
+        await page.waitForTimeout(500);
+
+        const firstRow = page.locator('#liveStreamRequestList .request-row').first();
+        await expect(firstRow).toBeVisible();
+        const rowRequestId = await firstRow.getAttribute('data-request-id');
+        expect(rowRequestId).toBeTruthy();
+
+        await firstRow.click();
+        await page.waitForTimeout(300);
+
+        const bodyText = await page.locator('#sidePanelBody').innerText();
+        expect(bodyText).not.toContain('Request not found');
+        expect(bodyText).not.toBe('');
+    });
+
+    test('jumpToLatest scrolls to bottom when ordering is asc', async ({ page, proxyServer }) => {
+        await page.goto(proxyServer.url + '/dashboard?debug=1', { waitUntil: 'domcontentloaded' });
+        await page.waitForTimeout(1000);
+        await ensureDrawerExpanded(page);
+
+        await page.evaluate(() => {
+            var STATE = window.DashboardStore?.STATE;
+            if (!STATE) return;
+            STATE.requestsHistory = [];
+            for (var i = 0; i < 100; i++) {
+                STATE.requestsHistory.push({
+                    requestId: 'asc-scroll-' + i,
+                    timestamp: Date.now() - i * 1000,
+                    keyIndex: 0,
+                    path: '/v1/messages',
+                    originalModel: 'claude-sonnet-4-20250514',
+                    mappedModel: 'claude-sonnet-4-20250514',
+                    status: 'completed',
+                    error: null,
+                    latency: 100
+                });
+            }
+            if (window.DashboardSSE?.scheduleVirtualRender) {
+                window.DashboardSSE.scheduleVirtualRender();
+            }
+        });
+        await page.waitForTimeout(500);
+
+        // Set ordering to 'asc' and ensure the virtual list has scrollable height
+        await page.evaluate(() => {
+            if (window.DashboardInit?.setTabOrdering) {
+                window.DashboardInit.setTabOrdering('live', 'asc');
+            } else if (window.DashboardInit) {
+                window.DashboardInit.getTabOrdering = function() { return 'asc'; };
+            }
+            // Ensure the virtual list container has height matching all rows
+            var container = document.getElementById('liveStreamRequestList');
+            var rowHeight = window.DashboardSSE?.VIRTUAL_ROW_HEIGHT || 28;
+            if (container) {
+                container.style.height = (100 * rowHeight) + 'px';
+                container.style.position = 'relative';
+            }
+            if (window.DashboardSSE?.scheduleVirtualRender) {
+                window.DashboardSSE.scheduleVirtualRender();
+            }
+        });
+        await page.waitForTimeout(300);
+
+        await page.evaluate(() => {
+            if (window.DashboardFilters?.jumpToLatest) {
+                window.DashboardFilters.jumpToLatest();
+            }
+        });
+        await page.waitForTimeout(200);
+
+        const scrollState = await page.evaluate(() => {
+            var vp = document.querySelector('.virtual-scroll-viewport');
+            if (!vp) return { error: 'no viewport' };
+            return {
+                scrollTop: vp.scrollTop,
+                scrollHeight: vp.scrollHeight,
+                clientHeight: vp.clientHeight
+            };
+        });
+
+        // In asc mode, jumpToLatest should scroll to bottom.
+        // scrollHeight must exceed clientHeight for scroll to work.
+        if (scrollState.scrollHeight > scrollState.clientHeight) {
+            expect(scrollState.scrollTop).toBeGreaterThan(0);
+        } else {
+            // If content fits in viewport, scrollTop stays at 0 — that's fine
+            expect(scrollState.scrollTop).toBe(0);
+        }
+    });
 });

@@ -162,7 +162,9 @@ jobs:
             test/e2e/api-hardening.e2e.spec.js \
             test/e2e/live-flow.e2e.spec.js \
             test/e2e/golden-semantics.e2e.spec.js \
-            test/e2e/dashboard-perf-smoke.e2e.spec.js
+            test/e2e/dashboard-perf-smoke.e2e.spec.js \
+            test/e2e/dashboard-dock-insets.e2e.spec.js \
+            test/e2e/dashboard-filtering.e2e.spec.js
         env:
           CI: true
           PERF_FACTOR: '2'
