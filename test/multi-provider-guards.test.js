@@ -94,7 +94,7 @@ describe('GUARD-02: Non-configured provider rejection', () => {
         }
     });
 
-    test('config providers section does not exist yet', () => {
+    test('config providers defaults to null (backward compat path uses global target)', () => {
         const config = new Config({
             configDir: __dirname,
             useCluster: false,
@@ -102,8 +102,10 @@ describe('GUARD-02: Non-configured provider rejection', () => {
             logLevel: 'ERROR'
         });
 
-        // The providers section is not yet implemented
-        expect(config.config.providers).toBeUndefined();
+        // providers defaults to null — providerRegistry is built from global target config
+        expect(config.config.providers).toBeNull();
+        expect(config.providerRegistry).toBeDefined();
+        expect(config.providerRegistry.getDefaultProviderName()).toBe('z.ai');
     });
 });
 

@@ -9,6 +9,12 @@ title: Z.ai GLM Coding Plan - Complete Reference
 > **Provider:** Zhipu AI (Z.ai / BigModel.cn)
 > **Documentation Sources:** [z.ai](https://z.ai) | [docs.z.ai](https://docs.z.ai) | [open.bigmodel.cn](https://open.bigmodel.cn)
 
+> **Related:**
+> - [Z.ai Knowledge Base](./zai-knowledge-base.md) - Comprehensive documentation with model specs and integrations
+> - [Model Routing](../features/model-routing.md) - Configuring tier-based routing
+> - [Configuration Guide](../user-guide/configuration.md) - Setting up API keys and baseUrl
+> - [Getting Started](../user-guide/getting-started.md) - Quick setup instructions
+
 > **Looking for more details?** See the [Z.ai Knowledge Base](./zai-knowledge-base.md) for comprehensive documentation including model specs, integrations, known issues, and historical changes.
 
 ---

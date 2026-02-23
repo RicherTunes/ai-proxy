@@ -9,10 +9,12 @@ Complexity-aware routing layer that sits above the legacy `ModelMappingManager`.
 
 When `enabled: false` (default), the router is constructed but `selectModel()` returns `null`. All traffic falls through to the legacy `ModelMappingManager`. You can configure the router while disabled and toggle on without restart.
 
-> **Related Documentation:**
->
-> - [Z.ai Coding Subscription Reference](../reference/zai-coding-subscription.md) - Quick tier comparisons and limits
-> - [Z.ai Knowledge Base](../reference/zai-knowledge-base.md) - Comprehensive model specs, API details, and integrations
+> **Related:**
+> - [Z.ai Coding Subscription](../reference/zai-coding-subscription.md) - Quick tier comparisons and limits
+> - [Z.ai Knowledge Base](../reference/zai-knowledge-base.md) - Comprehensive model specs and API details
+> - [Model Mapping](./model-mapping.md) - Static model name mapping
+> - [Configuration Guide](../user-guide/configuration.md) - Environment variables
+> - [Metrics Reference](../reference/metrics.md) - Prometheus metrics for routing
 
 ## Dashboard Visualization
 

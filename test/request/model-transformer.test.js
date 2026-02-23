@@ -21,7 +21,8 @@ describe('model-transformer', () => {
                     body,
                     originalModel: null,
                     mappedModel: null,
-                    routingDecision: null
+                    routingDecision: null,
+                    provider: null
                 });
             });
 
@@ -33,7 +34,8 @@ describe('model-transformer', () => {
                     body,
                     originalModel: null,
                     mappedModel: null,
-                    routingDecision: null
+                    routingDecision: null,
+                    provider: null
                 });
                 expect(logger.debug).toHaveBeenCalled();
             });
@@ -45,7 +47,8 @@ describe('model-transformer', () => {
                     body,
                     originalModel: null,
                     mappedModel: null,
-                    routingDecision: null
+                    routingDecision: null,
+                    provider: null
                 });
             });
         });

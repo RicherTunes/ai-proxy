@@ -20,7 +20,8 @@ describe('RequestHandler Contract: Model Transformation', () => {
                 body,
                 originalModel: null,
                 mappedModel: null,
-                routingDecision: null
+                routingDecision: null,
+                provider: null
             });
         });
     });
@@ -34,7 +35,8 @@ describe('RequestHandler Contract: Model Transformation', () => {
                 body,
                 originalModel: null,
                 mappedModel: null,
-                routingDecision: null
+                routingDecision: null,
+                provider: null
             });
             expect(logger.debug).toHaveBeenCalledWith(
                 'Body not JSON, skipping model mapping',
@@ -51,7 +53,8 @@ describe('RequestHandler Contract: Model Transformation', () => {
                 body,
                 originalModel: null,
                 mappedModel: null,
-                routingDecision: null
+                routingDecision: null,
+                provider: null
             });
         });
     });
