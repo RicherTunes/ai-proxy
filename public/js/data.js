@@ -2205,6 +2205,7 @@
             setEl('weekCost', '$' + (weekCost || 0).toFixed(4));
             setEl('monthCost', '$' + ((data.projection && data.projection.monthly && data.projection.monthly.current) || 0).toFixed(4));
             setEl('avgCostPerReq', '$' + (data.avgCostPerRequest || 0).toFixed(6));
+            setEl('costPer1kTokens', '$' + (data.costPer1kTokens || 0).toFixed(6));
             setEl('costRequests', formatNumber(data.requests || 0));
             var costHint = document.getElementById('costEmptyHint');
             if (costHint) costHint.style.display = (data.cost || 0) > 0 ? 'none' : 'block';
@@ -2292,6 +2293,13 @@
         }
         html += '</div>';
         if (list) list.innerHTML = html;
+
+        // Show toggle button when AIMD is active
+        var toggleBtn = document.getElementById('aimdToggleBtn');
+        if (toggleBtn) {
+            toggleBtn.style.display = '';
+            toggleBtn.textContent = ac.mode === 'enforce' ? 'Switch to Observe' : 'Switch to Enforce';
+        }
     }
 
     // ========== PREDICTIONS ==========

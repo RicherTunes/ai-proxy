@@ -782,6 +782,22 @@
             --dock-right: 0px;
             padding-bottom: var(--dock-bottom);
         }
+        body.screenshot-mode .side-panel {
+            position: static;
+            top: auto;
+            right: auto;
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            transform: none;
+            z-index: auto;
+            box-shadow: none;
+            border-left: none;
+            border-top: 1px solid var(--border);
+        }
+        body.screenshot-mode .side-panel-backdrop {
+            display: none !important;
+        }
         body.screenshot-mode .shortcuts-help-btn,
         body.screenshot-mode .toast-container,
         body.screenshot-mode .context-menu {

@@ -63,6 +63,7 @@ set GLM_PORT=8080 && npm start
 | `GLM_RATE_LIMIT` | `60` | Requests per minute per key (0=disabled) | Maximum requests per minute for each key. Set to `0` to disable |
 | `GLM_REQUEST_TIMEOUT` | `300000` | Request timeout (ms) | How long (in milliseconds) to wait for a request to complete |
 | `GLM_LOG_LEVEL` | `INFO` | Log level | How much detail to show in logs: `DEBUG` (most), `INFO`, `WARN`, `ERROR` (least) |
+| `GLM_ADAPTIVE_CONCURRENCY_MODE` | `observe_only` | Adaptive concurrency mode | `observe_only` (compute windows but don't enforce) or `enforce` (apply computed limits). Invalid values are coerced to `observe_only` |
 
 ### Additional Environment Variables
 

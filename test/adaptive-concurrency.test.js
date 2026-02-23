@@ -498,6 +498,71 @@ describe('AdaptiveConcurrencyController', () => {
     });
 
     // ---------------------------------------------------------------
+    // Invalid mode coercion
+    // ---------------------------------------------------------------
+
+    describe('invalid mode coercion', () => {
+        test('garbage mode string is coerced to observe_only', () => {
+            createController({ mode: 'invalid_garbage' });
+            expect(controller.config.mode).toBe('observe_only');
+        });
+
+        test('empty string mode is coerced to observe_only', () => {
+            createController({ mode: '' });
+            expect(controller.config.mode).toBe('observe_only');
+        });
+
+        test('getEffectiveConcurrency returns null for coerced invalid mode', () => {
+            createController({ mode: 'not_a_real_mode' });
+            seedModel(controller, 'glm-4.5', 10);
+            expect(controller.getEffectiveConcurrency('glm-4.5')).toBeNull();
+        });
+    });
+
+    // ---------------------------------------------------------------
+    // setMode() atomic transitions
+    // ---------------------------------------------------------------
+
+    describe('setMode() atomic transitions', () => {
+        test('setMode("enforce") pushes windows to keyManager', () => {
+            createController({ mode: 'observe_only' });
+            const w = seedModel(controller, 'glm-4.5', 10);
+            w.effectiveMax = 7;
+
+            const result = controller.setMode('enforce');
+            expect(result.previousMode).toBe('observe_only');
+            expect(result.currentMode).toBe('enforce');
+            expect(mockKeyManager.setEffectiveModelLimit).toHaveBeenCalledWith('glm-4.5', 7);
+        });
+
+        test('setMode("observe_only") restores static limits', () => {
+            createController({ mode: 'enforce' });
+            seedModel(controller, 'glm-4.5', 10);
+
+            const result = controller.setMode('observe_only');
+            expect(result.previousMode).toBe('enforce');
+            expect(result.currentMode).toBe('observe_only');
+            expect(mockKeyManager.restoreStaticLimits).toHaveBeenCalled();
+        });
+
+        test('setMode throws on invalid mode', () => {
+            createController({ mode: 'observe_only' });
+            expect(() => controller.setMode('garbage')).toThrow('Invalid mode');
+        });
+
+        test('setMode same-mode is a no-op', () => {
+            createController({ mode: 'observe_only' });
+            seedModel(controller, 'glm-4.5', 10);
+
+            const result = controller.setMode('observe_only');
+            expect(result.previousMode).toBe('observe_only');
+            expect(result.currentMode).toBe('observe_only');
+            expect(mockKeyManager.setEffectiveModelLimit).not.toHaveBeenCalled();
+            expect(mockKeyManager.restoreStaticLimits).not.toHaveBeenCalled();
+        });
+    });
+
+    // ---------------------------------------------------------------
     // Shrink-while-inflight
     // ---------------------------------------------------------------
 
@@ -1003,13 +1068,95 @@ describe('AdaptiveConcurrencyController', () => {
     // E2E Canary (documented but skipped)
     // ---------------------------------------------------------------
 
-    describe.skip('E2E canary (manual testing)', () => {
-        test('inject synthetic 429s → window decreases → stop → recovery', () => {
-            // Spin up proxy with mode: 'enforce'
-            // Inject synthetic 429s on specific model
-            // Verify window decreases over ticks
-            // Stop injecting → verify recovery
-            // Compare before/after: success rate, p95 latency, retry count
+    describe('enforce mode integration', () => {
+        function createController(overrides = {}) {
+            mockKeyManager._staticLimits.set('glm-4.5', 10);
+            mockKeyManager._limits.set('glm-4.5', 10);
+            controller = new AdaptiveConcurrencyController(
+                { mode: 'enforce', tickIntervalMs: 100, minHoldMs: 0, recoveryDelayMs: 0, growthCleanTicks: 1, ...overrides },
+                { keyManager: mockKeyManager, logger: mockLogger, statsAggregator: mockStatsAggregator }
+            );
+        }
+
+        test('enforce mode writes decreased window to KeyManager', () => {
+            createController();
+
+            // Seed and trigger congestion
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();
+
+            // In enforce mode, setEffectiveModelLimit should be called
+            expect(mockKeyManager.setEffectiveModelLimit).toHaveBeenCalledWith('glm-4.5', 5);
+        });
+
+        test('enforce mode caps effective concurrency below static', () => {
+            createController();
+
+            // Simulate multiple congestion events
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();
+
+            const snapshot = controller.getSnapshot();
+            expect(snapshot.models['glm-4.5'].effectiveMax).toBe(5);  // 10 * 0.5
+
+            // Query: enforce mode returns the reduced value
+            expect(controller.getEffectiveConcurrency('glm-4.5')).toBe(5);
+        });
+
+        test('enforce mode recovers window after clean ticks', () => {
+            createController({ recoveryDelayMs: 0, growthCleanTicks: 1 });
+
+            // Decrease
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();
+            expect(controller.getEffectiveConcurrency('glm-4.5')).toBe(5);
+
+            // Clean tick (success, no congestion)
+            controller.recordSuccess('glm-4.5');
+            jest.advanceTimersByTime(200);
+            controller._tick();
+
+            // Should grow by 1 (additive increase)
+            expect(controller.getEffectiveConcurrency('glm-4.5')).toBe(6);
+            expect(mockKeyManager.setEffectiveModelLimit).toHaveBeenCalledWith('glm-4.5', 6);
+        });
+
+        test('stop() restores static limits in enforce mode', () => {
+            createController();
+
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();
+            expect(controller.getEffectiveConcurrency('glm-4.5')).toBe(5);
+
+            controller.stop();
+            expect(mockKeyManager.restoreStaticLimits).toHaveBeenCalled();
+        });
+
+        test('mode toggle from observe_only to enforce pushes current windows', () => {
+            // Start in observe_only
+            mockKeyManager._staticLimits.set('glm-4.5', 10);
+            mockKeyManager._limits.set('glm-4.5', 10);
+            controller = new AdaptiveConcurrencyController(
+                { mode: 'observe_only', tickIntervalMs: 100, minHoldMs: 0 },
+                { keyManager: mockKeyManager, logger: mockLogger, statsAggregator: mockStatsAggregator }
+            );
+
+            // Simulate congestion in observe_only (window adjusts but doesn't write)
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();
+            expect(mockKeyManager.setEffectiveModelLimit).not.toHaveBeenCalled();
+            expect(controller.getObservedConcurrency('glm-4.5')).toBe(5);
+
+            // Toggle to enforce
+            controller.config.mode = 'enforce';
+
+            // Another congestion in enforce mode should write to KeyManager
+            controller.recordCongestion('glm-4.5', { retryAfterMs: 2000 });
+            controller._tick();
+
+            // Now in enforce mode, decrease should be written (5 * 0.5 = 2, clamped to minWindow=1)
+            expect(mockKeyManager.setEffectiveModelLimit).toHaveBeenCalled();
+            expect(controller.getEffectiveConcurrency('glm-4.5')).toBeLessThan(5);
         });
     });
 });

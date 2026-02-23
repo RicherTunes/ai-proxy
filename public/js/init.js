@@ -1649,6 +1649,33 @@
                 if (DD && DD.copyTraceJson) DD.copyTraceJson();
                 break;
 
+            // ---- Adaptive Concurrency ----
+            case 'toggle-aimd-mode':
+                (function() {
+                    var badge = document.getElementById('aimdMode');
+                    var currentMode = badge ? badge.textContent.trim() : 'observe_only';
+                    var newMode = currentMode === 'enforce' ? 'observe_only' : 'enforce';
+                    element.disabled = true;
+                    element.textContent = 'Switching...';
+                    fetchJSON('/adaptive-concurrency', {
+                        method: 'PUT',
+                        requireAuth: true,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mode: newMode })
+                    }).then(function(data) {
+                        if (data && !data.__error && data.success) {
+                            if (badge) badge.textContent = data.currentMode;
+                            element.textContent = data.currentMode === 'enforce' ? 'Switch to Observe' : 'Switch to Enforce';
+                            if (showToast) showToast('AIMD mode: ' + data.currentMode, 'info');
+                        } else {
+                            element.textContent = currentMode === 'enforce' ? 'Switch to Observe' : 'Switch to Enforce';
+                            if (showToast) showToast('Failed to toggle AIMD mode' + (data && data.status ? ' (' + data.status + ')' : ''), 'error');
+                        }
+                        element.disabled = false;
+                    });
+                })();
+                break;
+
             // ---- Routing actions ----
             case 'set-routing-time':
                 if (DT && DT.setRoutingTime) DT.setRoutingTime(element.dataset.range);

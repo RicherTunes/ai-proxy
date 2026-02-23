@@ -61,6 +61,8 @@ The dashboard provides real-time visual monitoring of all proxy metrics. Open it
 | `GET /persistent-stats` | Historical usage statistics |
 | `GET /backpressure` | Current load information |
 | `POST /reload` | Trigger hot reload of API keys |
+| `GET /adaptive-concurrency` | AIMD window snapshot |
+| `PUT /adaptive-concurrency` | Toggle AIMD mode |
 
 ## Health Check
 
@@ -243,6 +245,48 @@ curl http://127.0.0.1:18765/backpressure
 | 50-80% | Elevated load |
 | 80-95% | High load |
 | 95-100% | Near capacity - consider scaling |
+
+## Adaptive Concurrency (AIMD)
+
+The proxy uses TCP-inspired AIMD (Additive Increase / Multiplicative Decrease) to dynamically adjust per-model concurrency limits based on upstream 429 feedback.
+
+**Modes:**
+
+| Mode | Behavior |
+|------|----------|
+| `observe_only` | Computes windows but does not enforce limits (safe for monitoring) |
+| `enforce` | Applies computed limits to the key manager (active throttling) |
+
+### GET /adaptive-concurrency
+
+Returns current AIMD state including per-model windows.
+
+```bash
+curl -H "x-admin-token: TOKEN" http://127.0.0.1:18765/adaptive-concurrency
+```
+
+**Response includes:** `mode`, per-model `effectiveMax`, `staticMax`, `consecutiveCleanTicks`, and global window state.
+
+### PUT /adaptive-concurrency
+
+Toggle between `observe_only` and `enforce` mode at runtime.
+
+```bash
+curl -X PUT \
+  -H "x-admin-token: TOKEN" \
+  -H "content-type: application/json" \
+  -d '{"mode": "enforce"}' \
+  http://127.0.0.1:18765/adaptive-concurrency
+```
+
+**Response:** `{ "success": true, "previousMode": "observe_only", "currentMode": "enforce", "snapshot": {...} }`
+
+**Notes:**
+- Requires admin authentication when enabled
+- Switching to `enforce` immediately pushes computed windows to the key manager
+- Switching to `observe_only` restores static concurrency limits
+- Can also be set via `GLM_ADAPTIVE_CONCURRENCY_MODE` environment variable
+- The dashboard AIMD card includes a toggle button for this endpoint
 
 ## Persistent Statistics
 
