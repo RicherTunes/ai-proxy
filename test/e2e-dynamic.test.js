@@ -338,7 +338,7 @@ describe('Request Proxying Round-Trip', () => {
         expect(sentBody.model).toBe('glm-5');
     });
 
-    test('forwards key as Authorization bearer to upstream', async () => {
+    test('forwards key as x-api-key to upstream', async () => {
         upstream = createMockUpstream((_req, res) => {
             sendSuccess(res);
         });
@@ -356,7 +356,7 @@ describe('Request Proxying Round-Trip', () => {
         });
 
         const sentHeaders = upstream.getRequests()[0].headers;
-        expect(sentHeaders['authorization']).toMatch(/^Bearer /);
+        expect(sentHeaders['x-api-key']).toBeDefined();
     });
 
     test('upstream x-request-id is echoed back to client', async () => {
@@ -584,9 +584,9 @@ describe('Key Rotation on Upstream Errors', () => {
         expect(res.statusCode).toBe(200);
         expect(res.json().content[0].text).toBe('Retry succeeded');
         // Server_error strategy has excludeKey=true, so second request uses different key
-        const req1Auth = upstream.getRequests()[0].headers.authorization;
-        const req2Auth = upstream.getRequests()[1].headers.authorization;
-        expect(req2Auth).not.toBe(req1Auth);
+        const req1Key = upstream.getRequests()[0].headers['x-api-key'];
+        const req2Key = upstream.getRequests()[1].headers['x-api-key'];
+        expect(req2Key).not.toBe(req1Key);
     });
 
     test('rotates to next key after 401 auth error', async () => {
@@ -614,9 +614,9 @@ describe('Key Rotation on Upstream Errors', () => {
         });
 
         expect(res.statusCode).toBe(200);
-        const req1Auth = upstream.getRequests()[0].headers.authorization;
-        const req2Auth = upstream.getRequests()[1].headers.authorization;
-        expect(req2Auth).not.toBe(req1Auth);
+        const req1Key = upstream.getRequests()[0].headers['x-api-key'];
+        const req2Key = upstream.getRequests()[1].headers['x-api-key'];
+        expect(req2Key).not.toBe(req1Key);
     });
 
     test('upstream 429 triggers LLM retry with key rotation', async () => {
@@ -698,9 +698,9 @@ describe('Key Rotation on Upstream Errors', () => {
             })
         });
 
-        const authHeaders = upstream.getRequests().map(r => r.headers.authorization);
+        const apiKeys = upstream.getRequests().map(r => r.headers['x-api-key']);
         // With excludeKey=true for server_error, each retry should use a different key
-        const unique = new Set(authHeaders);
+        const unique = new Set(apiKeys);
         expect(unique.size).toBeGreaterThan(1);
     });
 });

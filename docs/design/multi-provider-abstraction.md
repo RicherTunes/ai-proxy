@@ -168,3 +168,40 @@ Each phase is independently deployable and backward compatible.
 ## 9. Decision
 
 This design doc establishes the architecture. The TDD guard tests (Section 4) are implemented alongside this document to prevent unsafe provider routing from ever being merged.
+
+## 10. Appendix A — Coupling Analysis
+
+Deep analysis of 40+ coupling points across the codebase where the z.ai singleton assumption is embedded:
+
+| Module | Coupling Points | Severity |
+|--------|----------------|----------|
+| `config.js` | Global targetHost/targetBasePath/targetProtocol | High |
+| `request-handler.js` | this.targetHost, this.useHttps, auth headers | High |
+| `model-transformer.js` | Single-provider model routing | Medium |
+| `key-manager.js` | Flat key array (no provider tag) | Medium |
+| `cost-tracker.js` | z.ai-specific pricing lookup | Medium |
+| `usage-monitor.js` | z.ai /api/usage endpoint | High |
+| `stream-parser.js` | Already multi-format (Anthropic + OpenAI) | Low |
+| `request-trace.js` | provider/mappedProvider fields exist but null | Low |
+| `pricing-loader.js` | Hardcoded z.ai model pricing | Medium |
+| `model-router.js` | Provider-agnostic tier routing | Low |
+| `dashboard (SSE)` | Passes through trace data | Low |
+
+### Key Findings
+
+1. **Config is the root**: All provider-specific values flow from config.js globals
+2. **Request handler is the bottleneck**: Per-request provider resolution requires parameterizing targetHost/auth
+3. **Stream parser is ready**: Already handles both Anthropic and OpenAI response formats
+4. **RequestTrace is ready**: Has provider/mappedProvider fields, just needs population
+5. **Usage monitor is deeply coupled**: Makes z.ai-specific API calls for quota tracking
+
+## 11. Appendix B — Implementation Checklist
+
+- [x] 5.1: Design doc (this document)
+- [x] 5.2: TDD guard tests (test/provider-registry.test.js, test/multi-provider-guards.test.js)
+- [x] 5.3: ProviderRegistry module (lib/provider-registry.js) + config integration
+- [x] 5.4: Per-provider target URL in request-handler.js
+- [x] 5.5: Auth header transformation per provider (GUARD-05)
+- [x] 5.6: Request body transformation layer (provider field in model-transformer)
+- [x] 5.7: Dashboard provider indicator (badge in SSE rows + detail panel)
+- [x] 5.8: Claude direct passthrough spike (7 tests demonstrating dual-provider config)

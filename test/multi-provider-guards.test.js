@@ -103,7 +103,9 @@ describe('GUARD-02: Non-configured provider rejection', () => {
         });
 
         // The providers section is not yet implemented
-        expect(config.config.providers).toBeUndefined();
+        expect(config.config.providers).toBeNull();
+        expect(config.providerRegistry).toBeDefined();
+        expect(config.providerRegistry.getDefaultProvider()).toBeDefined();
     });
 });
 
