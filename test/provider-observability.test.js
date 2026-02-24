@@ -73,6 +73,13 @@ describe('getProviderHealthStats', () => {
 
         expect(health['anthropic']).toBeDefined();
         expect(health['anthropic'].total).toBe(1);
+
+        // UX: configured field distinguishes "0 configured" from "0 available"
+        expect(health['z.ai'].configured).toBe(2);
+        expect(health['anthropic'].configured).toBe(1);
+
+        // UX: _meta.defaultProvider surfaces the default provider name
+        expect(health._meta).toBeDefined();
     });
 
     test('returns __untagged__ for flat array keys', () => {
@@ -82,6 +89,7 @@ describe('getProviderHealthStats', () => {
         const health = km.getProviderHealthStats();
         expect(health['__untagged__']).toBeDefined();
         expect(health['__untagged__'].total).toBe(2);
+        expect(health['__untagged__'].configured).toBe(0);
     });
 
     test('tracks open circuits per provider', () => {
