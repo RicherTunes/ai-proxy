@@ -38,6 +38,8 @@ describeIf('Live Integration Tests (real API)', () => {
     // Expect at least one key card or heatmap cell to be rendered
     const keyElements = await page.locator('[data-key-index], .key-cell, .heatmap-cell').count();
     expect(keyElements).toBeGreaterThan(0);
+    // Close page to sever SSE connections before fixture teardown
+    await page.close();
   });
 
   // Test 3: Stats endpoint returns structured cost and usage data
@@ -106,6 +108,8 @@ describeIf('Live Integration Tests (real API)', () => {
       const text = await requestsBadge.textContent();
       expect(parseInt(text, 10)).toBeGreaterThanOrEqual(0);
     }
+    // Close page to sever SSE connections before fixture teardown
+    await page.close();
   });
 
   // Test 6: Account usage monitoring field is well-formed when present
