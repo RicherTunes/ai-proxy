@@ -53,6 +53,7 @@ proxy.err
 logs_temp.json
 stats_temp.json
 stats-cache.json
+rate-limit-cache.json
 failed-requests.json
 cost-data.json
 usage-cache.json
@@ -62,6 +63,9 @@ history.json
 history.jsonl
 test/test-history.json
 test/quarantine/test-history.json
+
+# MCP config (local paths)
+.mcp.json
 
 # Plugins (runtime cache with local paths)
 plugins/

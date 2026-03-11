@@ -581,9 +581,19 @@
                 }
                 await fetchModelRouting();
                 // Verify save round-trip (roadmap 2.4)
-                var submitted = JSON.stringify(payload.tiers || {});
-                var returned = JSON.stringify((modelRoutingData && modelRoutingData.config && modelRoutingData.config.tiers) || {});
-                if (submitted !== returned) {
+                // Compare semantically: server may reorder properties or add
+                // fields (clientModelPolicy, label) that the tier-builder
+                // doesn't submit.  Only compare models[] and strategy.
+                var savedTiers = (modelRoutingData && modelRoutingData.config && modelRoutingData.config.tiers) || {};
+                var mismatch = false;
+                Object.keys(payload.tiers || {}).forEach(function(tierName) {
+                    var sub = payload.tiers[tierName];
+                    var ret = savedTiers[tierName];
+                    if (!ret) { mismatch = true; return; }
+                    if (JSON.stringify(sub.models) !== JSON.stringify(ret.models)) { mismatch = true; }
+                    if ((sub.strategy || 'balanced') !== (ret.strategy || 'balanced')) { mismatch = true; }
+                });
+                if (mismatch) {
                     if (typeof window.showToast === 'function') {
                         window.showToast('Warning: saved config differs from submitted — check for server-side normalization', 'warning');
                     }

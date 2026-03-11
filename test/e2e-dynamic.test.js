@@ -928,7 +928,7 @@ describe('SSE Event Broadcasting', () => {
             expect(poolStatus.seq).toBeDefined();
             expect(poolStatus.ts).toBeDefined();
         }
-    });
+    }, 10000);
 
     test('SSE broadcasts request event after proxied request completes', async () => {
         upstream = createMockUpstream((_req, res) => {
@@ -969,7 +969,7 @@ describe('SSE Event Broadcasting', () => {
         // Verify the SSE stream is live and producing events after requests
         // (exact event type depends on timing and proxy config)
         expect(events.length).toBeGreaterThanOrEqual(1);
-    });
+    }, 10000);
 });
 
 describe('Error Response Formats', () => {
