@@ -40,13 +40,13 @@ describe('ModelDiscovery', () => {
     });
 
     describe('getModel', () => {
-        test('should find GLM-5 by ID with maxConcurrency=1', async () => {
+        test('should find GLM-5 by ID with maxConcurrency=3', async () => {
             const model = await modelDiscovery.getModel('glm-5');
 
             expect(model).not.toBeNull();
             expect(model.id).toBe('glm-5');
             expect(model.tier).toBe('HEAVY');
-            expect(model.maxConcurrency).toBe(1);
+            expect(model.maxConcurrency).toBe(3);
         });
 
         test('should find model by ID', async () => {

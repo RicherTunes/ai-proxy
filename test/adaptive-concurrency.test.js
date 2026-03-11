@@ -1419,4 +1419,70 @@ describe('AdaptiveConcurrencyController', () => {
             expect(snapshot.models['glm-4.5'].history[0].to).toBe(12);
         });
     });
+
+    describe('updateStaticBaseline()', () => {
+        test('raises ceiling and effective follows when at old ceiling', () => {
+            const km = {
+                setEffectiveModelLimit: jest.fn(),
+                getEffectiveModelLimit: (m) => km._eff?.get(m),
+                getStaticModelLimit: (m) => km._static?.get(m),
+                restoreStaticLimits: jest.fn(),
+                _eff: new Map([['glm-test', 5]]),
+                _static: new Map([['glm-test', 5]])
+            };
+            const ctrl = new AdaptiveConcurrencyController(
+                { mode: 'enforce', minWindow: 1, tickIntervalMs: 999999 },
+                { keyManager: km, logger: { info: jest.fn(), warn: jest.fn(), debug: jest.fn(), error: jest.fn() } }
+            );
+            // Seed a window
+            ctrl.recordSuccess('glm-test');  // creates window with staticMax=5
+            const w = ctrl._windows.get('glm-test');
+            expect(w).toBeDefined();
+            expect(w.staticMax).toBe(5);
+            expect(w.effectiveMax).toBe(5);
+
+            // Update static baseline to 8
+            const result = ctrl.updateStaticBaseline('glm-test', 8);
+            expect(result).toBe(true);
+            expect(w.staticMax).toBe(8);
+            expect(w.effectiveMax).toBe(8);  // Was at ceiling → follows
+            expect(km.setEffectiveModelLimit).toHaveBeenCalledWith('glm-test', 8);
+        });
+
+        test('effective stays if AIMD had reduced below old ceiling', () => {
+            const km = {
+                setEffectiveModelLimit: jest.fn(),
+                getEffectiveModelLimit: (m) => km._eff?.get(m),
+                getStaticModelLimit: (m) => km._static?.get(m),
+                restoreStaticLimits: jest.fn(),
+                _eff: new Map([['glm-test', 10]]),
+                _static: new Map([['glm-test', 10]])
+            };
+            const ctrl = new AdaptiveConcurrencyController(
+                { mode: 'enforce', minWindow: 1, tickIntervalMs: 999999 },
+                { keyManager: km, logger: { info: jest.fn(), warn: jest.fn(), debug: jest.fn(), error: jest.fn() } }
+            );
+            // Seed window and simulate AIMD reduction
+            ctrl.recordSuccess('glm-test');
+            const w = ctrl._windows.get('glm-test');
+            w.effectiveMax = 7;  // AIMD reduced from static 10 to 7
+
+            // Update static from 10 to 12
+            const result = ctrl.updateStaticBaseline('glm-test', 12);
+            expect(result).toBe(true);
+            expect(w.staticMax).toBe(12);
+            expect(w.effectiveMax).toBe(7);  // Stays at AIMD-reduced value
+            // In enforce mode, push the (unchanged) effective to keyManager
+            expect(km.setEffectiveModelLimit).toHaveBeenCalledWith('glm-test', 7);
+        });
+
+        test('returns false for unknown model (no window)', () => {
+            const ctrl = new AdaptiveConcurrencyController(
+                { minWindow: 1, tickIntervalMs: 999999 },
+                { keyManager: { getStaticModelLimit: () => undefined }, logger: { info: jest.fn(), warn: jest.fn(), debug: jest.fn(), error: jest.fn() } }
+            );
+            const result = ctrl.updateStaticBaseline('nonexistent', 5);
+            expect(result).toBe(false);
+        });
+    });
 });
