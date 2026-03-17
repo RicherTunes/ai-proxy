@@ -21,6 +21,8 @@
 
     var requestPollingIntervalId = null;
     var staleCheckIntervalId = null;
+    var _scrollViewport = null;
+    var _viewportObserver = null;
 
     // ========== VIRTUAL SCROLL RENDERER ==========
     var VIRTUAL_ROW_HEIGHT = 28;
@@ -61,8 +63,15 @@
         var endIndex = Math.min(startIndex + visibleCount + VIRTUAL_BUFFER, totalItems);
 
         var totalHeight = totalItems * VIRTUAL_ROW_HEIGHT;
-        container.style.height = totalHeight + 'px';
-        container.style.position = 'relative';
+        var newHeight = totalHeight + 'px';
+        if (container._lastHeight !== newHeight) {
+            container.style.height = newHeight;
+            container._lastHeight = newHeight;
+        }
+        if (!container._positionSet) {
+            container.style.position = 'relative';
+            container._positionSet = true;
+        }
 
         var fragment = document.createDocumentFragment();
         for (var displayIdx = bufferedStart; displayIdx < endIndex; displayIdx++) {
@@ -98,15 +107,14 @@
 
     // Attach scroll listener after a tick to ensure DOM is ready
     setTimeout(function() {
-        var viewport = document.querySelector('.virtual-scroll-viewport');
-        if (viewport) {
-            viewport.addEventListener('scroll', scheduleVirtualRender, { passive: true });
+        _scrollViewport = document.querySelector('.virtual-scroll-viewport');
+        if (_scrollViewport) {
+            _scrollViewport.addEventListener('scroll', scheduleVirtualRender, { passive: true });
         }
     }, 0);
 
     // ========== VISIBILITY OPTIMIZATION ==========
     // Use IntersectionObserver to pause/resume virtual scroll rendering when not visible
-    var viewportVisibilityObserver = null;
     var isViewportVisible = true;
 
     function setupViewportVisibilityObserver() {
@@ -115,7 +123,12 @@
         var viewport = document.querySelector('.virtual-scroll-viewport');
         if (!viewport) return;
 
-        viewportVisibilityObserver = new IntersectionObserver(function(entries) {
+        // Disconnect previous observer if re-initializing
+        if (_viewportObserver) {
+            _viewportObserver.disconnect();
+        }
+
+        _viewportObserver = new IntersectionObserver(function(entries) {
             entries.forEach(function(entry) {
                 var wasVisible = isViewportVisible;
                 isViewportVisible = entry.isIntersecting;
@@ -129,7 +142,7 @@
             threshold: 0.1
         });
 
-        viewportVisibilityObserver.observe(viewport);
+        _viewportObserver.observe(viewport);
     }
 
     // Initialize visibility observer after DOM is ready
@@ -314,9 +327,7 @@
                 store.dispatch(Actions.sseConnected({ clientId: clientId, recentRequests: [] }));
 
                 if (window._liveFlowViz) {
-                    window._liveFlowViz._sseAttached = false;
-                    window._liveFlowViz._stopFallbackPolling();
-                    window._liveFlowViz._attachSSE();
+                    window._liveFlowViz.handleSSEReconnect();
                 }
             };
 
@@ -351,10 +362,12 @@
                 updateConnectionStatus('error');
                 store.dispatch(Actions.sseDisconnected());
 
-                if (window._liveFlowViz && !window._liveFlowViz._usePolling) {
+                if (window._liveFlowViz) {
                     window._liveFlowViz._sseAttached = false;
                     window._liveFlowViz._setStatus('error');
-                    window._liveFlowViz._startFallbackPolling();
+                    if (!window._liveFlowViz._usePolling) {
+                        window._liveFlowViz._startFallbackPolling();
+                    }
                 }
 
                 // Implement exponential backoff with jitter
@@ -434,6 +447,27 @@
         if (typeof window.updateTracesTable === 'function') {
             window.updateTracesTable(request);
         }
+
+        // One-time context menu hint (attached to fixed container, not virtual rows)
+        try {
+            if (!window._contextMenuHintShown && !localStorage.getItem('glm_ctx_hint_shown')) {
+                window._contextMenuHintShown = true;
+                setTimeout(function() {
+                    var viewport = document.querySelector('.virtual-scroll-viewport');
+                    if (viewport && !document.querySelector('.context-menu-hint')) {
+                        var hint = document.createElement('div');
+                        hint.className = 'context-menu-hint';
+                        hint.textContent = 'Tip: Right-click rows for quick actions';
+                        hint.style.cssText = 'text-align:center;font-size:0.6rem;color:var(--text-secondary);opacity:0.6;padding:4px 0;';
+                        viewport.parentNode.insertBefore(hint, viewport);
+                        setTimeout(function() {
+                            if (hint.parentNode) hint.remove();
+                            localStorage.setItem('glm_ctx_hint_shown', '1');
+                        }, 8000);
+                    }
+                }, 2000);
+            }
+        } catch(_e) { /* ignore */ }
     }
 
     // Store callback — clear placeholder, schedule virtual scroll render
@@ -623,6 +657,14 @@
             if (requestPollingIntervalId) clearInterval(requestPollingIntervalId);
             if (staleCheckIntervalId) clearInterval(staleCheckIntervalId);
             if (virtualScrollRAF) { cancelAnimationFrame(virtualScrollRAF); virtualScrollRAF = null; }
+            if (_scrollViewport) {
+                _scrollViewport.removeEventListener('scroll', scheduleVirtualRender);
+                _scrollViewport = null;
+            }
+            if (_viewportObserver) {
+                _viewportObserver.disconnect();
+                _viewportObserver = null;
+            }
         }
     };
 

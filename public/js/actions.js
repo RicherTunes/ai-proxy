@@ -67,10 +67,31 @@
             .then(function(results) {
                 var stats = results[0];
                 var history = results[1];
+                var exportPayload = { stats: stats, history: history };
+
+                // Add human-readable summary
+                exportPayload.summary = {
+                    generatedAt: new Date().toISOString(),
+                    uptime: (stats && stats.uptimeFormatted) || '?',
+                    totalRequests: (stats && stats.clientRequests && stats.clientRequests.total) || 0,
+                    successRate: (stats && stats.clientRequests && stats.clientRequests.successRate) || '?',
+                    activeKeys: (stats && stats.keys || []).filter(function(k) { return k.totalRequests > 0 || k.total > 0; }).length,
+                    totalKeys: (stats && stats.keys || []).length,
+                    errorBreakdown: (stats && stats.errors) || {},
+                    topModels: {}
+                };
+                // Top models by request count
+                var modelCounts = {};
+                (stats && stats.keys || []).forEach(function(k) {
+                    if (k.model) modelCounts[k.model] = (modelCounts[k.model] || 0) + (k.totalRequests || k.total || 0);
+                });
+                exportPayload.summary.topModels = modelCounts;
+
                 var csvContent = generateCSV(stats, history);
-                var jsonContent = JSON.stringify({ stats: stats, history: history }, null, 2);
-                downloadFile(csvContent, 'glm-proxy-stats.csv', 'text/csv');
-                setTimeout(function() { downloadFile(jsonContent, 'glm-proxy-stats.json', 'application/json'); }, 100);
+                var jsonContent = JSON.stringify(exportPayload, null, 2);
+                var filename = 'glm-proxy-' + new Date().toISOString().slice(0, 10) + '.json';
+                downloadFile(csvContent, 'glm-proxy-' + new Date().toISOString().slice(0, 10) + '.csv', 'text/csv');
+                setTimeout(function() { downloadFile(jsonContent, filename, 'application/json'); }, 100);
                 showToast('Data exported successfully', 'success');
             }).catch(function(err) { console.error('Export failed:', err); showToast('Export failed: ' + err.message, 'error'); });
     }
@@ -136,6 +157,8 @@
     function dismissIssues() {
         var panel = document.getElementById('issuesPanel');
         if (panel) panel.classList.remove('has-issues');
+        // Note: 'issues-dismissed' key lacks the 'glm_' prefix used by other keys.
+        // Kept as-is to avoid breaking dismissed state for existing users.
         localStorage.setItem('issues-dismissed', JSON.stringify({ hash: previousIssuesHash, dismissedAt: Date.now() }));
         var reopenBadge = document.getElementById('issuesReopenBadge');
         if (reopenBadge) reopenBadge.style.display = 'inline-flex';

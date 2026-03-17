@@ -79,9 +79,9 @@ test.describe('Dashboard Vendor Scripts', () => {
         const requestChart = page.locator('#requestChart');
         await expect(requestChart).toBeVisible();
 
-        // D3 loaded - liveFlowCanvas element exists in DOM (inside routing tab, may be hidden by tab state)
-        const liveFlowCanvas = page.locator('#liveFlowCanvas');
-        await expect(liveFlowCanvas).toHaveCount(1);
+        // Runway viz element exists in DOM (inside routing tab, may be hidden by tab state)
+        const runwayViz = page.locator('#runwayViz');
+        await expect(runwayViz).toHaveCount(1);
 
         // Verify D3 is actually available and functional
         const d3Available = await page.evaluate(() => typeof window.d3 === 'object' && typeof window.d3.select === 'function');

@@ -372,7 +372,7 @@ describe('data-action handler completeness', () => {
         'noop', 'kpi-navigate', 'enable-routing', 'toggle-routing', 'scroll-to-account-usage',
         'toggle-global-mapping', 'toggle-aimd-mode',
         // Nested sub-cases
-        'sort-models', 'select-tenant',
+        'sort-models', 'refresh-models', 'select-tenant',
         // Handled in context-menu.js (separate event listener)
         'context-copy-id', 'context-filter-by-key',
         'context-view-similar', 'context-investigate'

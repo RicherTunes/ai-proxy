@@ -25,13 +25,37 @@
             align-items: center;
             min-width: 0;
         }
-        .health-item[data-action] {
+        .health-item[data-action],
+        .alert-item[data-action] {
             border-radius: var(--radius-md);
             padding: 4px 6px;
-            transition: background var(--dur) var(--ease);
+            cursor: pointer;
+            transition: background var(--dur) var(--ease), border-color var(--dur) ease, box-shadow var(--dur) ease;
+            position: relative;
         }
-        .health-item[data-action]:hover {
+        .health-item[data-action]:hover,
+        .alert-item[data-action]:hover {
             background: var(--surface-overlay-hover);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent);
+        }
+        .health-item[data-action]::after,
+        .alert-item[data-action]::after {
+            content: '\2192';
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            opacity: 0;
+            transition: opacity var(--dur) ease;
+        }
+        .health-item[data-action]:hover::after,
+        .alert-item[data-action]:hover::after {
+            opacity: 0.6;
+        }
+        .account-usage-pill[data-action]:hover {
+            border-color: var(--accent);
         }
 
         body.density-compact .health-item {

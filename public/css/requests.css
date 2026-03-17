@@ -260,8 +260,8 @@
             opacity: 0.92;
             cursor: help;
         }
-        .request-token-part.in { color: #93c5fd; }
-        .request-token-part.out { color: #f9a8d4; }
+        .request-token-part.in { color: var(--token-color-in); }
+        .request-token-part.out { color: var(--token-color-out); }
         .request-token-sep {
             color: var(--text-secondary);
             opacity: 0.5;
@@ -291,7 +291,7 @@
         }
         .routing-chip .chip-src {
             padding: 1px 6px 1px 8px;
-            color: #c4b5fd;
+            color: var(--chip-source);
         }
         .routing-chip .chip-arrow {
             padding: var(--spacing-xs, 4px);
@@ -301,20 +301,20 @@
         }
         .routing-chip .chip-dst {
             padding: 1px 8px 1px 6px;
-            color: #67e8f9;
+            color: var(--chip-target);
         }
         /* Source color by chip type */
         .routing-chip--classifier .chip-src { color: #a5b4fc; }
         .routing-chip--rule .chip-src { color: #a5b4fc; }
         .routing-chip--pool .chip-src { color: #a5b4fc; }
-        .routing-chip--override .chip-src, .routing-chip--saved-override .chip-src { color: #fcd34d; }
+        .routing-chip--override .chip-src, .routing-chip--saved-override .chip-src { color: var(--chip-override); }
         .routing-chip--failover .chip-src { color: #fca5a5; }
         .routing-chip--legacy .chip-src { color: var(--text-secondary); font-style: italic; }
         /* Target color by chip type */
-        .routing-chip--classifier .chip-dst { color: #67e8f9; }
-        .routing-chip--rule .chip-dst { color: #67e8f9; }
+        .routing-chip--classifier .chip-dst { color: var(--chip-target); }
+        .routing-chip--rule .chip-dst { color: var(--chip-target); }
         .routing-chip--pool .chip-dst { color: #86efac; }
-        .routing-chip--override .chip-dst, .routing-chip--saved-override .chip-dst { color: #67e8f9; }
+        .routing-chip--override .chip-dst, .routing-chip--saved-override .chip-dst { color: var(--chip-target); }
         .routing-chip--failover .chip-dst { color: #fca5a5; }
         .routing-chip--legacy .chip-dst { color: var(--text-secondary); }
         .routing-chip--default .chip-src, .routing-chip--default .chip-dst { color: var(--text-secondary); }
@@ -500,7 +500,10 @@
 
         /* Request row hover + selection */
         .request-row:hover {
-            background: var(--surface-overlay);
+            background: var(--surface-overlay-hover);
+        }
+        .request-row:active {
+            background: var(--surface-overlay-active);
         }
 
         .request-row.selected {

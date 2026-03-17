@@ -56,6 +56,13 @@
             --score-fair-bg: rgba(245, 158, 11, 0.15);
             --score-poor-bg: rgba(239, 68, 68, 0.15);
 
+            /* Semantic chip colors */
+            --chip-source: #c4b5fc;
+            --chip-target: #67e8f9;
+            --chip-override: #fcd34d;
+            --token-color-in: #93c5fd;
+            --token-color-out: #f9a8d4;
+
             /* Motion */
             --dur: 180ms;
             --ease: cubic-bezier(0.4, 0, 0.2, 1);
@@ -117,6 +124,12 @@
             --score-good-bg: rgba(6, 182, 212, 0.15);
             --score-fair-bg: rgba(217, 119, 6, 0.15);
             --score-poor-bg: rgba(220, 38, 38, 0.15);
+
+            --chip-source: #7c3aed;
+            --chip-target: #0891b2;
+            --chip-override: #d97706;
+            --token-color-in: #2563eb;
+            --token-color-out: #db2777;
 
             /* Surface overlays - light theme */
             --surface-overlay: rgba(0, 0, 0, 0.03);

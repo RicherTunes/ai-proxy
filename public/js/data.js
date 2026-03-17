@@ -337,25 +337,50 @@
         var chartOptions = {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            animation: { duration: 300 },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleFont: { family: 'var(--font-mono), monospace', size: 11 },
+                    bodyFont: { family: 'var(--font-mono), monospace', size: 11 },
+                    padding: 8,
+                    cornerRadius: 4
+                }
+            },
             scales: {
                 x: {
-                    grid: { color: theme.grid },
-                    ticks: { color: theme.tick, maxTicksLimit: 8 }
+                    grid: { color: theme.grid, drawBorder: false },
+                    ticks: {
+                        color: theme.tick,
+                        maxTicksLimit: 8,
+                        maxRotation: 45,
+                        font: { size: 10 }
+                    }
                 },
                 y: {
-                    grid: { color: theme.grid },
-                    ticks: { color: theme.tick },
+                    grid: { color: theme.grid, drawBorder: false },
+                    ticks: { color: theme.tick, font: { size: 10 } },
                     beginAtZero: true
                 }
+            },
+            elements: {
+                point: { radius: 0, hoverRadius: 4 },
+                line: { borderWidth: 1.5 }
             }
         };
+
+        // Resolve CSS var colors for charts (CSS vars aren't readable by Canvas, so resolve once)
+        var cssRoot = getComputedStyle(document.documentElement);
+        var chartAccent = cssRoot.getPropertyValue('--accent')?.trim() || '#06b6d4';
+        var chartSuccess = cssRoot.getPropertyValue('--success')?.trim() || '#22c55e';
+        var chartError = cssRoot.getPropertyValue('--error')?.trim() || '#ef4444';
 
         var reqEl = document.getElementById('requestChart');
         if (reqEl) {
             requestChart = new Chart(reqEl, {
                 type: 'line',
-                data: { labels: [], datasets: [{ data: [], borderColor: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.1)', fill: true, tension: 0.3 }] },
+                data: { labels: [], datasets: [{ data: [], borderColor: chartAccent, backgroundColor: chartAccent + '1a', fill: true, tension: 0.3 }] },
                 options: chartOptions
             });
             STATE.charts.request = requestChart;
@@ -366,7 +391,7 @@
         if (latEl) {
             latencyChart = new Chart(latEl, {
                 type: 'line',
-                data: { labels: [], datasets: [{ data: [], borderColor: '#22c55e', backgroundColor: 'rgba(34, 197, 94, 0.1)', fill: true, tension: 0.3 }] },
+                data: { labels: [], datasets: [{ data: [], borderColor: chartSuccess, backgroundColor: chartSuccess + '1a', fill: true, tension: 0.3 }] },
                 options: chartOptions
             });
             STATE.charts.latency = latencyChart;
@@ -377,7 +402,7 @@
         if (errEl) {
             errorChart = new Chart(errEl, {
                 type: 'line',
-                data: { labels: [], datasets: [{ data: [], borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', fill: true, tension: 0.3 }] },
+                data: { labels: [], datasets: [{ data: [], borderColor: chartError, backgroundColor: chartError + '1a', fill: true, tension: 0.3 }] },
                 options: Object.assign({}, chartOptions, {
                     scales: Object.assign({}, chartOptions.scales, {
                         y: Object.assign({}, chartOptions.scales.y, {
@@ -510,19 +535,25 @@
         var costTimeEl = document.getElementById('costTimeChart');
         if (costTimeEl) {
             costTimeChart = new Chart(costTimeEl, {
-                type: 'bar',
-                data: { labels: [], datasets: [] },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: true, position: 'bottom', labels: { color: theme.tick, boxWidth: 10, font: { size: 10 } } },
-                        tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': $' + (ctx.parsed.y || 0).toFixed(6); } } }
-                    },
-                    scales: {
-                        x: { stacked: true, grid: { color: theme.grid }, ticks: { color: theme.tick, maxTicksLimit: 12, maxRotation: 45 } },
-                        y: { stacked: true, grid: { color: theme.grid }, ticks: { color: theme.tick, callback: function(v) { return '$' + v.toFixed(4); } }, beginAtZero: true }
-                    }
-                }
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Heavy', data: [], borderColor: chartError, backgroundColor: chartError + '1a', fill: true, tension: 0.3, borderWidth: 1.5 },
+                        { label: 'Medium', data: [], borderColor: chartAccent, backgroundColor: chartAccent + '1a', fill: true, tension: 0.3, borderWidth: 1.5 },
+                        { label: 'Light', data: [], borderColor: chartSuccess, backgroundColor: chartSuccess + '1a', fill: true, tension: 0.3, borderWidth: 1.5 }
+                    ]
+                },
+                options: Object.assign({}, chartOptions, {
+                    plugins: { legend: { display: true, position: 'top', labels: { color: theme.legendLabel, font: { size: 10 }, boxWidth: 12, padding: 8 } } },
+                    scales: Object.assign({}, chartOptions.scales, {
+                        y: Object.assign({}, chartOptions.scales.y, {
+                            stacked: true,
+                            ticks: { color: theme.tick, callback: function(v) { return '$' + v.toFixed(4); } }
+                        }),
+                        x: Object.assign({}, chartOptions.scales.x, { stacked: true })
+                    })
+                })
             });
             STATE.charts.costTime = costTimeChart;
             markChartLoaded(costTimeEl);
@@ -855,6 +886,28 @@
         el = document.getElementById('clientSuccessRate'); if (el) el.textContent = (clientReq.successRate || 100) + '%';
         el = document.getElementById('keyAttempts'); if (el) el.textContent = formatNumber(keyAttempts.total || 0);
         el = document.getElementById('inFlightRequests'); if (el) el.textContent = clientReq.inFlight || 0;
+        // Header in-flight counter (always visible next to connection dot)
+        var headerInFlight = document.getElementById('connectionInFlight');
+        if (headerInFlight) {
+            var inFlightVal = clientReq.inFlight || 0;
+            headerInFlight.textContent = inFlightVal;
+            headerInFlight.style.display = inFlightVal > 0 ? '' : 'none';
+        }
+
+        // Header sparkline: track requests/sec over last 60s
+        if (!window._sparklineData) window._sparklineData = { points: [], lastTotal: 0, lastTime: Date.now() };
+        var spark = window._sparklineData;
+        var currentTotal = clientReq.total || 0;
+        var now = Date.now();
+        var elapsed = (now - spark.lastTime) / 1000;
+        if (elapsed > 0.5) {
+            var rps = (currentTotal - spark.lastTotal) / elapsed;
+            spark.points.push(Math.max(0, rps));
+            if (spark.points.length > 60) spark.points.shift();
+            spark.lastTotal = currentTotal;
+            spark.lastTime = now;
+            _drawHeaderSparkline(spark.points);
+        }
 
         // Queue & backpressure
         var bp = stats.backpressure || {};
@@ -1066,6 +1119,103 @@
 
         // Requests page summary
         updateRequestsPageSummary(stats);
+
+        // Smart notifications: detect anomalies and show non-intrusive banners
+        if (!window._smartNotifs) window._smartNotifs = { lastErrorRate: 0, lastP95: 0, bannerShown: {} };
+        var sn = window._smartNotifs;
+
+        var errorRate = Number(clientReq.failureRate || 0);
+        var p95Latency = Number(stats.latency && stats.latency.p95 || 0);
+
+        // High error rate alert (>10%)
+        if (errorRate > 10 && !sn.bannerShown.errorRate) {
+            sn.bannerShown.errorRate = true;
+            _showSmartBanner('error-rate', 'Error rate is ' + errorRate.toFixed(1) + '% — check the Requests page for details', 'error');
+        } else if (errorRate <= 5) {
+            sn.bannerShown.errorRate = false;
+            _hideSmartBanner('error-rate');
+        }
+
+        // Latency spike (P95 doubled from baseline)
+        if (sn.lastP95 > 0 && p95Latency > sn.lastP95 * 2 && p95Latency > 5000 && !sn.bannerShown.latency) {
+            sn.bannerShown.latency = true;
+            _showSmartBanner('latency', 'Latency spike detected: P95 is ' + Math.round(p95Latency) + 'ms (2x normal)', 'warning');
+        } else if (p95Latency < sn.lastP95 * 1.2 || p95Latency < 3000) {
+            sn.bannerShown.latency = false;
+            _hideSmartBanner('latency');
+        }
+        sn.lastP95 = p95Latency || sn.lastP95;
+        sn.lastErrorRate = errorRate;
+    }
+
+    // ========== HEADER SPARKLINE ==========
+    function _drawHeaderSparkline(points) {
+        var canvas = document.getElementById('headerSparkline');
+        if (!canvas || !canvas.getContext) return;
+        var ctx = canvas.getContext('2d');
+        var w = canvas.width, h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        if (points.length < 2) return;
+
+        var max = Math.max.apply(null, points) || 1;
+        var step = w / (points.length - 1);
+
+        // Fill area
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        for (var i = 0; i < points.length; i++) {
+            var x = i * step;
+            var y = h - (points[i] / max) * (h - 2);
+            if (i === 0) ctx.lineTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.lineTo(w, h);
+        ctx.closePath();
+
+        var cssRoot = getComputedStyle(document.documentElement);
+        var accentColor = cssRoot.getPropertyValue('--accent')?.trim() || '#06b6d4';
+        ctx.fillStyle = accentColor + '20';
+        ctx.fill();
+
+        // Line
+        ctx.beginPath();
+        for (var j = 0; j < points.length; j++) {
+            var lx = j * step;
+            var ly = h - (points[j] / max) * (h - 2);
+            if (j === 0) ctx.moveTo(lx, ly);
+            else ctx.lineTo(lx, ly);
+        }
+        ctx.strokeStyle = accentColor;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+
+    // ========== SMART NOTIFICATION BANNERS ==========
+    function _showSmartBanner(id, message, severity) {
+        var existing = document.getElementById('smart-banner-' + id);
+        if (existing) return; // Already shown
+
+        var container = document.querySelector('.smart-banner-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'smart-banner-container';
+            var header = document.querySelector('.sticky-header');
+            if (header) header.after(container);
+            else document.body.prepend(container);
+        }
+
+        var banner = document.createElement('div');
+        banner.id = 'smart-banner-' + id;
+        banner.className = 'smart-banner smart-banner-' + severity;
+        banner.innerHTML = '<span class="smart-banner-text">' + message + '</span>' +
+            '<button class="smart-banner-close" onclick="this.parentElement.remove()">&times;</button>';
+        container.appendChild(banner);
+    }
+
+    function _hideSmartBanner(id) {
+        var el = document.getElementById('smart-banner-' + id);
+        if (el) el.remove();
     }
 
     // ========== ACCOUNT USAGE ==========
@@ -1279,8 +1429,11 @@
         var ms = stats.modelStats;
         var mts = stats.modelTimeSeries;
 
-        // Check if we have any per-model data
+        // Progressive disclosure: hide entire section until multi-model data exists
         var modelNames = ms ? Object.keys(ms) : [];
+        var hasMultiModel = modelNames.length > 0;
+        section.style.display = hasMultiModel ? '' : 'none';
+
         var modelHint = document.getElementById('modelBreakdownHint');
         if (modelNames.length === 0) {
             if (modelHint) modelHint.style.display = 'block';
@@ -1572,14 +1725,60 @@
 
     // ========== UPDATE CHARTS ==========
     function updateCharts(history) {
+        // Progressive disclosure: hide welcome banner when chart data arrives
+        var welcomeBanner = document.getElementById('overviewWelcomeBanner');
+        if (welcomeBanner && welcomeBanner.style.display !== 'none') {
+            welcomeBanner.style.display = 'none';
+        }
+
         if (!requestChart) return;
         var points = history.points || [];
-        if (points.length === 0) return;
+        if (!points || points.length === 0) {
+            // Show actionable empty state instead of blank chart
+            var range = STATE.settings.timeRange || '1h';
+            var emptyMsg = 'No data in the last ' + range + '. Send requests or try a different time range.';
+            ['requestChart', 'latencyChart', 'errorChart'].forEach(function(id) {
+                var container = document.getElementById(id)?.closest('.chart-container');
+                var hint = container?.querySelector('.chart-empty-hint');
+                if (container && !hint) {
+                    var div = document.createElement('div');
+                    div.className = 'chart-empty-hint';
+                    div.textContent = emptyMsg;
+                    container.appendChild(div);
+                }
+            });
+            return;
+        }
+        // Clear empty hints when data arrives
+        document.querySelectorAll('.chart-empty-hint').forEach(function(el) { el.remove(); });
 
         var tierResolution = history.tierResolution || 1;
+        var range = STATE.settings.timeRange || '1h';
         var formatTimeForTier = function(timestamp) {
-            if (tierResolution >= 60) return formatTimestamp(timestamp, { compact: true });
-            return formatTimestamp(timestamp);
+            if (timestamp == null) return '-';
+            var d = new Date(timestamp);
+            if (isNaN(d.getTime())) return '-';
+            // 7d: show day + short time (Mon 3/10 5pm)
+            if (range === '7d') {
+                var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+                return days[d.getDay()] + ' ' + (d.getMonth()+1) + '/' + d.getDate() + ' ' +
+                    d.toLocaleTimeString([], { hour: 'numeric' });
+            }
+            // 24h: show date if not today, otherwise time
+            if (range === '24h') {
+                var now = new Date();
+                if (d.getDate() !== now.getDate()) {
+                    return (d.getMonth()+1) + '/' + d.getDate() + ' ' +
+                        d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+                return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+            // 6h: hour:minute
+            if (range === '6h') {
+                return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+            // Short ranges (5m, 15m, 1h): full time with seconds
+            return d.toLocaleTimeString();
         };
 
         var chartPoints = points;
@@ -1604,6 +1803,16 @@
             STATE.charts.error.data.labels = labels;
             STATE.charts.error.data.datasets[0].data = chartPoints.map(function(p) { return p.errorRate || 0; });
             STATE.charts.error.update('none');
+        }
+
+        // Update cost-over-time chart
+        if (STATE.charts.costTime && chartPoints.length > 0) {
+            STATE.charts.costTime.data.labels = labels;
+            // Use tier breakdown if available, otherwise estimate from total cost
+            STATE.charts.costTime.data.datasets[0].data = chartPoints.map(function(p) { return p.costHeavy || (p.cost || 0) * 0.6; });
+            STATE.charts.costTime.data.datasets[1].data = chartPoints.map(function(p) { return p.costMedium || (p.cost || 0) * 0.3; });
+            STATE.charts.costTime.data.datasets[2].data = chartPoints.map(function(p) { return p.costLight || (p.cost || 0) * 0.1; });
+            STATE.charts.costTime.update('none');
         }
 
         // Toggle chart empty states
@@ -1789,6 +1998,24 @@
             panel.style.display = 'none';
             return;
         }
+
+        // Check if these exact issues were already dismissed by the user
+        try {
+            var dismissed = JSON.parse(localStorage.getItem('issues-dismissed') || 'null');
+            if (dismissed && dismissed.hash === currentHash) {
+                // Same issues, still dismissed — keep panel hidden
+                panel.classList.remove('has-issues', 'critical', 'warning', 'info');
+                panel.style.display = 'none';
+                var reopenBadge = document.getElementById('issuesReopenBadge');
+                if (reopenBadge) reopenBadge.style.display = 'inline-flex';
+                return;
+            }
+            // Issues changed since dismissal — auto-reopen (new issues deserve attention)
+            if (dismissed && dismissed.hash !== currentHash) {
+                localStorage.removeItem('issues-dismissed');
+            }
+        } catch(_e) { /* localStorage unavailable */ }
+
         panel.style.display = '';
 
         panel.classList.add('has-issues');
@@ -1905,12 +2132,42 @@
                 ' data-action="select-key" data-key-index="' + index + '"' +
                 ' data-mouseenter="show-heatmap-tooltip" data-key-index-tooltip="' + index + '"' +
                 ' data-mouseleave="hide-heatmap-tooltip"' +
-                ' title="K' + index + ': Score ' + healthScore + ', ' + inFl + ' in-flight">' +
+                ' title="K' + index + ': Score ' + healthScore +
+                    ', ' + inFl + ' in-flight' +
+                    ', Req: ' + (key.total || 0) +
+                    ', Err: ' + (key.failures || 0) +
+                    ', Avg: ' + Math.round((key.latency && key.latency.avg) || 0) + 'ms' +
+                    ', Circuit: ' + (key.state || 'CLOSED') + '">' +
                 '<span class="cell-label">K' + index + '</span>' +
                 '<span class="cell-score">' + healthScore + '</span>' +
                 (hasInFlight ? '<span class="in-flight-badge">' + inFl + '</span>' : '') +
                 '</div>';
         }).join('');
+    }
+
+    function buildLatencySparklineSVG(latencyData) {
+        if (!latencyData) return '';
+        // Build representative latency profile from summary stats: min, p50, avg, p95, max
+        var points = [];
+        if (latencyData.min != null && latencyData.min > 0) points.push(latencyData.min);
+        if (latencyData.p50 != null && latencyData.p50 > 0) points.push(latencyData.p50);
+        if (latencyData.avg != null && latencyData.avg > 0) points.push(latencyData.avg);
+        if (latencyData.p95 != null && latencyData.p95 > 0) points.push(latencyData.p95);
+        if (latencyData.max != null && latencyData.max > 0) points.push(latencyData.max);
+        if (points.length < 2) return '';
+        var w = 100, h = 20;
+        var maxVal = Math.max.apply(null, points);
+        var minVal = Math.min.apply(null, points);
+        var range = maxVal - minVal || 1;
+        var coords = [];
+        for (var i = 0; i < points.length; i++) {
+            var x = Math.round((i / (points.length - 1)) * (w - 2)) + 1;
+            var y = Math.round(h - 2 - ((points[i] - minVal) / range) * (h - 4)) + 1;
+            coords.push(x + ',' + y);
+        }
+        return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" xmlns="http://www.w3.org/2000/svg">' +
+            '<polyline points="' + coords.join(' ') + '" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '</svg>';
     }
 
     function showHeatmapTooltip(event, index) {
@@ -1921,13 +2178,27 @@
         tooltip.className = 'heatmap-tooltip';
         tooltip.id = 'heatmapTooltip';
         var hs = (key.healthScore && key.healthScore.total) ? key.healthScore.total : 100;
+        var lat = key.latency || {};
+        var rlt = key.rateLimitTracking || {};
+        var circuitState = key.state || (key.circuitBreaker && key.circuitBreaker.state) || 'CLOSED';
         tooltip.innerHTML = '<div style="font-weight:600;margin-bottom:4px;">Key K' + index + '</div>' +
             '<div class="tooltip-row"><span class="tooltip-label">Health:</span><span class="tooltip-value">' + hs + '/100</span></div>' +
-            '<div class="tooltip-row"><span class="tooltip-label">State:</span><span class="tooltip-value">' + (key.state || 'CLOSED') + '</span></div>' +
+            '<div class="tooltip-row"><span class="tooltip-label">State:</span><span class="tooltip-value">' + circuitState + '</span></div>' +
             '<div class="tooltip-row"><span class="tooltip-label">Success:</span><span class="tooltip-value">' + (key.successRate || 0).toFixed(1) + '%</span></div>' +
-            '<div class="tooltip-row"><span class="tooltip-label">Latency:</span><span class="tooltip-value">' + ((key.latency && key.latency.avg) ? key.latency.avg.toFixed(0) : 0) + 'ms</span></div>' +
+            '<div class="tooltip-row"><span class="tooltip-label">Avg Latency:</span><span class="tooltip-value">' + (lat.avg ? lat.avg.toFixed(0) : 0) + 'ms</span></div>' +
+            '<div class="tooltip-row"><span class="tooltip-label">P50 / P95:</span><span class="tooltip-value">' + (lat.p50 ? lat.p50.toFixed(0) : '-') + ' / ' + (lat.p95 ? lat.p95.toFixed(0) : '-') + 'ms</span></div>' +
             '<div class="tooltip-row"><span class="tooltip-label">In Flight:</span><span class="tooltip-value">' + (key.inFlight || 0) + '</span></div>' +
-            '<div class="tooltip-row"><span class="tooltip-label">Total:</span><span class="tooltip-value">' + (key.total || 0) + '</span></div>';
+            '<div class="tooltip-row"><span class="tooltip-label">Total:</span><span class="tooltip-value">' + (key.total || 0) + '</span></div>' +
+            '<div class="tooltip-row"><span class="tooltip-label">Errors:</span><span class="tooltip-value">' + (key.failures || 0) + '</span></div>' +
+            (rlt.inCooldown ? '<div class="tooltip-row"><span class="tooltip-label">Cooldown:</span><span class="tooltip-value" style="color:var(--danger);">' + Math.ceil((rlt.cooldownRemaining || 0) / 1000) + 's</span></div>' : '') +
+            (function() {
+                var sparkSvg = buildLatencySparklineSVG(lat);
+                if (!sparkSvg) return '';
+                return '<div class="tooltip-sparkline">' +
+                    '<div class="tooltip-sparkline-label">Latency profile (min/p50/avg/p95/max)</div>' +
+                    sparkSvg +
+                    '</div>';
+            })();
         document.body.appendChild(tooltip);
         var rect = event.target.getBoundingClientRect();
         tooltip.style.top = (rect.bottom + 8) + 'px';
@@ -2114,20 +2385,32 @@
             rangeEl.textContent = labels[0] + ' \u2014 ' + labels[labels.length - 1];
         }
 
+        // Aggregate per-model costs into Heavy / Medium / Light tiers
         var modelNames = Object.keys(cts.byModel || {});
-        var datasets = [];
+        var numPoints = viewEnd - viewStart;
+        var heavy = new Array(numPoints);
+        var medium = new Array(numPoints);
+        var light = new Array(numPoints);
+        for (var k = 0; k < numPoints; k++) { heavy[k] = 0; medium[k] = 0; light[k] = 0; }
+
         for (var i = 0; i < modelNames.length; i++) {
-            var color = MODEL_COLORS[i % MODEL_COLORS.length];
-            datasets.push({
-                label: modelNames[i],
-                data: (cts.byModel[modelNames[i]] || []).slice(viewStart, viewEnd),
-                backgroundColor: color + '99',
-                borderColor: color,
-                borderWidth: 1
-            });
+            var mName = modelNames[i].toLowerCase();
+            var mData = (cts.byModel[modelNames[i]] || []).slice(viewStart, viewEnd);
+            // Classify model into tier: opus/heavy → Heavy, sonnet/medium → Medium, haiku/light → Light
+            var tier = 'light';
+            if (mName.indexOf('opus') !== -1 || mName.indexOf('heavy') !== -1 || mName.indexOf('large') !== -1) tier = 'heavy';
+            else if (mName.indexOf('sonnet') !== -1 || mName.indexOf('medium') !== -1) tier = 'medium';
+            for (var j = 0; j < mData.length; j++) {
+                if (tier === 'heavy') heavy[j] += (mData[j] || 0);
+                else if (tier === 'medium') medium[j] += (mData[j] || 0);
+                else light[j] += (mData[j] || 0);
+            }
         }
+
         costTimeChart.data.labels = labels;
-        costTimeChart.data.datasets = datasets;
+        costTimeChart.data.datasets[0].data = heavy;
+        costTimeChart.data.datasets[1].data = medium;
+        costTimeChart.data.datasets[2].data = light;
         costTimeChart.update('none');
     }
 
@@ -2638,6 +2921,7 @@
             STATE.charts.histogram = null;
             STATE.charts.acctToken = null;
             STATE.charts.acctRequest = null;
+            STATE.charts.costTime = null;
         }
     }
 
@@ -2839,8 +3123,10 @@
         getPollingBackoffState: DPolling.getPollingBackoffState,
         onTabChanged: DPolling.onTabChanged,
         onTimeRangeChanged: function(range) {
-            DPolling.onTimeRangeChanged(range);
+            // Abort old fetch FIRST, then start new one for the new range
             if (historyFetchController) { historyFetchController.abort(); historyFetchController = null; }
+            historyUpdatePending = false;  // Reset pending flag so new fetch isn't skipped
+            DPolling.onTimeRangeChanged(range);
         },
 
         // Cleanup
