@@ -17,6 +17,7 @@
     var chipModelName = DS.chipModelName;
     var formatTimestamp = DS.formatTimestamp;
     var renderEmptyState = DS.renderEmptyState;
+    var authFetch = DS.authFetch || (window.fetch ? window.fetch.bind(window) : null);
     var _getId = window.RequestIds.getRequestId;
 
     var requestPollingIntervalId = null;
@@ -493,10 +494,11 @@
         var lastSeenTimestamp = 0;
         requestPollingIntervalId = setInterval(async function() {
             if (STATE.sse.connected) return;
+            if (!authFetch) return;
 
             // Fetch recent requests, only adding genuinely new ones
             try {
-                var res = await fetch('/requests?limit=20');
+                var res = await authFetch('/requests?limit=20');
                 if (res.ok) {
                     var data = await res.json();
                     if (data && data.requests && data.requests.length > 0) {
@@ -515,7 +517,7 @@
                 }
             } catch (err) {
                 // Heartbeat fallback
-                try { await fetch('/stats'); } catch (_) { /* ignore */ }
+                try { await authFetch('/stats'); } catch (_) { /* ignore */ }
             }
         }, 5000);
     }

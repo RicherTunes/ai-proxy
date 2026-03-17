@@ -17,6 +17,7 @@
     var formatTimestamp = DS.formatTimestamp;
     var renderEmptyState = DS.renderEmptyState;
     var TIME_RANGES = DS.TIME_RANGES;
+    var authFetch = DS.authFetch;
     var showToast = window.showToast;
 
     // Module-level state
@@ -573,7 +574,7 @@
         });
 
         var saveAction = async function() {
-            var res = await fetch('/model-routing', {
+            var res = await authFetch('/model-routing', {
                 method: 'PUT',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -1162,7 +1163,7 @@
         var key = keyEl.value.trim();
         var model = modelEl.value.trim();
         if (!key || !model) { showToast('Key and model are required', 'error'); return; }
-        fetch('/model-routing/overrides', {
+        authFetch('/model-routing/overrides', {
             method: 'PUT',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ key: key, model: model })
@@ -1187,7 +1188,7 @@
     }
 
     function removeRoutingOverride(key) {
-        fetch('/model-routing/overrides', {
+        authFetch('/model-routing/overrides', {
             method: 'DELETE',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ key: key })
@@ -1222,7 +1223,7 @@
         var tiers = {};
         tiers[tierName] = { targetModel: targetModel, fallbackModels: fallbackModels, strategy: strategy, clientModelPolicy: policy };
         var saveAction = function() {
-            return fetch('/model-routing', {
+            return authFetch('/model-routing', {
                 method: 'PUT',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({ tiers: tiers })
@@ -1262,7 +1263,7 @@
         if (hasVision) match.hasVision = true;
         var currentRules = (modelRoutingData && modelRoutingData.config && modelRoutingData.config.rules) ? modelRoutingData.config.rules : [];
         var newRules = currentRules.concat([{ match: match, tier: tier }]);
-        fetch('/model-routing', {
+        authFetch('/model-routing', {
             method: 'PUT',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ rules: newRules })
@@ -1282,7 +1283,7 @@
     function removeRoutingRule(index) {
         var currentRules = (modelRoutingData && modelRoutingData.config && modelRoutingData.config.rules) ? modelRoutingData.config.rules : [];
         var newRules = currentRules.filter(function(_, i) { return i !== index; });
-        fetch('/model-routing', {
+        authFetch('/model-routing', {
             method: 'PUT',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ rules: newRules })
@@ -1313,7 +1314,7 @@
         if (maxTokens) url += '&max_tokens=' + encodeURIComponent(maxTokens);
         if (tools) url += '&tools=true';
         if (vision) url += '&vision=true';
-        fetch(url).then(function(res) { return res.json(); }).then(function(data) {
+        authFetch(url).then(function(res) { return res.json(); }).then(function(data) {
             var resultEl = document.getElementById('routingTestResult');
             if (resultEl) {
                 resultEl.classList.add('visible');
@@ -1339,7 +1340,7 @@
         if (maxTokensStr) body.maxTokens = parseInt(maxTokensStr);
         var btn = document.getElementById('explainBtn');
         if (btn) btn.disabled = true;
-        fetch('/model-routing/explain', {
+        authFetch('/model-routing/explain', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
@@ -1409,7 +1410,7 @@
     }
 
     function resetModelRouting() {
-        fetch('/model-routing/reset', { method: 'POST' }).then(function(res) {
+        authFetch('/model-routing/reset', { method: 'POST' }).then(function(res) {
             if (res.ok) {
                 return res.json().then(function(result) {
                     if (result.warning === 'runtime_only_change') showToast('Model routing reset (runtime only)', 'warning');
@@ -1438,7 +1439,7 @@
     }
 
     function exportRoutingJson() {
-        fetch('/model-routing/export').then(function(r) { return r.blob(); }).then(function(blob) {
+        authFetch('/model-routing/export').then(function(r) { return r.blob(); }).then(function(blob) {
             var url = URL.createObjectURL(blob);
             var a = document.createElement('a');
             a.href = url;
@@ -1518,7 +1519,7 @@
             if (sysBtn && sysBtn !== activeBtn) sysBtn.disabled = true;
             if (btn && btn !== activeBtn) btn.disabled = true;
 
-            return fetch('/models/refresh', {
+            return authFetch('/models/refresh', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({ probeKnown: true, probeCandidates: true })
@@ -1600,7 +1601,7 @@
         }
 
         return withLoading(btn, function() {
-            return fetch('/models/refresh', {
+            return authFetch('/models/refresh', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({
@@ -1693,7 +1694,7 @@
      * Fetch and render discovery state from backend (for initial page load).
      */
     function fetchDiscoveryState() {
-        fetch('/models/refresh').then(function(res) {
+        authFetch('/models/refresh').then(function(res) {
             if (!res.ok) return;
             return res.json();
         }).then(function(state) {

@@ -22,6 +22,9 @@
     var safeParseJson = DS.safeParseJson;
     var capitalize = DS.capitalize;
     var fetchJSON = DS.fetchJSON;
+    var authFetch = DS.authFetch;
+    var getAuthHeaders = DS.getAuthHeaders;
+    var clearAdminToken = DS.clearAdminToken;
     var showToast = window.showToast;
     var _getId = window.RequestIds.getRequestId;
     var errorBoundary = window.DashboardErrorBoundary?.errorBoundary;
@@ -1244,8 +1247,7 @@
                 var lookupId = request.traceId || request.requestId || targetId;
                 traceSection.style.display = 'none';
                 waterfallEl.innerHTML = '';
-                var authHeaders = window.DashboardDOM && window.DashboardDOM.getAuthHeaders
-                    ? window.DashboardDOM.getAuthHeaders() : {};
+                var authHeaders = getAuthHeaders();
                 fetch('/traces/' + encodeURIComponent(lookupId), { headers: authHeaders })
                     .then(function(res) { return res.ok ? res.json() : null; })
                     .then(function(data) {
@@ -1358,37 +1360,39 @@
         var token = prompt('Enter admin token:');
         if (token === null) return;
         if (!token || token.length < 1) { showToast('Token cannot be empty', 'error'); return; }
-        fetch('/auth-status', { headers: { 'x-admin-token': token } })
+        authFetch('/auth/login', { method: 'POST', headers: { 'x-admin-token': token } })
             .then(function(res) { return res.json(); })
             .then(function(data) {
                 if (data.authenticated) {
-                    AUTH_STATE.token = token; AUTH_STATE.authenticated = true;
-                    sessionStorage.setItem('adminToken', token);
-                    updateAuthUI(); showToast('Admin access granted', 'success');
+                    AUTH_STATE.token = null;
+                    AUTH_STATE.authenticated = true;
+                    clearAdminToken();
+                    updateAuthUI();
+                    if (window.DashboardSSE?.cleanup) window.DashboardSSE.cleanup();
+                    if (window.DashboardSSE?.connectRequestStream) window.DashboardSSE.connectRequestStream();
+                    showToast('Admin access granted', 'success');
                 } else { showToast('Invalid admin token', 'error'); }
             }).catch(function() { showToast('Authentication failed', 'error'); });
     }
 
     function logout() {
-        AUTH_STATE.token = null; AUTH_STATE.authenticated = false;
-        sessionStorage.removeItem('adminToken'); localStorage.removeItem('adminToken');
-        updateAuthUI(); showToast('Logged out', 'info');
+        authFetch('/auth/logout', { method: 'POST' })
+            .catch(function() { /* best-effort logout */ })
+            .then(function() {
+                AUTH_STATE.token = null;
+                AUTH_STATE.authenticated = false;
+                clearAdminToken();
+                updateAuthUI();
+                if (STATE.sse.eventSource) {
+                    STATE.sse.eventSource.close();
+                    STATE.sse.eventSource = null;
+                }
+                showToast('Logged out', 'info');
+            });
     }
 
     function loadStoredToken() {
-        var token = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
-        if (token) {
-            fetch('/auth-status', { headers: { 'x-admin-token': token } })
-                .then(function(res) { return res.json(); })
-                .then(function(data) {
-                    if (data.authenticated) { AUTH_STATE.token = token; AUTH_STATE.authenticated = true; updateAuthUI(); }
-                    else { sessionStorage.removeItem('adminToken'); localStorage.removeItem('adminToken'); }
-                }).catch(function() {
-                    // Server unreachable — clear stale tokens
-                    sessionStorage.removeItem('adminToken');
-                    localStorage.removeItem('adminToken');
-                });
-        }
+        clearAdminToken();
     }
 
     // ========== DATA FETCHING (stubs delegating to original dashboard.js functions) ==========
@@ -1700,7 +1704,7 @@
                 var issueAction = element.dataset.issueAction;
                 var issueData = parseInt(element.dataset.issueData, 10);
                 if (issueAction === 'resetCircuit' && DD && DD.forceCircuitState) {
-                    fetch('/api/circuit/' + issueData, {
+                    authFetch('/api/circuit/' + issueData, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ state: 'CLOSED' })
@@ -1811,7 +1815,7 @@
                         b.classList.toggle('active', b.dataset.range === range);
                     });
                     var minutes = (DT && DT.ROUTING_TIME_MINUTES && DT.ROUTING_TIME_MINUTES[range]) || 5;
-                    fetch('/history?minutes=' + minutes).then(function(r) {
+                    authFetch('/history?minutes=' + minutes).then(function(r) {
                         if (!r.ok) throw new Error('History fetch failed: ' + r.status);
                         return r.json();
                     }).then(function(h) {
@@ -1923,9 +1927,7 @@
                 element.textContent = 'Loading...';
                 (async function() {
                     try {
-                        var token = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
-                        var headers = token ? { 'x-admin-token': token } : {};
-                        var response = await fetch('/requests/' + encodeURIComponent(requestIdToLoad) + '/payload', { headers: headers });
+                        var response = await authFetch('/requests/' + encodeURIComponent(requestIdToLoad) + '/payload');
                         if (!response.ok) {
                             throw new Error('payload fetch failed: ' + response.status);
                         }
@@ -2009,7 +2011,7 @@
                 if (element.disabled) break;
                 element.disabled = true;
                 element.textContent = 'Enabling...';
-                fetch('/model-routing/enable-safe', {
+                authFetch('/model-routing/enable-safe', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ addDefaultRules: true })
@@ -2039,7 +2041,7 @@
                 var isCurrentlyEnabled = element.textContent.trim() === 'Disable';
                 element.disabled = true;
                 element.textContent = isCurrentlyEnabled ? 'Disabling...' : 'Enabling...';
-                fetch(isCurrentlyEnabled ? '/model-routing' : '/model-routing/enable-safe', {
+                authFetch(isCurrentlyEnabled ? '/model-routing' : '/model-routing/enable-safe', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(isCurrentlyEnabled ? { enabled: false } : { addDefaultRules: true })

@@ -13,6 +13,7 @@
     var STATE = DS.STATE;
     var FEATURES = DS.FEATURES;
     var escapeHtml = DS.escapeHtml;
+    var authFetch = DS.authFetch;
     var showToast = window.showToast;
 
     // ========== RUNWAY PER-REQUEST FLOW VISUALIZATION ==========
@@ -505,7 +506,7 @@
     };
 
     RunwayViz.prototype.fetchUpstreamDetails = function() {
-        fetch('/upstream-health').then(function(res) { return res.json(); }).then(function(data) {
+        authFetch('/upstream-health').then(function(res) { return res.json(); }).then(function(data) {
             // IP health table
             var ipsEl = document.getElementById('upstreamIPs');
             if (ipsEl && data.ipHealth) {
@@ -935,7 +936,7 @@
         this._pollTimer = setInterval(async function() {
             if (!self.enabled) return;
             try {
-                var res = await fetch('/model-routing/pools');
+                var res = await authFetch('/model-routing/pools');
                 if (res.ok) {
                     var pools = await res.json();
                     if (typeof window.modelRoutingData !== 'undefined' && window.modelRoutingData) {
@@ -1135,7 +1136,7 @@
             var section = document.getElementById('modelPoolsSection');
             if (!section || section.style.display === 'none') return;
             try {
-                var res = await fetch('/model-routing/pools');
+                var res = await authFetch('/model-routing/pools');
                 if (res.ok) {
                     var pools = await res.json();
                     if (window.modelRoutingData) {

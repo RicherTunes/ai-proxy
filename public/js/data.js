@@ -35,6 +35,7 @@
     var VALID_RANGES = DS.VALID_RANGES;
     var FEATURES = DS.FEATURES;
     var fetchJSON = DS.fetchJSON;
+    var authFetch = DS.authFetch;
 
     var showToast = window.showToast || function() {};
 
@@ -562,7 +563,7 @@
 
     // ========== TENANT MANAGEMENT ==========
     function fetchTenants() {
-        return fetch('/tenants').then(function(res) {
+        return authFetch('/tenants').then(function(res) {
             if (res.ok) return res.json();
             return null;
         }).then(function(data) {
@@ -686,7 +687,7 @@
             return Promise.resolve(true);
         }
 
-        return fetch('/history?minutes=' + minutes, { cache: 'no-store', signal: signal })
+        return authFetch('/history?minutes=' + minutes, { cache: 'no-store', signal: signal })
             .then(function(res) {
                 if (fetchId !== lastHistoryFetchId) return false;
                 if (!res.ok) { console.error('History endpoint returned:', res.status); return false; }
@@ -739,7 +740,7 @@
     }
 
     function fetchLogs() {
-        return fetch('/logs?limit=100').then(function(res) {
+        return authFetch('/logs?limit=100').then(function(res) {
             if (!res.ok) { console.error('Logs endpoint returned:', res.status); return false; }
             return res.json();
         }).then(function(data) {
@@ -1525,7 +1526,7 @@
     function fetchAccountDetails() {
         var limitsEl = document.getElementById('acctDetailLimits');
         if (limitsEl) limitsEl.textContent = 'Loading...';
-        fetch('/stats/account-details').then(function(res) { return res.json(); })
+        authFetch('/stats/account-details').then(function(res) { return res.json(); })
         .then(function(details) {
             // Render tier status
             var tierEl = document.getElementById('acctTierStatus');
@@ -2816,7 +2817,7 @@
     }
 
     function fetchComparison() {
-        return fetch('/compare').then(function(res) {
+        return authFetch('/compare').then(function(res) {
             if (res.ok) return res.json();
             return false;
         }).then(function(data) {

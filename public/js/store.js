@@ -283,41 +283,103 @@
         try { return JSON.parse(str); } catch (e) { return fallback; }
     }
 
-    // Helper to get admin auth token from storage
+    var ADMIN_TOKEN_STORAGE_KEY = 'adminToken';
+
+    function _safeStorageGet(storage, key) {
+        try {
+            return storage.getItem(key);
+        } catch (_e) {
+            return null;
+        }
+    }
+
+    function _safeStorageSet(storage, key, value) {
+        try {
+            storage.setItem(key, value);
+        } catch (_e) {
+            // Ignore storage failures in locked-down browsers/private mode
+        }
+    }
+
+    function _safeStorageRemove(storage, key) {
+        try {
+            storage.removeItem(key);
+        } catch (_e) {
+            // Ignore storage failures in locked-down browsers/private mode
+        }
+    }
+
+    function _isSameOriginUrl(url) {
+        if (typeof url !== 'string') return false;
+        try {
+            return new URL(url, window.location.href).origin === window.location.origin;
+        } catch (_e) {
+            return false;
+        }
+    }
+
+    function _clearLegacyAdminTokenStorage() {
+        _safeStorageRemove(sessionStorage, ADMIN_TOKEN_STORAGE_KEY);
+        _safeStorageRemove(localStorage, ADMIN_TOKEN_STORAGE_KEY);
+    }
+
+    // Legacy compatibility only. Admin auth now uses HttpOnly cookies instead of web storage.
     function getAdminToken() {
-        return sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken') || null;
+        _clearLegacyAdminTokenStorage();
+        return null;
+    }
+
+    function setAdminToken(token) {
+        void token;
+        _clearLegacyAdminTokenStorage();
+        return token;
+    }
+
+    function clearAdminToken() {
+        _clearLegacyAdminTokenStorage();
+    }
+
+    function getAuthHeaders(headers) {
+        _clearLegacyAdminTokenStorage();
+        return Object.assign({}, headers || {});
+    }
+
+    function authFetch(url, options) {
+        var requestOptions = Object.assign({}, options || {});
+        if (_isSameOriginUrl(url)) {
+            requestOptions.headers = getAuthHeaders(requestOptions.headers);
+            if (!requestOptions.credentials) {
+                requestOptions.credentials = 'same-origin';
+            }
+        } else if (requestOptions.headers) {
+            requestOptions.headers = Object.assign({}, requestOptions.headers);
+        }
+        return fetch(url, requestOptions);
+    }
+
+    function buildAuthenticatedUrl(url, options) {
+        void options;
+        _clearLegacyAdminTokenStorage();
+        return url;
     }
 
     // fetchJSON - Consolidated fetch utility with error handling and timeout
     // Options:
     //   - timeout: Request timeout in ms (default 10000)
-    //   - requireAuth: If true, include admin auth token header
+    //   - requireAuth: Deprecated. Same-origin requests already include the admin auth token when present.
     //   - headers: Additional headers to include
     async function fetchJSON(url, options) {
         options = options || {};
         var timeout = options.timeout || 10000;
-        var requireAuth = options.requireAuth || false;
         delete options.timeout;
         delete options.requireAuth;
 
         var controller = new AbortController();
         var timeoutId = setTimeout(function() { controller.abort(); }, timeout);
 
-        // Build headers object
-        var headers = Object.assign({}, options.headers || {});
-
-        // Add auth token if required and available
-        if (requireAuth) {
-            var token = getAdminToken();
-            if (token) {
-                headers['x-admin-token'] = token;
-            }
-        }
-
         try {
-            var res = await fetch(url, Object.assign({}, options, {
-                signal: controller.signal,
-                headers: headers
+            var res = await authFetch(url, Object.assign({}, options, {
+                signal: controller.signal
             }));
             clearTimeout(timeoutId);
             if (!res.ok) {
@@ -393,7 +455,12 @@
         capitalize: capitalize,
         safeParseJson: safeParseJson,
         fetchJSON: fetchJSON,
+        authFetch: authFetch,
         getAdminToken: getAdminToken,
+        setAdminToken: setAdminToken,
+        clearAdminToken: clearAdminToken,
+        getAuthHeaders: getAuthHeaders,
+        buildAuthenticatedUrl: buildAuthenticatedUrl,
         debugEnabled: debugEnabled
     };
 

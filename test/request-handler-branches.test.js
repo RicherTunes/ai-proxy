@@ -150,6 +150,10 @@ function createTraceAttempt() {
     };
 }
 
+async function flushAsyncWork() {
+    await new Promise(resolve => setImmediate(resolve));
+}
+
 // ============================================================================
 // Line 210: createTimeout rejection path
 // ============================================================================
@@ -161,6 +165,9 @@ describe('handleRequest timeout/error catch block (lines 684-688)', () => {
         const setup = createHandler();
         rh = setup.rh;
         km = setup.km;
+        jest.spyOn(rh, '_resolveHealthyIP').mockResolvedValue(null);
+        jest.spyOn(rh, '_acquireUpstreamSlot').mockResolvedValue();
+        jest.spyOn(rh, '_releaseUpstreamSlot').mockImplementation(() => {});
     });
 
     afterEach(() => {
@@ -1301,10 +1308,16 @@ describe('_makeProxyRequest response data buffer and tokenUsage (lines 1610-1620
     test('records token usage from response when parseTokenUsage returns data (line 1620)', async () => {
         const proxyReq = createMockProxyReq();
         const proxyRes = new EventEmitter();
+        const tokenData = 'data: {"type":"message_delta","usage":{"input_tokens":100,"output_tokens":50}}\n\n';
         proxyRes.statusCode = 200;
         proxyRes.headers = { 'content-type': 'text/event-stream' };
         proxyRes.resume = jest.fn();
-        proxyRes.pipe = jest.fn();
+        proxyRes.pipe = jest.fn(() => {
+            setImmediate(() => {
+                proxyRes.emit('data', Buffer.from(tokenData));
+                proxyRes.emit('end');
+            });
+        });
 
         https.request.mockImplementation((options, callback) => {
             process.nextTick(() => callback(proxyRes));
@@ -1329,12 +1342,6 @@ describe('_makeProxyRequest response data buffer and tokenUsage (lines 1610-1620
             false, null, false, createTraceAttempt()
         );
 
-        // Simulate data chunks including token usage
-        await new Promise(resolve => setTimeout(resolve, 10));
-        const tokenData = 'data: {"type":"message_delta","usage":{"input_tokens":100,"output_tokens":50}}\n\n';
-        proxyRes.emit('data', Buffer.from(tokenData));
-        proxyRes.emit('end');
-
         const result = await resultPromise;
 
         // Line 1620: recordTokenUsage called with parsed usage
@@ -1347,10 +1354,17 @@ describe('_makeProxyRequest response data buffer and tokenUsage (lines 1610-1620
     test('trims response buffer when exceeding 64KB (line 1611)', async () => {
         const proxyReq = createMockProxyReq();
         const proxyRes = new EventEmitter();
+        const bigChunk = Buffer.alloc(40 * 1024, 'x'); // 40KB
         proxyRes.statusCode = 200;
         proxyRes.headers = {};
         proxyRes.resume = jest.fn();
-        proxyRes.pipe = jest.fn();
+        proxyRes.pipe = jest.fn(() => {
+            setImmediate(() => {
+                proxyRes.emit('data', bigChunk);
+                proxyRes.emit('data', bigChunk); // Total 80KB > 64KB limit
+                proxyRes.emit('end');
+            });
+        });
 
         https.request.mockImplementation((options, callback) => {
             process.nextTick(() => callback(proxyRes));
@@ -1374,13 +1388,6 @@ describe('_makeProxyRequest response data buffer and tokenUsage (lines 1610-1620
             false, null, false, createTraceAttempt()
         );
 
-        await new Promise(resolve => setTimeout(resolve, 10));
-        // Send multiple chunks totaling > 64KB
-        const bigChunk = Buffer.alloc(40 * 1024, 'x'); // 40KB
-        proxyRes.emit('data', bigChunk);
-        proxyRes.emit('data', bigChunk); // Total 80KB > 64KB limit
-        proxyRes.emit('end');
-
         const result = await resultPromise;
 
         // Line 1611 path executed (trimming). Test completes without error.
@@ -1399,6 +1406,9 @@ describe('_makeProxyRequest proxyRes error on streaming (lines 1672-1674)', () =
         const setup = createHandler();
         rh = setup.rh;
         km = setup.km;
+        jest.spyOn(rh, '_resolveHealthyIP').mockResolvedValue(null);
+        jest.spyOn(rh, '_acquireUpstreamSlot').mockResolvedValue();
+        jest.spyOn(rh, '_releaseUpstreamSlot').mockImplementation(() => {});
     });
 
     afterEach(() => {
@@ -1436,7 +1446,7 @@ describe('_makeProxyRequest proxyRes error on streaming (lines 1672-1674)', () =
         );
 
         // Wait for response callback to fire
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await flushAsyncWork();
         // Fire error on proxyRes (after streaming started)
         proxyRes.emit('error', new Error('Connection reset'));
 
@@ -1458,6 +1468,9 @@ describe('_makeProxyRequest shouldRecreateAgent (line 1742)', () => {
         const setup = createHandler();
         rh = setup.rh;
         km = setup.km;
+        jest.spyOn(rh, '_resolveHealthyIP').mockResolvedValue(null);
+        jest.spyOn(rh, '_acquireUpstreamSlot').mockResolvedValue();
+        jest.spyOn(rh, '_releaseUpstreamSlot').mockImplementation(() => {});
     });
 
     afterEach(() => {
@@ -1477,6 +1490,12 @@ describe('_makeProxyRequest shouldRecreateAgent (line 1742)', () => {
         });
 
         km.recordSocketHangup = jest.fn().mockReturnValue({});
+        rh.statsAggregator = {
+            recordKeyUsage: jest.fn(),
+            recordError: jest.fn(),
+            recordAdaptiveTimeout: jest.fn(),
+            recordHangupCause: jest.fn()
+        };
 
         // Force shouldRecreateAgent to return true
         jest.spyOn(rh.connectionMonitor, 'shouldRecreateAgent').mockReturnValue(true);

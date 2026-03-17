@@ -16,6 +16,7 @@
     var escapeHtml = DS.escapeHtml;
     var renderEmptyState = DS.renderEmptyState;
     var TIME_RANGES = DS.TIME_RANGES;
+    var authFetch = DS.authFetch;
     var showToast = window.showToast || function() {};
 
     // Injected dependencies (set via init())
@@ -42,7 +43,7 @@
 
     // ========== CONTROL ACTIONS ==========
     function controlAction(action) {
-        return fetch('/control/' + action, { method: 'POST' }).then(function(res) {
+        return authFetch('/control/' + action, { method: 'POST' }).then(function(res) {
             if (!res.ok) console.error('Control action ' + action + ' failed:', res.status);
             if (action === 'pause' && deps.pausePolling) { deps.pausePolling(); }
             if (action === 'resume') {
@@ -54,7 +55,7 @@
     }
 
     function forceCircuitStateOnKey(keyIndex, state) {
-        return fetch('/api/circuit/' + keyIndex, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: state }) })
+        return authFetch('/api/circuit/' + keyIndex, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: state }) })
             .then(function(res) {
                 if (res.ok) { showToast('Key ' + (keyIndex + 1) + ' circuit set to ' + state, 'success'); if (deps.fetchStats) deps.fetchStats(); }
                 else { showToast('Failed to update circuit state', 'error'); }
@@ -63,7 +64,7 @@
 
     // ========== DATA EXPORT ==========
     function exportData() {
-        Promise.all([fetch('/stats').then(function(r) { return r.json(); }), fetch('/history?minutes=' + TIME_RANGES[STATE.settings.timeRange].minutes, { cache: 'no-store' }).then(function(r) { return r.json(); })])
+        Promise.all([authFetch('/stats').then(function(r) { return r.json(); }), authFetch('/history?minutes=' + TIME_RANGES[STATE.settings.timeRange].minutes, { cache: 'no-store' }).then(function(r) { return r.json(); })])
             .then(function(results) {
                 var stats = results[0];
                 var history = results[1];
@@ -170,11 +171,11 @@
     }
 
     function resetAllCircuits() {
-        fetch('/stats').then(function(res) { return res.json(); }).then(function(stats) {
+        authFetch('/stats').then(function(res) { return res.json(); }).then(function(stats) {
             if (!stats.keys) return;
             var promises = [];
             for (var i = 0; i < stats.keys.length; i++) {
-                promises.push(fetch('/api/circuit/' + i, {
+                promises.push(authFetch('/api/circuit/' + i, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ state: 'CLOSED' })
@@ -195,7 +196,7 @@
     }
 
     function exportDiagnostics() {
-        fetch('/stats').then(function(res) { return res.json(); }).then(function(stats) {
+        authFetch('/stats').then(function(res) { return res.json(); }).then(function(stats) {
             var diagnostics = {
                 timestamp: new Date().toISOString(),
                 uptime: stats.uptime,
@@ -224,35 +225,35 @@
 
     function forceCircuitState(state) {
         if (STATE.selectedKeyIndex === null) return;
-        fetch('/control/circuit/' + STATE.selectedKeyIndex + '/' + state, { method: 'POST' })
+        authFetch('/control/circuit/' + STATE.selectedKeyIndex + '/' + state, { method: 'POST' })
             .then(function() { if (deps.fetchStats) deps.fetchStats(); })
             .catch(function(err) { console.error('Force circuit state failed:', err); });
     }
 
     function forceCircuit(state) {
         if (STATE.selectedKeyIndex !== null && state) {
-            fetch('/control/circuit/' + STATE.selectedKeyIndex + '/' + state, { method: 'POST' })
+            authFetch('/control/circuit/' + STATE.selectedKeyIndex + '/' + state, { method: 'POST' })
                 .then(function() { if (deps.fetchStats) deps.fetchStats(); })
                 .catch(function(err) { console.error('Force circuit state failed:', err); });
         }
     }
 
     function reloadKeys() {
-        fetch('/reload', { method: 'POST' }).then(function(res) {
+        authFetch('/reload', { method: 'POST' }).then(function(res) {
             if (!res.ok) console.error('Reload failed:', res.status);
             return deps.fetchStats ? deps.fetchStats() : null;
         }).catch(function(err) { console.error('Reload failed:', err); });
     }
 
     function resetStats() {
-        fetch('/control/reset-stats', { method: 'POST' }).then(function(res) {
+        authFetch('/control/reset-stats', { method: 'POST' }).then(function(res) {
             if (!res.ok) console.error('Reset stats failed:', res.status);
             return deps.fetchStats ? deps.fetchStats() : null;
         }).catch(function(err) { console.error('Reset stats failed:', err); });
     }
 
     function clearLogs() {
-        fetch('/control/clear-logs', { method: 'POST' }).then(function(res) {
+        authFetch('/control/clear-logs', { method: 'POST' }).then(function(res) {
             if (!res.ok) console.error('Clear logs failed:', res.status);
             return deps.fetchLogs ? deps.fetchLogs() : null;
         }).catch(function(err) { console.error('Clear logs failed:', err); });
@@ -355,7 +356,7 @@
         var configKeys = Object.keys(config);
         for (var j = 0; j < configKeys.length; j++) payload[configKeys[j]] = config[configKeys[j]];
         payload.overrides = updatedOverrides;
-        fetch('/model-routing', {
+        authFetch('/model-routing', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
