@@ -806,10 +806,10 @@
             line-height: 1.5;
         }
 
-        .log-level.INFO { background: #3b82f6; color: var(--text-on-accent); }
+        .log-level.INFO { background: var(--color-info); color: var(--text-on-accent); }
         .log-level.WARN { background: var(--warning); color: var(--text-on-dark); }
         .log-level.ERROR { background: var(--error); color: var(--text-on-accent); }
-        .log-level.DEBUG { background: #6b7280; color: var(--text-on-accent); }
+        .log-level.DEBUG { background: var(--color-muted); color: var(--text-on-accent); }
 
         .log-message {
             color: var(--text-primary);
@@ -946,7 +946,7 @@
         }
 
         .issue-action:hover {
-            background: #0891b2;
+            background: var(--accent-hover);
             transform: translateY(-1px);
         }
 
@@ -955,7 +955,7 @@
         }
 
         .issue-action.danger:hover {
-            background: #dc2626;
+            background: var(--error-hover);
         }
 
         @keyframes slideDown {
@@ -1176,17 +1176,17 @@
         }
 
         .key-rank.rank-1 {
-            background: linear-gradient(135deg, #ffd700, #ffb800);
+            background: linear-gradient(135deg, var(--medal-gold-start), var(--medal-gold-end));
             color: var(--text-on-dark);
         }
 
         .key-rank.rank-2 {
-            background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
+            background: linear-gradient(135deg, var(--medal-silver-start), var(--medal-silver-end));
             color: var(--text-on-dark);
         }
 
         .key-rank.rank-3 {
-            background: linear-gradient(135deg, #cd7f32, #b8722d);
+            background: linear-gradient(135deg, var(--medal-bronze-start), var(--medal-bronze-end));
             color: var(--text-on-accent);
         }
 

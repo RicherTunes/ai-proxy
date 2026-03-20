@@ -735,4 +735,48 @@ describe('Frontend Hardening', () => {
       }
     });
   });
+
+  // ─── GROUP 9: Design token discipline — no hardcoded hex outside tokens.css ──
+  describe('Group 9: Design token discipline', () => {
+    test('hardcoded hex colors outside tokens.css are under strict threshold', () => {
+      const hexRe = /#[0-9a-fA-F]{3,8}\b/g;
+      const violations = [];
+
+      for (const file of allCssFiles) {
+        if (file.name === 'tokens.css') continue;
+
+        const lines = file.content.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          let m;
+          hexRe.lastIndex = 0;
+
+          while ((m = hexRe.exec(line)) !== null) {
+            const idx = m.index;
+            const before = line.substring(0, idx).toLowerCase();
+
+            // Allow colors inside var() fallback: var(--name, #color)
+            const inVarFallback = before.lastIndexOf('var(') > before.lastIndexOf(')');
+            // Allow colors inside rgba()
+            const inRgba = before.lastIndexOf('rgba(') > before.lastIndexOf(')');
+            // Allow colors inside color-mix()
+            const inColorMix = before.lastIndexOf('color-mix(') > before.lastIndexOf(')');
+
+            if (!inVarFallback && !inRgba && !inColorMix) {
+              violations.push(`${file.name}:${i + 1} — ${line.trim().substring(0, 100)}`);
+            }
+          }
+        }
+      }
+
+      console.log(`  Hardcoded hex colors outside tokens.css: ${violations.length}`);
+      if (violations.length > 0) {
+        violations.slice(0, 20).forEach(v => console.log(`    ${v}`));
+        if (violations.length > 20) console.log(`    ... and ${violations.length - 20} more`);
+      }
+
+      // Strict threshold: fewer than 20 hardcoded hex colors across all files
+      expect(violations.length).toBeLessThan(20);
+    });
+  });
 });

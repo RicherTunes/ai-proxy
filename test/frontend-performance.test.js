@@ -278,10 +278,101 @@ describe('Group 5: JS file sizes', () => {
 });
 
 /* ------------------------------------------------------------------ */
-/*  Group 6: Asset cache-busting                                       */
+/*  Group 6: No CSS @import statements (they block rendering)           */
 /* ------------------------------------------------------------------ */
 
-describe('Group 6: Asset cache-busting', () => {
+describe('Group 6: No CSS @import statements', () => {
+    let cssFiles;
+
+    beforeAll(() => {
+        cssFiles = loadCssFiles();
+    });
+
+    test('no CSS file contains @import (blocks rendering)', () => {
+        const violations = [];
+        for (const file of cssFiles) {
+            const lines = file.content.split('\n');
+            lines.forEach((line, idx) => {
+                // Match @import that is NOT inside a comment
+                if (/^\s*@import\b/.test(line) && !/^\s*\/\*/.test(line) && !/^\s*\*/.test(line)) {
+                    violations.push({
+                        file: file.name,
+                        line: idx + 1,
+                        text: line.trim().substring(0, 100),
+                    });
+                }
+            });
+        }
+
+        if (violations.length > 0) {
+            console.log('  CSS @import violations:');
+            violations.forEach(v => console.log(`    ${v.file}:${v.line} — ${v.text}`));
+        }
+        expect(violations.length).toBe(0);
+    });
+});
+
+/* ------------------------------------------------------------------ */
+/*  Group 7: CSS selector efficiency                                    */
+/* ------------------------------------------------------------------ */
+
+describe('Group 7: CSS selector efficiency — no universal * in descendant chains', () => {
+    let cssFiles;
+
+    beforeAll(() => {
+        cssFiles = loadCssFiles();
+    });
+
+    test('no selectors use universal * in middle of descendant chains', () => {
+        const violations = [];
+
+        // Match patterns like ".parent * .child" (universal selector in middle
+        // of a descendant combinator chain). The root-level "* { box-sizing... }"
+        // reset is allowed, as are selectors like ".parent > *" at the end.
+        //
+        // Pattern: some selector, then whitespace, *, whitespace, then another selector
+        const badPattern = /[.#\w\]]\s+\*\s+[.#\w\[]/;
+
+        for (const file of cssFiles) {
+            const lines = file.content.split('\n');
+            let inComment = false;
+
+            lines.forEach((line, idx) => {
+                // Track block comments
+                if (line.includes('/*')) inComment = true;
+                if (line.includes('*/')) { inComment = false; return; }
+                if (inComment) return;
+
+                // Only check lines that look like selectors (contain { or are
+                // before a { on the next line). Simple heuristic: skip lines
+                // that start with a CSS property pattern (word: value).
+                const trimmed = line.trim();
+                if (!trimmed || /^\s*[\w-]+\s*:/.test(trimmed)) return;
+                if (/^\s*[{}@]/.test(trimmed)) return;
+
+                if (badPattern.test(trimmed)) {
+                    violations.push({
+                        file: file.name,
+                        line: idx + 1,
+                        text: trimmed.substring(0, 100),
+                    });
+                }
+            });
+        }
+
+        if (violations.length > 0) {
+            console.log('  Universal * in descendant chain violations:');
+            violations.forEach(v => console.log(`    ${v.file}:${v.line} — ${v.text}`));
+        }
+        expect(violations.length).toBe(0);
+    });
+});
+
+/* ------------------------------------------------------------------ */
+/*  Group 8: Asset cache-busting                                       */
+/* ------------------------------------------------------------------ */
+
+describe('Group 8: Asset cache-busting', () => {
     let dashboardSrc;
 
     beforeAll(() => {

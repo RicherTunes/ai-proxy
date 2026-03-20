@@ -69,6 +69,35 @@
             --token-color-in: #93c5fd;
             --token-color-out: #f9a8d4;
 
+            /* Interactive state variants */
+            --accent-hover: #0891b2;
+            --success-hover: #16a34a;
+            --warning-hover: #d97706;
+            --error-hover: #dc2626;
+            --text-on-bright: #000000;
+
+            /* Status chip palette */
+            --color-info: #3b82f6;
+            --color-muted: #6b7280;
+            --color-violet: #8b5cf6;
+            --color-indigo: #818cf8;
+            --color-emerald: #10b981;
+            --color-lime: #4ade80;
+            --color-orange: #f97316;
+            --chip-src-default: #a5b4fc;
+            --chip-failover: #fca5a5;
+            --chip-dst-pool: #86efac;
+            --provider-metered: #fbbf24;
+            --provider-premium: #f87171;
+
+            /* Medal / rank gradients */
+            --medal-gold-start: #ffd700;
+            --medal-gold-end: #ffb800;
+            --medal-silver-start: #c0c0c0;
+            --medal-silver-end: #a8a8a8;
+            --medal-bronze-start: #cd7f32;
+            --medal-bronze-end: #b8722d;
+
             /* Motion */
             --dur: 180ms;
             --ease: cubic-bezier(0.4, 0, 0.2, 1);
@@ -143,6 +172,35 @@
             --token-color-in: #2563eb;
             --token-color-out: #db2777;
 
+            /* Interactive state variants - light theme */
+            --accent-hover: #0e7490;
+            --success-hover: #15803d;
+            --warning-hover: #b45309;
+            --error-hover: #b91c1c;
+            --text-on-bright: #000000;
+
+            /* Status chip palette - light theme */
+            --color-info: #2563eb;
+            --color-muted: #4b5563;
+            --color-violet: #7c3aed;
+            --color-indigo: #6366f1;
+            --color-emerald: #059669;
+            --color-lime: #16a34a;
+            --color-orange: #ea580c;
+            --chip-src-default: #6366f1;
+            --chip-failover: #ef4444;
+            --chip-dst-pool: #16a34a;
+            --provider-metered: #d97706;
+            --provider-premium: #dc2626;
+
+            /* Medal / rank gradients - same in both themes */
+            --medal-gold-start: #ffd700;
+            --medal-gold-end: #ffb800;
+            --medal-silver-start: #c0c0c0;
+            --medal-silver-end: #a8a8a8;
+            --medal-bronze-start: #cd7f32;
+            --medal-bronze-end: #b8722d;
+
             /* Surface overlays - light theme */
             --surface-overlay: rgba(0, 0, 0, 0.03);
             --surface-overlay-hover: rgba(0, 0, 0, 0.06);
@@ -183,6 +241,29 @@
                 --chip-override: #d97706;
                 --token-color-in: #2563eb;
                 --token-color-out: #db2777;
+                --accent-hover: #0e7490;
+                --success-hover: #15803d;
+                --warning-hover: #b45309;
+                --error-hover: #b91c1c;
+                --text-on-bright: #000000;
+                --color-info: #2563eb;
+                --color-muted: #4b5563;
+                --color-violet: #7c3aed;
+                --color-indigo: #6366f1;
+                --color-emerald: #059669;
+                --color-lime: #16a34a;
+                --color-orange: #ea580c;
+                --chip-src-default: #6366f1;
+                --chip-failover: #ef4444;
+                --chip-dst-pool: #16a34a;
+                --provider-metered: #d97706;
+                --provider-premium: #dc2626;
+                --medal-gold-start: #ffd700;
+                --medal-gold-end: #ffb800;
+                --medal-silver-start: #c0c0c0;
+                --medal-silver-end: #a8a8a8;
+                --medal-bronze-start: #cd7f32;
+                --medal-bronze-end: #b8722d;
                 --surface-overlay: rgba(0, 0, 0, 0.03);
                 --surface-overlay-hover: rgba(0, 0, 0, 0.06);
                 --surface-overlay-active: rgba(0, 0, 0, 0.09);

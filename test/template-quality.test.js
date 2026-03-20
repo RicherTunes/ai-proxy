@@ -364,4 +364,56 @@ describe('Template quality tests', () => {
             expect(html).toContain('meta name="viewport"');
         });
     });
+
+    // =======================================================================
+    // Group 7: Collapsible sections and ARIA
+    // =======================================================================
+    describe('Group 7: Collapsible sections and ARIA', () => {
+        test('all collapsible headers have aria-expanded', () => {
+            // Find elements with class containing "collapsible-header" as a whole word
+            // (not collapsible-header-title or other substrings)
+            const collapsibleHeaderRe = /<[^>]+class="[^"]*\bcollapsible-header\b(?!-)[^"]*"[^>]*>/gi;
+            const collapsibleHeaders = html.match(collapsibleHeaderRe) || [];
+            expect(collapsibleHeaders.length).toBeGreaterThan(0);
+
+            const failing = [];
+            for (const hdr of collapsibleHeaders) {
+                if (!hasAttr(hdr, 'aria-expanded')) {
+                    failing.push(hdr.substring(0, 120));
+                }
+            }
+            expect(failing).toEqual([]);
+        });
+
+        test('no empty href="#" links (should use buttons or proper links)', () => {
+            const links = extractTags(html, 'a');
+            const hashLinks = links.filter(link => {
+                const href = getAttr(link, 'href');
+                return href === '#';
+            });
+
+            if (hashLinks.length > 0) {
+                console.log('  Links with href="#":');
+                hashLinks.forEach(l => console.log(`    ${l.substring(0, 120)}`));
+            }
+            expect(hashLinks).toEqual([]);
+        });
+
+        test('all tab panels have role="tabpanel"', () => {
+            // Find elements that are tab content panels:
+            // - .tab-panel elements in the bottom drawer
+            // - .routing-tab-panel elements in routing section
+            const tabPanelRe = /<div\b[^>]*class="[^"]*\btab-panel\b[^"]*"[^>]*>/gi;
+            const tabPanels = html.match(tabPanelRe) || [];
+            expect(tabPanels.length).toBeGreaterThan(0);
+
+            const failing = [];
+            for (const panel of tabPanels) {
+                if (!/role=["']tabpanel["']/i.test(panel)) {
+                    failing.push(panel.substring(0, 120));
+                }
+            }
+            expect(failing).toEqual([]);
+        });
+    });
 });

@@ -39,6 +39,7 @@ test/temp-test-*/
 test/model-routing-retry-*/
 test/model-routing-e2e-*/
 test/test-destroy-history.json
+test/__temp_*
 test-results/
 playwright-report/
 test-output.txt

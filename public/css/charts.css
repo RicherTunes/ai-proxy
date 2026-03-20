@@ -72,7 +72,7 @@
 
         .prediction-badge.warning {
             background: rgba(249, 115, 22, 0.2);
-            color: #f97316;
+            color: var(--color-orange);
         }
 
         .prediction-badge.critical {
@@ -302,17 +302,17 @@
         }
 
         .key-rank.rank-1 {
-            background: linear-gradient(135deg, #ffd700, #ffb800);
+            background: linear-gradient(135deg, var(--medal-gold-start), var(--medal-gold-end));
             color: var(--text-on-dark);
         }
 
         .key-rank.rank-2 {
-            background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
+            background: linear-gradient(135deg, var(--medal-silver-start), var(--medal-silver-end));
             color: var(--text-on-dark);
         }
 
         .key-rank.rank-3 {
-            background: linear-gradient(135deg, #cd7f32, #b8722d);
+            background: linear-gradient(135deg, var(--medal-bronze-start), var(--medal-bronze-end));
             color: var(--text-on-accent);
         }
 
