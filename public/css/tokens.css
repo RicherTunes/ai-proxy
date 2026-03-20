@@ -254,4 +254,18 @@
             color: var(--accent);
             flex-shrink: 0;
         }
+
+        /* Welcome banner responsive */
+        @media (max-width: 480px) {
+            .welcome-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 10px 12px;
+                font-size: var(--font-xs);
+            }
+            .welcome-content .welcome-icon {
+                display: none;
+            }
+        }
 

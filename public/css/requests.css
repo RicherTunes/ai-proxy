@@ -81,6 +81,19 @@
             font-size: var(--font-sm);
             color: var(--text-secondary);
             margin-top: 4px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* Token panel responsive */
+        @media (max-width: 480px) {
+            .token-panel {
+                padding: var(--spacing-sm);
+            }
+            .token-panel h3 {
+                flex-wrap: wrap;
+                gap: 4px;
+            }
         }
 
         .account-usage-status {

@@ -2289,8 +2289,10 @@
 
             header.classList.remove('is-cramped', 'is-tight', 'is-ultra-tight');
 
-            // On small/mobile breakpoints, CSS media queries own the layout.
-            if (width < HEADER_BREAKPOINTS.mobileLarge) {
+            // At very small mobile widths, CSS media queries fully own the layout.
+            // But we still allow compaction at mobileLarge+ range where header has
+            // more visible items and can genuinely overflow.
+            if (width < HEADER_BREAKPOINTS.mobileSmall) {
                 restoreUsagePillText();
                 return;
             }
@@ -2305,24 +2307,26 @@
                 return;
             }
 
+            // Apply compaction levels synchronously with forced reflows
+            // to prevent visible overflow flash (previously used nested rAF).
             if (!header.classList.contains('is-cramped')) {
                 header.classList.add('is-cramped');
             }
+            void header.offsetWidth; // force reflow
 
-            // Re-check after cramped adjustments applied
-            requestAnimationFrame(function() {
+            if (isHeaderOverflowing(header)) {
+                header.classList.add('is-tight');
+                void header.offsetWidth; // force reflow
+
                 if (isHeaderOverflowing(header)) {
-                    header.classList.add('is-tight');
+                    header.classList.add('is-ultra-tight');
+                    condenseUsagePillText();
+                } else {
+                    restoreUsagePillText();
                 }
-                requestAnimationFrame(function() {
-                    if (isHeaderOverflowing(header)) {
-                        header.classList.add('is-ultra-tight');
-                        condenseUsagePillText();
-                    } else {
-                        restoreUsagePillText();
-                    }
-                });
-            });
+            } else {
+                restoreUsagePillText();
+            }
         }
 
         /**

@@ -127,6 +127,19 @@
             color: var(--success);
         }
 
+        /* Cost panel responsive */
+        @media (max-width: 480px) {
+            .cost-panel {
+                padding: var(--spacing-sm);
+            }
+            .cost-stat {
+                padding: var(--spacing-sm);
+            }
+            .cost-stat .value {
+                font-size: 1rem;
+            }
+        }
+
         .budget-progress {
             background: var(--bg-secondary);
             border-radius: 4px;

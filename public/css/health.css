@@ -68,6 +68,10 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 6px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
         }
 
         body.density-compact .health-item .label {

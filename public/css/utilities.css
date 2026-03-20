@@ -190,7 +190,7 @@
         /* Small tablets / large phones */
         @media (max-width: 768px) {
             .kpi-strip {
-                grid-template-columns: repeat(auto-fit, minmax(65px, 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
             }
             .health-item .value {
                 font-size: var(--font-base);
@@ -261,10 +261,20 @@
             }
         }
 
+        /* Mid-range phones — portrait and landscape */
+        @media (max-width: 600px) {
+            .kpi-strip {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
         /* Small phones — portrait */
         @media (max-width: 480px) {
             .token-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+            .token-metric .metric-value {
+                font-size: 1.2rem;
             }
             .cost-stats {
                 grid-template-columns: repeat(2, 1fr);
@@ -276,8 +286,31 @@
                 font-size: 0.5rem;
                 letter-spacing: 0;
             }
+            .health-item .value {
+                font-size: var(--font-base);
+            }
             .chart-container {
                 height: 100px;
+            }
+        }
+
+        /* Extra small phones */
+        @media (max-width: 360px) {
+            .kpi-strip {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 4px;
+            }
+            .health-item .label {
+                font-size: 0.45rem;
+            }
+            .health-item .value {
+                font-size: var(--font-sm);
+            }
+            .token-grid {
+                grid-template-columns: 1fr;
+            }
+            .cost-stats {
+                grid-template-columns: 1fr 1fr;
             }
         }
 
