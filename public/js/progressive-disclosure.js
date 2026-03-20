@@ -8,6 +8,13 @@
 (function(window) {
     'use strict';
 
+    var escapeHtml = window.DashboardStore ? window.DashboardStore.escapeHtml : function(str) {
+        if (str === null || str === undefined) return '';
+        var div = document.createElement('div');
+        div.textContent = String(str);
+        return div.innerHTML;
+    };
+
     function ProgressiveDisclosureManager() {
         this.init();
     }
@@ -87,7 +94,7 @@
         section.innerHTML =
             '<div class="collapsible-header" role="button" tabindex="0" aria-expanded="' + !collapsed + '">' +
                 '<div class="collapsible-header-title">' +
-                    '<span>' + title + '</span>' +
+                    '<span>' + escapeHtml(title) + '</span>' +
                 '</div>' +
                 '<svg class="collapsible-chevron" viewBox="0 0 20 20">' +
                     '<path d="M10 14l-5-5h10l-5 5z"/>' +

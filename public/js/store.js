@@ -53,11 +53,18 @@
     var renderErrorState = window.DashboardUtils?.renderErrorState || function(error, options) {
         options = options || {};
         var retry = options.retryable
-            ? '<button class="btn btn-small" onclick="location.reload()">Retry</button>'
+            ? '<button class="btn btn-small" data-action="reload-page">Retry</button>'
             : '';
         return '<div class="state-error"><span class="state-icon">\u26A0</span>' +
             '<span class="state-message">' + escapeHtml(error) + '</span>' + retry + '</div>';
     };
+
+    // Delegated click handler for retry buttons rendered by renderErrorState
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.getAttribute('data-action') === 'reload-page') {
+            location.reload();
+        }
+    });
 
     var renderTableEmptyState = function(columnCount, message, options) {
         return '<tr><td colspan="' + columnCount + '">' + renderEmptyState(message, options) + '</td></tr>';

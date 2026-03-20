@@ -346,7 +346,7 @@
             margin-left: 6px;
         }
         .config-badge-live { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-        .config-badge-restart { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .config-badge-restart { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
 
         /* Stream Toolbar (Week 2 UX) */
         .stream-toolbar {

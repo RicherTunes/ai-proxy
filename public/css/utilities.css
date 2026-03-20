@@ -419,6 +419,8 @@
         .text-base { font-size: var(--font-base); }
         .text-lg { font-size: var(--font-md); }
         .text-xl { font-size: var(--font-lg); }
+        .text-heading-md { font-size: 1.1rem; }
+        .text-heading-sm { font-size: 0.9rem; }
         .font-normal { font-weight: normal; }
         .font-semibold { font-weight: 600; }
         .font-bold { font-weight: 700; }
@@ -1763,7 +1765,6 @@
         .text-muted { color: var(--text-secondary); }
         .text-error { color: var(--error); }
         .font-mono { font-family: var(--font-mono); }
-        .font-normal { font-weight: 400; }
 
         /* --- Spacing Utilities --- */
         .m-auto { margin: auto; }

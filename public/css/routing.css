@@ -351,7 +351,7 @@
         }
         .chain-node.primary { background: rgba(99, 102, 241, 0.25); border: 1px solid rgba(99, 102, 241, 0.4); }
         .chain-node.available { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-        .chain-node.cooled { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .chain-node.cooled { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
         .chain-arrow {
             color: var(--text-secondary);
             margin: 0 4px;
@@ -365,7 +365,7 @@
             gap: var(--spacing-xs, 4px);
         }
         .chain-status-cooled {
-            color: #f59e0b;
+            color: var(--warning);
             font-weight: 600;
         }
         .chain-status-available {

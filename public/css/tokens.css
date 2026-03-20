@@ -142,6 +142,42 @@
             --border-subtle: rgba(0, 0, 0, 0.08);
         }
 
+        /* Auto-detect OS dark/light preference when no explicit theme is set */
+        @media (prefers-color-scheme: light) {
+            :root:not([data-theme]) {
+                --bg-primary: #f0f2f5;
+                --bg-secondary: #ffffff;
+                --bg-card: #ffffff;
+                --text-primary: #1e293b;
+                --text-secondary: #64748b;
+                --accent: #0891b2;
+                --accent-secondary: #7c3aed;
+                --success: #16a34a;
+                --warning: #d97706;
+                --error: #dc2626;
+                --danger: var(--error);
+                --border: #e2e8f0;
+                --glow-cyan: none;
+                --glow-green: none;
+                --glow-red: none;
+                --color-good: #0891b2;
+                --text-on-accent: #ffffff;
+                --score-excellent-bg: rgba(22, 163, 74, 0.15);
+                --score-good-bg: rgba(6, 182, 212, 0.15);
+                --score-fair-bg: rgba(217, 119, 6, 0.15);
+                --score-poor-bg: rgba(220, 38, 38, 0.15);
+                --chip-source: #7c3aed;
+                --chip-target: #0891b2;
+                --chip-override: #d97706;
+                --token-color-in: #2563eb;
+                --token-color-out: #db2777;
+                --surface-overlay: rgba(0, 0, 0, 0.03);
+                --surface-overlay-hover: rgba(0, 0, 0, 0.06);
+                --surface-overlay-active: rgba(0, 0, 0, 0.09);
+                --border-subtle: rgba(0, 0, 0, 0.08);
+            }
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
@@ -181,11 +217,11 @@
         }
         .model-breakdown-table td {
             padding: 4px 8px;
-            border-bottom: 1px solid rgba(51, 65, 85, 0.3);
+            border-bottom: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
             color: var(--text-primary);
         }
         .model-breakdown-table tr:hover td {
-            background: rgba(6, 182, 212, 0.05);
+            background: color-mix(in srgb, var(--accent) 5%, transparent);
         }
         .model-breakdown-table .model-name {
             font-family: monospace;

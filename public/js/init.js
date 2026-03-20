@@ -555,8 +555,8 @@
             // Don't show sub-page for default 'table' tab
             if (subPage === 'table' || subPage === 'live') subPage = null;
         } else if (page === 'routing') {
-            var activeTab = document.querySelector('.routing-tab-btn.active');
-            if (activeTab) subPage = activeTab.dataset.routingTab;
+            var activeRoutingTab = document.querySelector('.routing-tab-btn.active');
+            if (activeRoutingTab) subPage = activeRoutingTab.dataset.routingTab;
             // Don't show sub-page for default tab
             if (subPage === 'tiers' || subPage === 'flow') subPage = null;
         }
