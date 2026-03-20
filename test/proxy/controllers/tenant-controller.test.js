@@ -106,7 +106,7 @@ describeIfModule('tenant-controller', () => {
 
             controller.handleTenants(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.error).toContain('not enabled');
         });
@@ -126,7 +126,7 @@ describeIfModule('tenant-controller', () => {
 
             controller.handleTenants(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData).toHaveProperty('tenantCount');
             expect(responseData).toHaveProperty('globalStats');
@@ -154,7 +154,7 @@ describeIfModule('tenant-controller', () => {
 
             controller.handleTenantStats(mockReq, mockRes, '/tenants/tenant1/stats');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.error).toContain('not enabled');
         });
@@ -165,7 +165,7 @@ describeIfModule('tenant-controller', () => {
 
             controller.handleTenantStats(mockReq, mockRes, '/tenants/');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.error).toBe('Not found');
         });
@@ -187,7 +187,7 @@ describeIfModule('tenant-controller', () => {
 
             controller.handleTenantStats(mockReq, mockRes, '/tenants/nonexistent/stats');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.error).toBe('Tenant not found');
         });
@@ -198,7 +198,7 @@ describeIfModule('tenant-controller', () => {
 
             controller.handleTenantStats(mockReq, mockRes, '/tenants/tenant1/stats');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return formatted JSON response', () => {

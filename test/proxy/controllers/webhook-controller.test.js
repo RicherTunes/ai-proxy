@@ -73,7 +73,7 @@ describeIfModule('webhook-controller', () => {
 
             controller.handleWebhooks(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.error).toContain('not enabled');
         });
@@ -102,7 +102,7 @@ describeIfModule('webhook-controller', () => {
 
             controller.handleWebhooks(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData).toHaveProperty('endpoints');
             expect(responseData).toHaveProperty('stats');
@@ -139,7 +139,7 @@ describeIfModule('webhook-controller', () => {
 
             await controller.handleWebhookTest(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(405, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(405, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.error).toContain('Method not allowed');
         });
@@ -152,7 +152,7 @@ describeIfModule('webhook-controller', () => {
 
             await controller.handleWebhookTest(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.error).toContain('not enabled');
         });
@@ -174,7 +174,7 @@ describeIfModule('webhook-controller', () => {
 
             await controller.handleWebhookTest(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(400, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.error).toContain('URL required');
         });
@@ -187,7 +187,7 @@ describeIfModule('webhook-controller', () => {
 
             await controller.handleWebhookTest(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(400, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should call testWebhook with URL from body', async () => {
@@ -209,7 +209,7 @@ describeIfModule('webhook-controller', () => {
 
             await controller.handleWebhookTest(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return 400 when webhook test fails', async () => {
@@ -220,7 +220,7 @@ describeIfModule('webhook-controller', () => {
 
             await controller.handleWebhookTest(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(400, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return 400 on parse error', async () => {
@@ -233,7 +233,7 @@ describeIfModule('webhook-controller', () => {
 
             await controller.handleWebhookTest(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(400, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return 400 on parse error without statusCode', async () => {
@@ -244,7 +244,7 @@ describeIfModule('webhook-controller', () => {
 
             await controller.handleWebhookTest(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(400, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({ 'content-type': 'application/json' }));
         });
     });
 

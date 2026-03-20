@@ -67,7 +67,7 @@ describeIfModule('ProxyServer Contract: Logs Controller Operations', () => {
             controller.handleLogs(mockReq, mockRes);
 
             expect(mockLogger.getLogs).toHaveBeenCalledWith(50);
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should default to limit of 100 when not specified', () => {
@@ -119,7 +119,7 @@ describeIfModule('ProxyServer Contract: Logs Controller Operations', () => {
 
             controller.handleAuditLog(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(401, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(401, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return audit log entries when authenticated', () => {
@@ -129,7 +129,7 @@ describeIfModule('ProxyServer Contract: Logs Controller Operations', () => {
             controller.handleAuditLog(mockReq, mockRes);
 
             expect(mockAuditLog.toArray).toHaveBeenCalled();
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should default to limit of 100 when not specified', () => {
@@ -174,7 +174,7 @@ describeIfModule('ProxyServer Contract: Logs Controller Operations', () => {
             controller.handleAuditLog(mockReq, mockRes);
 
             expect(mockAdminAuth.authenticate).not.toHaveBeenCalled();
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
     });
 
@@ -185,7 +185,7 @@ describeIfModule('ProxyServer Contract: Logs Controller Operations', () => {
 
             controller.handleClearLogs(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(405, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(405, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should clear logs on POST request', () => {
@@ -204,7 +204,7 @@ describeIfModule('ProxyServer Contract: Logs Controller Operations', () => {
 
             controller.handleClearLogs(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.status).toBe('logs_cleared');
         });

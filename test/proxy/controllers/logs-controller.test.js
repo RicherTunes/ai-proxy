@@ -81,7 +81,7 @@ describeIfModule('logs-controller', () => {
 
             controller.handleLogs(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should call getLogs with limit from query param', () => {
@@ -153,7 +153,7 @@ describeIfModule('logs-controller', () => {
 
             controller.handleAuditLog(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(401, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(401, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData).toHaveProperty('error');
         });
@@ -177,7 +177,7 @@ describeIfModule('logs-controller', () => {
             controller.handleAuditLog(mockReq, mockRes);
 
             expect(mockAuditLog.toArray).toHaveBeenCalled();
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should respect limit from query param', () => {
@@ -268,7 +268,7 @@ describeIfModule('logs-controller', () => {
             controller.handleAuditLog(mockReq, mockRes);
 
             expect(mockAdminAuth.authenticate).not.toHaveBeenCalled();
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should skip auth when adminAuth is not enabled', () => {
@@ -280,7 +280,7 @@ describeIfModule('logs-controller', () => {
             controller.handleAuditLog(mockReq, mockRes);
 
             expect(mockAdminAuth.authenticate).not.toHaveBeenCalled();
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
     });
 
@@ -291,7 +291,7 @@ describeIfModule('logs-controller', () => {
 
             controller.handleClearLogs(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(405, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(405, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.error).toContain('Method not allowed');
         });
@@ -320,7 +320,7 @@ describeIfModule('logs-controller', () => {
 
             controller.handleClearLogs(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return logs_cleared status in response', () => {

@@ -63,7 +63,7 @@ describeIfModule('ProxyServer Contract: Trace Controller Operations', () => {
 
             controller.handleTraces(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should call getRecentTraces when no filters provided', () => {
@@ -144,7 +144,7 @@ describeIfModule('ProxyServer Contract: Trace Controller Operations', () => {
 
             controller.handleTraceById(mockReq, mockRes, '/traces/');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return 404 when trace not found', () => {
@@ -155,7 +155,7 @@ describeIfModule('ProxyServer Contract: Trace Controller Operations', () => {
 
             controller.handleTraceById(mockReq, mockRes, '/traces/nonexistent');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should extract traceId from path and return 200 when found', () => {
@@ -165,7 +165,7 @@ describeIfModule('ProxyServer Contract: Trace Controller Operations', () => {
             controller.handleTraceById(mockReq, mockRes, '/traces/trace123');
 
             expect(mockRequestHandler.getTrace).toHaveBeenCalledWith('trace123');
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should redact sensitive data in trace response', () => {

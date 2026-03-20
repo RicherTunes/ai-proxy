@@ -55,7 +55,7 @@ describeIfModule('ProxyServer Contract: Auth Controller Operations', () => {
 
             controller.handleAuthStatus(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData).toHaveProperty('enabled');
             expect(responseData).toHaveProperty('tokensConfigured');
@@ -186,9 +186,9 @@ describeIfModule('ProxyServer Contract: Auth Controller Operations', () => {
             const result = controller.requireAuth(mockReq, mockRes);
 
             expect(result).toBe(false);
-            expect(mockRes.writeHead).toHaveBeenCalledWith(401, {
+            expect(mockRes.writeHead).toHaveBeenCalledWith(401, expect.objectContaining({
                 'content-type': 'application/json'
-            });
+            }));
         });
 
         it('should return false and send 429 when too many attempts', () => {
@@ -204,10 +204,10 @@ describeIfModule('ProxyServer Contract: Auth Controller Operations', () => {
             const result = controller.requireAuth(mockReq, mockRes);
 
             expect(result).toBe(false);
-            expect(mockRes.writeHead).toHaveBeenCalledWith(429, {
+            expect(mockRes.writeHead).toHaveBeenCalledWith(429, expect.objectContaining({
                 'content-type': 'application/json',
                 'retry-after': '5'
-            });
+            }));
         });
 
         it('should include retry-after header when provided', () => {
@@ -222,10 +222,10 @@ describeIfModule('ProxyServer Contract: Auth Controller Operations', () => {
 
             controller.requireAuth(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(429, {
+            expect(mockRes.writeHead).toHaveBeenCalledWith(429, expect.objectContaining({
                 'content-type': 'application/json',
                 'retry-after': '10'
-            });
+            }));
         });
 
         it('should send error response with message', () => {

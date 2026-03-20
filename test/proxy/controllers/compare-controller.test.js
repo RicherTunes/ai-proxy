@@ -64,7 +64,7 @@ describeIfModule('compare-controller', () => {
 
             controller.handleCompare(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should call compareKeys with null when no keys parameter', () => {

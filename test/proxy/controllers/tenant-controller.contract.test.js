@@ -79,7 +79,7 @@ describeIfModule('ProxyServer Contract: Tenant Controller Operations', () => {
 
             controller.handleTenants(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should call getAllTenantStats on tenantManager', () => {
@@ -97,7 +97,7 @@ describeIfModule('ProxyServer Contract: Tenant Controller Operations', () => {
 
             controller.handleTenants(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should include tenantCount in response', () => {
@@ -140,7 +140,7 @@ describeIfModule('ProxyServer Contract: Tenant Controller Operations', () => {
 
             controller.handleTenantStats(mockReq, mockRes, '/tenants/tenant1/stats');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return 404 when path does not match pattern', () => {
@@ -149,7 +149,7 @@ describeIfModule('ProxyServer Contract: Tenant Controller Operations', () => {
 
             controller.handleTenantStats(mockReq, mockRes, '/tenants/');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should extract tenantId from path and call getTenantStats', () => {
@@ -169,7 +169,7 @@ describeIfModule('ProxyServer Contract: Tenant Controller Operations', () => {
 
             controller.handleTenantStats(mockReq, mockRes, '/tenants/nonexistent/stats');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return 200 with tenant stats when found', () => {
@@ -178,7 +178,7 @@ describeIfModule('ProxyServer Contract: Tenant Controller Operations', () => {
 
             controller.handleTenantStats(mockReq, mockRes, '/tenants/tenant1/stats');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
     });
 

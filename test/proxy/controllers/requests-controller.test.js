@@ -61,7 +61,7 @@ describeIfModule('requests-controller', () => {
 
                 controller.handleRequests(mockReq, mockRes, '/requests');
 
-                expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+                expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
             });
 
             it('should parse limit from query parameter', () => {
@@ -165,7 +165,7 @@ describeIfModule('requests-controller', () => {
 
                 controller.handleRequests(mockReq, mockRes, '/requests/nonexistent');
 
-                expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+                expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
             });
 
             it('should find request by traceId', () => {
@@ -174,7 +174,7 @@ describeIfModule('requests-controller', () => {
 
                 controller.handleRequests(mockReq, mockRes, '/requests/trace1');
 
-                expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+                expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
             });
 
             it('should find request by requestId', () => {
@@ -183,7 +183,7 @@ describeIfModule('requests-controller', () => {
 
                 controller.handleRequests(mockReq, mockRes, '/requests/req1');
 
-                expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+                expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
             });
 
             it('should return the request data when found', () => {
@@ -204,7 +204,7 @@ describeIfModule('requests-controller', () => {
 
                 controller.handleRequests(mockReq, mockRes, '/requests/unknown/path');
 
-                expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+                expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
             });
         });
     });

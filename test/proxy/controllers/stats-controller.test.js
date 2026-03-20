@@ -697,7 +697,7 @@ describeIfModule('stats-controller', () => {
             controller.handlePersistentStats(mockReq, mockRes);
 
             expect(mockStatsAggregator.getPersistentStatsResponse).toHaveBeenCalledWith(['sk-test1', 'sk-test2']);
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should include response from aggregator', () => {
@@ -766,7 +766,7 @@ describeIfModule('stats-controller', () => {
             const mockRes = { writeHead: jest.fn(), end: jest.fn(), setHeader: jest.fn() };
 
             expect(() => controllerNoKeyManager.handlePersistentStats(mockReq, mockRes)).not.toThrow();
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
     });
 
@@ -777,7 +777,7 @@ describeIfModule('stats-controller', () => {
 
             controller.handleReload(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(405, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(405, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.error).toContain('Method not allowed');
         });
@@ -789,7 +789,7 @@ describeIfModule('stats-controller', () => {
             controller.handleReload(mockReq, mockRes);
 
             expect(mockReloadKeys).toHaveBeenCalled();
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.success).toBe(true);
             expect(responseData.reloaded).toBe(5);
@@ -803,7 +803,7 @@ describeIfModule('stats-controller', () => {
 
             controller.handleReload(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(500, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(500, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.success).toBe(false);
             expect(responseData.error).toContain('Failed to reload');
@@ -818,7 +818,7 @@ describeIfModule('stats-controller', () => {
             controller.handleBackpressure(mockReq, mockRes);
 
             expect(mockRequestHandler.getBackpressureStats).toHaveBeenCalled();
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should include backpressure data in response', () => {

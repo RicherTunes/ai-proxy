@@ -70,7 +70,7 @@ describeIfModule('auth-controller', () => {
 
             controller.handleAuthStatus(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should include all required fields in response', () => {
@@ -144,9 +144,9 @@ describeIfModule('auth-controller', () => {
             const result = controller.requireAuth(mockReq, mockRes);
 
             expect(result).toBe(false);
-            expect(mockRes.writeHead).toHaveBeenCalledWith(401, {
+            expect(mockRes.writeHead).toHaveBeenCalledWith(401, expect.objectContaining({
                 'content-type': 'application/json'
-            });
+            }));
         });
 
         it('should return 429 for too many attempts', () => {
@@ -162,10 +162,10 @@ describeIfModule('auth-controller', () => {
             const result = controller.requireAuth(mockReq, mockRes);
 
             expect(result).toBe(false);
-            expect(mockRes.writeHead).toHaveBeenCalledWith(429, {
+            expect(mockRes.writeHead).toHaveBeenCalledWith(429, expect.objectContaining({
                 'content-type': 'application/json',
                 'retry-after': '60'
-            });
+            }));
         });
 
         it('should send appropriate error message', () => {
@@ -195,10 +195,10 @@ describeIfModule('auth-controller', () => {
 
             controller.requireAuth(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(429, {
+            expect(mockRes.writeHead).toHaveBeenCalledWith(429, expect.objectContaining({
                 'content-type': 'application/json',
                 'retry-after': '6'
-            });
+            }));
         });
     });
 

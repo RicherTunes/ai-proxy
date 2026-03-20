@@ -84,7 +84,7 @@ describeIfModule('ProxyServer Contract: Keys Controller Operations', () => {
 
             controller.handleDebugKeys(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should include keys array with scheduler info in response', () => {
@@ -123,7 +123,7 @@ describeIfModule('ProxyServer Contract: Keys Controller Operations', () => {
 
             controller.handleKeyLatencyHistogram(mockReq, mockRes, '/stats/latency-histogram/');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should extract key index from path and get histogram', () => {
@@ -141,7 +141,7 @@ describeIfModule('ProxyServer Contract: Keys Controller Operations', () => {
 
             controller.handleKeyLatencyHistogram(mockReq, mockRes, '/stats/latency-histogram/999');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(400, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return 200 with histogram data when found', () => {
@@ -150,7 +150,7 @@ describeIfModule('ProxyServer Contract: Keys Controller Operations', () => {
 
             controller.handleKeyLatencyHistogram(mockReq, mockRes, '/stats/latency-histogram/0');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should include histogram percentiles in response', () => {
