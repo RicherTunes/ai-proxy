@@ -11,7 +11,7 @@ describe('ModelDiscovery', () => {
     beforeEach(() => {
         modelDiscovery = new ModelDiscovery({
             cacheTTL: 100, // Short TTL for testing
-            configPath: '/tmp/test-model-discovery.json'
+            configPath: require('path').join(os.tmpdir(), 'test-model-discovery.json')
         });
     });
 
@@ -594,7 +594,7 @@ describe('ModelDiscovery probing', () => {
     beforeEach(() => {
         discovery = new ModelDiscovery({
             cacheTTL: 100,
-            configPath: '/tmp/test-probe.json',
+            configPath: require('path').join(os.tmpdir(), 'test-probe.json'),
             configDir: os.tmpdir(),
             persistFile: 'test-discovery-cache-' + Date.now() + '.json'
         });
@@ -678,7 +678,7 @@ describe('ModelDiscovery persistence', () => {
         const discovery = new ModelDiscovery({
             configDir,
             persistFile,
-            configPath: '/tmp/nonexistent.json'
+            configPath: require('path').join(os.tmpdir(), 'nonexistent.json')
         });
 
         discovery._discoveredModels.set('glm-test', { id: 'glm-test', tier: 'MEDIUM' });
@@ -708,7 +708,7 @@ describe('ModelDiscovery persistence', () => {
         const discovery = new ModelDiscovery({
             configDir,
             persistFile,
-            configPath: '/tmp/nonexistent.json'
+            configPath: require('path').join(os.tmpdir(), 'nonexistent.json')
         });
 
         expect(discovery._discoveredModels.has('glm-cached')).toBe(true);
@@ -720,7 +720,7 @@ describe('ModelDiscovery persistence', () => {
         const discovery = new ModelDiscovery({
             configDir,
             persistFile: 'nonexistent-' + Date.now() + '.json',
-            configPath: '/tmp/nonexistent.json'
+            configPath: require('path').join(os.tmpdir(), 'nonexistent.json')
         });
 
         expect(discovery._discoveredModels.size).toBe(0);
@@ -729,12 +729,12 @@ describe('ModelDiscovery persistence', () => {
 
     test('cached discovered models survive round-trip', async () => {
         // Save
-        const discovery1 = new ModelDiscovery({ configDir, persistFile, configPath: '/tmp/nonexistent.json' });
+        const discovery1 = new ModelDiscovery({ configDir, persistFile, configPath: require('path').join(os.tmpdir(), 'nonexistent.json') });
         discovery1._discoveredModels.set('glm-roundtrip', { id: 'glm-roundtrip', tier: 'HEAVY', source: 'probed' });
         await discovery1._saveDiscoveryCache();
 
         // Load
-        const discovery2 = new ModelDiscovery({ configDir, persistFile, configPath: '/tmp/nonexistent.json' });
+        const discovery2 = new ModelDiscovery({ configDir, persistFile, configPath: require('path').join(os.tmpdir(), 'nonexistent.json') });
         const models = await discovery2.getModels();
         const found = models.find(m => m.id === 'glm-roundtrip');
         expect(found).toBeDefined();

@@ -10,45 +10,13 @@
  * - Graceful shutdown
  */
 
-const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { ProxyServer } = require('../lib/proxy-server');
 const { Config, resetConfig } = require('../lib/config');
 const { resetLogger } = require('../lib/logger');
-
-// Helper to make HTTP requests
-function request(url, options = {}) {
-    return new Promise((resolve, reject) => {
-        const req = http.request(url, options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                try {
-                    resolve({
-                        statusCode: res.statusCode,
-                        headers: res.headers,
-                        body: data,
-                        json: () => JSON.parse(data)
-                    });
-                } catch (e) {
-                    resolve({
-                        statusCode: res.statusCode,
-                        headers: res.headers,
-                        body: data,
-                        json: () => null
-                    });
-                }
-            });
-        });
-        req.on('error', reject);
-        if (options.body) {
-            req.write(options.body);
-        }
-        req.end();
-    });
-}
+const { request } = require('./helpers/http-request');
 
 // Mock upstream API server
 function createMockUpstream(options = {}) {

@@ -51,6 +51,17 @@ beforeAll(() => {
 // HELPERS
 // ============================================================================
 
+// Import mock-object factories from the shared helper.
+// createKeyManager/createHandler stay local because jest.isolateModules
+// gives us different KeyManager / RequestHandler references.
+const {
+    createMockReq,
+    createMockRes,
+    createMockProxyReq,
+    createMockProxyRes,
+    setupHttpsMock: _setupHttpsMock
+} = require('./helpers/create-handler');
+
 function createKeyManager(keys = ['key1.secret1', 'key2.secret2']) {
     const km = new KeyManager({
         maxConcurrencyPerKey: 5,
@@ -79,59 +90,8 @@ function createHandler(overrides = {}) {
     return { rh, km };
 }
 
-function createMockReq(overrides = {}) {
-    return {
-        method: 'POST',
-        url: '/v1/messages',
-        headers: {
-            'content-type': 'application/json',
-            'host': 'localhost:3000',
-            ...overrides.headers
-        },
-        ...overrides
-    };
-}
-
-function createMockRes() {
-    return {
-        headersSent: false,
-        writeHead: jest.fn(),
-        end: jest.fn(),
-        on: jest.fn(),
-        once: jest.fn(),
-        removeListener: jest.fn(),
-        pipe: jest.fn()
-    };
-}
-
-function createMockProxyReq() {
-    const proxyReq = new EventEmitter();
-    proxyReq.write = jest.fn();
-    proxyReq.end = jest.fn();
-    proxyReq.destroy = jest.fn();
-    proxyReq.reusedSocket = false;
-    proxyReq.socket = { localPort: 12345, remotePort: 443 };
-    return proxyReq;
-}
-
-function createMockProxyRes(statusCode = 200, headers = {}) {
-    const proxyRes = new EventEmitter();
-    proxyRes.statusCode = statusCode;
-    proxyRes.headers = headers;
-    proxyRes.resume = jest.fn();
-    proxyRes.pipe = jest.fn((dest) => {
-        setImmediate(() => proxyRes.emit('end'));
-    });
-    return proxyRes;
-}
-
 function setupHttpsMock(proxyReq, proxyRes) {
-    https.request.mockImplementation((options, callback) => {
-        if (proxyRes) {
-            process.nextTick(() => callback(proxyRes));
-        }
-        return proxyReq;
-    });
+    _setupHttpsMock(https, proxyReq, proxyRes);
 }
 
 function createTrace() {

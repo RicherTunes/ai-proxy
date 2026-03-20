@@ -9,6 +9,7 @@ describe('CircuitBreaker', () => {
     let stateChanges;
 
     beforeEach(() => {
+        jest.useFakeTimers();
         stateChanges = [];
         cb = new CircuitBreaker({
             failureThreshold: 3,
@@ -22,6 +23,7 @@ describe('CircuitBreaker', () => {
 
     afterEach(() => {
         cb.destroy();
+        jest.useRealTimers();
     });
 
     describe('initial state', () => {
@@ -76,22 +78,22 @@ describe('CircuitBreaker', () => {
     });
 
     describe('failure window', () => {
-        test('should not open if failures are outside window', async () => {
+        test('should not open if failures are outside window', () => {
             cb.recordFailure('test');
             cb.recordFailure('test');
 
-            // Wait for failures to expire
-            await new Promise(resolve => setTimeout(resolve, 1100));
+            // Advance past the 1000ms failure window
+            jest.advanceTimersByTime(1100);
 
             cb.recordFailure('test');
             expect(cb.state).toBe(STATES.CLOSED);
         });
 
-        test('should clean up old failures on update', async () => {
+        test('should clean up old failures on update', () => {
             cb.recordFailure('test');
             cb.recordFailure('test');
 
-            await new Promise(resolve => setTimeout(resolve, 1100));
+            jest.advanceTimersByTime(1100);
 
             cb.updateState();
             expect(cb.getStats().recentFailures).toBe(0);
@@ -106,17 +108,17 @@ describe('CircuitBreaker', () => {
             cb.recordFailure('test');
         });
 
-        test('should transition to HALF_OPEN after cooldown', async () => {
+        test('should transition to HALF_OPEN after cooldown', () => {
             expect(cb.state).toBe(STATES.OPEN);
 
-            await new Promise(resolve => setTimeout(resolve, 600));
+            jest.advanceTimersByTime(600);
 
             cb.updateState();
             expect(cb.state).toBe(STATES.HALF_OPEN);
         });
 
-        test('should be available in HALF_OPEN state', async () => {
-            await new Promise(resolve => setTimeout(resolve, 600));
+        test('should be available in HALF_OPEN state', () => {
+            jest.advanceTimersByTime(600);
             expect(cb.isAvailable()).toBe(true);
         });
 
@@ -128,11 +130,11 @@ describe('CircuitBreaker', () => {
     });
 
     describe('HALF_OPEN -> CLOSED transition', () => {
-        beforeEach(async () => {
+        beforeEach(() => {
             cb.recordFailure('test');
             cb.recordFailure('test');
             cb.recordFailure('test');
-            await new Promise(resolve => setTimeout(resolve, 600));
+            jest.advanceTimersByTime(600);
             cb.updateState(); // Transition to HALF_OPEN
         });
 
@@ -156,11 +158,11 @@ describe('CircuitBreaker', () => {
     });
 
     describe('HALF_OPEN -> OPEN transition', () => {
-        beforeEach(async () => {
+        beforeEach(() => {
             cb.recordFailure('test');
             cb.recordFailure('test');
             cb.recordFailure('test');
-            await new Promise(resolve => setTimeout(resolve, 600));
+            jest.advanceTimersByTime(600);
             cb.updateState();
         });
 

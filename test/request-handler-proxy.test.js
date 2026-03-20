@@ -20,8 +20,16 @@ const { KeyManager } = require('../lib/key-manager');
 const { TraceStore, RequestTrace, SpanType } = require('../lib/request-trace');
 const EventEmitter = require('events');
 
+const {
+    createMockReq,
+    createMockRes,
+    createMockProxyReq,
+    createMockProxyRes,
+    setupHttpsMock: _setupHttpsMock
+} = require('./helpers/create-handler');
+
 // ============================================================================
-// SHARED SETUP HELPERS
+// SHARED SETUP HELPERS (module-dependent — must use file-level references)
 // ============================================================================
 
 function createKeyManager(keys = ['key1.secret1', 'key2.secret2']) {
@@ -52,72 +60,9 @@ function createHandler(overrides = {}) {
     return { rh, km };
 }
 
-function createMockReq(overrides = {}) {
-    return {
-        method: 'POST',
-        url: '/v1/messages',
-        headers: {
-            'content-type': 'application/json',
-            'host': 'localhost:3000',
-            ...overrides.headers
-        },
-        ...overrides
-    };
-}
-
-function createMockRes() {
-    const res = {
-        headersSent: false,
-        writeHead: jest.fn(),
-        end: jest.fn(),
-        on: jest.fn(),
-        once: jest.fn(),
-        removeListener: jest.fn(),
-        // Make pipe work for streaming tests
-        pipe: jest.fn()
-    };
-    return res;
-}
-
-/**
- * Create a mock proxyReq EventEmitter that behaves like http.ClientRequest
- */
-function createMockProxyReq() {
-    const proxyReq = new EventEmitter();
-    proxyReq.write = jest.fn();
-    proxyReq.end = jest.fn();
-    proxyReq.destroy = jest.fn();
-    proxyReq.reusedSocket = false;
-    proxyReq.socket = { localPort: 12345, remotePort: 443 };
-    return proxyReq;
-}
-
-/**
- * Create a mock proxyRes EventEmitter that behaves like http.IncomingMessage
- */
-function createMockProxyRes(statusCode = 200, headers = {}) {
-    const proxyRes = new EventEmitter();
-    proxyRes.statusCode = statusCode;
-    proxyRes.headers = headers;
-    proxyRes.resume = jest.fn();
-    proxyRes.pipe = jest.fn((dest) => {
-        // Simulate piping: when pipe is called, schedule the 'end' event
-        // This ensures all 'on' listeners are registered before 'end' fires
-        setImmediate(() => proxyRes.emit('end'));
-    });
-    return proxyRes;
-}
-
-/**
- * Setup https.request mock that triggers callback with proxyRes on next tick
- */
+// Bind setupHttpsMock to the file-level `https` mock
 function setupHttpsMock(proxyReq, proxyRes) {
-    https.request.mockImplementation((options, callback) => {
-        if (proxyRes) {
-            process.nextTick(() => callback(proxyRes));
-        }
-        return proxyReq;
-    });
+    _setupHttpsMock(https, proxyReq, proxyRes);
 }
 
 // ============================================================================

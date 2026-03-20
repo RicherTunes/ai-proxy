@@ -315,16 +315,20 @@ describe('Group 6: Asset cache-busting', () => {
         expect(missing.length).toBe(0);
     });
 
-    test('ASSET_VERSION includes a dynamic component (not just static semver)', () => {
-        // The ASSET_VERSION should contain Date.now() or a similar dynamic element
+    test('ASSET_VERSION includes a deterministic cache-bust suffix (not just static semver)', () => {
+        // The ASSET_VERSION should contain a deterministic hash, NOT Date.now()
         const versionLine = dashboardSrc.match(/ASSET_VERSION\s*=\s*(.+)/);
         expect(versionLine).not.toBeNull();
 
         const versionExpr = versionLine[1];
         console.log(`  ASSET_VERSION expression: ${versionExpr.trim()}`);
 
-        // Must include a dynamic component — Date.now(), process.hrtime, Math.random, etc.
-        const hasDynamic = /Date\.now|process\.hrtime|Math\.random|new Date|timestamp/.test(versionExpr);
-        expect(hasDynamic).toBe(true);
+        // Must NOT use non-deterministic sources (Date.now, Math.random, etc.)
+        const hasNonDeterministic = /Date\.now|Math\.random|process\.hrtime/.test(versionExpr);
+        expect(hasNonDeterministic).toBe(false);
+
+        // Must include a deterministic suffix beyond the bare version (hash, digest, etc.)
+        const hasDeterministicSuffix = /createHash|digest|\.slice|gitHash|commitHash/.test(versionExpr);
+        expect(hasDeterministicSuffix).toBe(true);
     });
 });
