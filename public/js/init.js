@@ -2580,7 +2580,7 @@
         function updateGridLayout() {
             var width = grid.clientWidth;
             grid.classList.remove('grid-1col', 'grid-2col', 'grid-3col');
-            if (width < 700) {
+            if (width < 840) {
                 grid.classList.add('grid-1col');
             } else if (width < 1100) {
                 grid.classList.add('grid-2col');
@@ -2620,5 +2620,10 @@
             }, 3000); // Show after 3s so it doesn't compete with initial toasts
         }
     } catch(_e) { /* localStorage unavailable */ }
+
+    // Respect prefers-reduced-motion for SMIL animations (CSS media query does not affect SMIL)
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.querySelectorAll('animateMotion, animate').forEach(function(el) { el.remove(); });
+    }
 
 })(window);

@@ -594,7 +594,12 @@
 
     GlobalSearchManager.prototype.loadSearchHistory = function() {
         var stored = localStorage.getItem('dashboard-search-history');
-        return stored ? JSON.parse(stored) : [];
+        if (!stored) return [];
+        try {
+            return JSON.parse(stored);
+        } catch (e) {
+            return [];
+        }
     };
 
     GlobalSearchManager.prototype.saveSearch = function(query) {

@@ -218,12 +218,6 @@
             margin-bottom: 8px;
         }
 
-        .comparison-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: var(--spacing-md);
-        }
-
         /* Key Comparison Cards */
         .comparison-grid {
             display: grid;
@@ -290,7 +284,7 @@
         }
 
         .key-progress-fill.excellent { background: var(--success); }
-        .key-progress-fill.good { background: #22d3ee; }
+        .key-progress-fill.good { background: var(--color-good); }
         .key-progress-fill.fair { background: var(--warning); }
         .key-progress-fill.poor { background: var(--error); }
 
@@ -403,7 +397,7 @@
 
         .heatmap-cell.good {
             background: var(--score-good-bg);
-            color: #22d3ee;
+            color: var(--color-good);
             border-color: rgba(34, 211, 238, 0.3);
         }
 

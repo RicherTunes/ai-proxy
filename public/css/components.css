@@ -94,6 +94,7 @@
         /* Status Cards */
         .status-cards {
             display: flex;
+            flex-wrap: wrap;
             gap: var(--spacing-md);
             margin-bottom: 8px;
         }
@@ -280,8 +281,8 @@
 
         .auth-badge.open {
             background: rgba(6, 182, 212, 0.15);
-            color: #22d3ee;
-            border: 1px solid #22d3ee;
+            color: var(--color-good);
+            border: 1px solid var(--color-good);
         }
 
         /* Admin controls disabled state */
@@ -361,6 +362,11 @@
             cursor: pointer;
             font-size: 1.2rem;
             line-height: 1;
+        }
+
+        .toast-close:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
         }
 
         /* Keyboard Shortcuts Modal */
@@ -499,6 +505,8 @@
             border-radius: var(--radius-sm);
             color: var(--text-primary);
             line-height: 1.4;
+            min-height: 32px;
+            min-width: 32px;
         }
         .chart-nav .btn-sm:hover {
             background: var(--border);
@@ -518,6 +526,12 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 6px;
+        }
+        @media (max-width: 768px) {
+            .tier-status-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .tier-status-grid { grid-template-columns: 1fr; }
         }
         .tier-status-card {
             background: var(--bg-secondary);
@@ -593,6 +607,7 @@
             font-size: 11px;
             padding: 2px 6px;
             border-radius: var(--radius-sm);
+            min-height: 28px;
         }
         .btn-details-toggle:hover {
             background: var(--surface-overlay-hover);
@@ -788,6 +803,11 @@
             color: var(--text-primary);
         }
 
+        .modal-close:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
         .modal-body {
             max-height: 400px;
             overflow-y: auto;
@@ -811,6 +831,8 @@
             font-family: var(--font-mono);
             font-size: var(--font-base);
             color: var(--text-primary);
+            word-break: break-all;
+            overflow-wrap: break-word;
         }
 
         .override-section {
@@ -862,6 +884,7 @@
             gap: var(--spacing-sm);
             font-family: var(--font-mono);
             font-size: var(--font-sm);
+            flex-wrap: wrap;
         }
 
         .override-remove {
@@ -879,6 +902,7 @@
 
         .add-override-form {
             display: flex;
+            flex-wrap: wrap;
             gap: var(--spacing-sm);
             margin-top: 8px;
         }
@@ -982,6 +1006,8 @@
             justify-content: center;
             width: 16px;
             height: 16px;
+            min-width: 24px;
+            min-height: 24px;
             border-radius: 50%;
             background: rgba(0, 0, 0, 0.2);
             font-size: var(--font-xs);
@@ -990,6 +1016,11 @@
 
         .filter-chip-remove:hover {
             background: rgba(239, 68, 68, 0.5);
+        }
+
+        .filter-chip-remove:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
         }
 
         /* 2. KEYBOARD SHORTCUTS - Enhanced tab shortcuts */
@@ -1222,11 +1253,6 @@
             color: var(--text-secondary);
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
         .pulse-animation {
             animation: pulse 2s ease-in-out infinite;
         }
@@ -1333,6 +1359,16 @@
             border: 1px solid rgba(107, 114, 128, 0.3);
         }
 
+        /* Light theme: improve tier badge contrast (WCAG AA) */
+        [data-theme="light"] .tier-badge-light {
+            color: #16a34a;
+            border-color: rgba(22, 163, 74, 0.4);
+        }
+        [data-theme="light"] .tier-badge-medium {
+            color: #d97706;
+            border-color: rgba(217, 119, 6, 0.4);
+        }
+
         /* Visually hidden but accessible to screen readers */
         .visually-hidden {
             position: absolute;
@@ -1341,7 +1377,7 @@
             padding: 0;
             margin: -1px;
             overflow: hidden;
-            clip: rect(0, 0, 0, 0);
+            clip-path: inset(50%);
             white-space: nowrap;
             border: 0;
         }
@@ -1566,6 +1602,9 @@
             background: var(--bg-secondary);
             border-radius: var(--radius-lg);
             margin-top: var(--spacing-md);
+        }
+        @media (max-width: 768px) {
+            .request-details-comparison { grid-template-columns: 1fr; }
         }
 
         .comparison-column {
@@ -1876,6 +1915,9 @@
             margin-bottom: var(--spacing-lg);
             text-align: center;
         }
+        @media (max-width: 480px) {
+            .overview-welcome { padding: var(--spacing-md) var(--spacing-lg); }
+        }
         .overview-welcome h3 {
             margin: 0 0 8px 0;
             font-size: var(--font-lg);
@@ -1895,7 +1937,7 @@
         .welcome-hint {
             font-size: var(--font-xs);
             color: var(--text-secondary);
-            opacity: 0.7;
+            opacity: 0.85;
         }
         .welcome-hint code, .welcome-hint kbd {
             background: var(--surface-overlay);

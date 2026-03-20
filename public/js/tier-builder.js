@@ -911,6 +911,7 @@
             this.container.removeEventListener('mouseleave', this._onMouseLeave, true);
             this.container.removeEventListener('focusin', this._onFocusIn);
             this.container.removeEventListener('focusout', this._onFocusOut);
+            this.container.removeEventListener('keydown', this._onKeyDown);
         }
         // Remove tooltip DOM element
         if (this._tooltip && this._tooltip.parentNode) {

@@ -168,7 +168,7 @@
             this._trackRate();
             this._scheduleRender();
             this._updateEmpty();
-        } catch (err) { /* parse error */ }
+        } catch (err) { console.warn('SSE parse error:', err); }
     };
 
     RunwayViz.prototype._handleRequestRetry = function(e) {
@@ -183,7 +183,7 @@
             row.mappedModel = data.mappedModel || row.mappedModel;
             row.status = 'processing';
             this._scheduleRender();
-        } catch (err) { /* parse error */ }
+        } catch (err) { console.warn('SSE parse error:', err); }
     };
 
     RunwayViz.prototype._handleRequestComplete = function(e) {
@@ -258,7 +258,7 @@
                 self._updateEmpty();
             }, recvHoldMs);
 
-        } catch (err) { /* parse error */ }
+        } catch (err) { console.warn('SSE parse error:', err); }
     };
 
     RunwayViz.prototype._addToCompleted = function(row) {
@@ -374,13 +374,17 @@
 
             // 3. Update header connection dot color based on upstream
             var dot = document.getElementById('connectionDot');
+            var statusText = document.getElementById('connectionStatusText');
             if (dot) {
                 if (data.state === 'down') {
                     dot.className = 'connection-dot error';
+                    if (statusText) statusText.textContent = 'Upstream down';
                 } else if (data.state === 'degraded') {
                     dot.className = 'connection-dot stale';
+                    if (statusText) statusText.textContent = 'Upstream degraded';
                 } else {
                     dot.className = 'connection-dot connected';
+                    if (statusText) statusText.textContent = 'Connected';
                 }
             }
 
@@ -514,9 +518,9 @@
                     var ip = entry[0], h = entry[1];
                     return '<div class="upstream-ip-row">' +
                         '<span class="upstream-ip-dot ' + (h.healthy ? 'ok' : 'bad') + '"></span>' +
-                        '<span class="upstream-ip-addr">' + ip + '</span>' +
+                        '<span class="upstream-ip-addr">' + escapeHtml(ip) + '</span>' +
                         '<span class="upstream-ip-latency">' + (h.latencyMs || '?') + 'ms</span>' +
-                        (h.error ? '<span class="upstream-ip-error">' + h.error + '</span>' : '') +
+                        (h.error ? '<span class="upstream-ip-error">' + escapeHtml(h.error) + '</span>' : '') +
                         '</div>';
                 }).join('');
                 ipsEl.innerHTML = rows || '<div class="text-secondary">No IP data yet</div>';
@@ -742,8 +746,16 @@
         // Click to expand inline details
         var self2 = this;
         el.style.cursor = 'pointer';
+        el.setAttribute('tabindex', '0');
+        el.setAttribute('role', 'button');
         el.addEventListener('click', function() {
             self2._toggleRowDetail(el, row);
+        });
+        el.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                el.click();
+            }
         });
 
         // ID
@@ -967,6 +979,7 @@
         document.removeEventListener('visibilitychange', this._visHandler);
         this._motionQuery.removeEventListener('change', this._motionHandler);
         if (this._compactDebounce) { clearTimeout(this._compactDebounce); this._compactDebounce = null; }
+        this._renderPending = false;
         // Clear expiry timers
         this.completed.forEach(function(row) {
             if (row.expiryTimer) clearTimeout(row.expiryTimer);

@@ -615,7 +615,7 @@
     function fetchStats(opts) {
         opts = opts || {};
         var statsUrl = currentTenant ? '/stats?tenant=' + encodeURIComponent(currentTenant) : '/stats';
-        return fetch(statsUrl).then(function(res) {
+        return authFetch(statsUrl).then(function(res) {
             if (!res.ok) {
                 console.error('Stats endpoint returned:', res.status);
                 if (window.DashboardSSE) window.DashboardSSE.updateConnectionStatus('error');
@@ -1210,7 +1210,10 @@
         banner.id = 'smart-banner-' + id;
         banner.className = 'smart-banner smart-banner-' + severity;
         banner.innerHTML = '<span class="smart-banner-text">' + message + '</span>' +
-            '<button class="smart-banner-close" onclick="this.parentElement.remove()">&times;</button>';
+            '<button class="smart-banner-close" aria-label="Close">&times;</button>';
+        banner.querySelector('.smart-banner-close').addEventListener('click', function() {
+            banner.remove();
+        });
         container.appendChild(banner);
     }
 

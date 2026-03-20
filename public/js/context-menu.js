@@ -116,7 +116,7 @@
     ContextMenuManager.prototype.copyId = function() {
         var id = this.currentTarget.dataset.id || this.currentTarget.dataset.traceId;
         if (id) {
-            navigator.clipboard.writeText(id);
+            navigator.clipboard.writeText(id).catch(function() {});
             if (typeof window.showToast === 'function') window.showToast('ID copied to clipboard');
         }
     };

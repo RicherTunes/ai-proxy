@@ -51,6 +51,8 @@
             --radius-full: 9999px;
 
             /* Health score colors */
+            --color-good: #22d3ee;
+            --text-on-accent: #ffffff;
             --score-excellent-bg: rgba(34, 197, 94, 0.15);
             --score-good-bg: rgba(34, 211, 238, 0.15);
             --score-fair-bg: rgba(245, 158, 11, 0.15);
@@ -120,6 +122,8 @@
             --glow-red: none;
 
             /* Health score colors - light theme */
+            --color-good: #0891b2;
+            --text-on-accent: #ffffff;
             --score-excellent-bg: rgba(22, 163, 74, 0.15);
             --score-good-bg: rgba(6, 182, 212, 0.15);
             --score-fair-bg: rgba(217, 119, 6, 0.15);

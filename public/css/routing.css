@@ -114,6 +114,12 @@
         .routing-tab-panel.active { display: block; }
         .routing-tab-content { padding: var(--spacing-lg); }
 
+        @media (max-width: 480px) {
+            .routing-tab-content {
+                padding: var(--spacing-sm);
+            }
+        }
+
         /* Explain result styles */
         .routing-explain-section {
             margin-top: var(--spacing-lg);
@@ -198,7 +204,6 @@
         /* Wrap tables that might overflow */
         .table-scroll-wrapper {
             overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
         }
 
         /* Model Routing Panel */
@@ -849,11 +854,6 @@
             animation: pulse 1.5s ease-in-out infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
         .busy-text {
             text-transform: uppercase;
         }
@@ -862,14 +862,14 @@
             position: absolute;
             top: 2px;
             right: 2px;
-            width: 16px;
-            height: 16px;
+            width: 28px;
+            height: 28px;
             border: none;
             background: transparent;
             color: var(--text-secondary);
             cursor: pointer;
             font-size: var(--font-sm);
-            line-height: 16px;
+            line-height: 28px;
             text-align: center;
             border-radius: 2px;
             opacity: 0;
@@ -1210,6 +1210,9 @@
             border-radius: 8px;
             margin-top: 8px;
         }
+        @media (max-width: 600px) {
+            .routing-test-form { grid-template-columns: 1fr; }
+        }
         .routing-test-form label {
             font-size: var(--font-sm);
             color: var(--text-secondary);
@@ -1357,6 +1360,7 @@
             border-radius: 10px;
             cursor: pointer;
             transition: background var(--dur, 180ms) ease, color var(--dur, 180ms) ease;
+            min-height: 28px;
         }
         .runway-jump-btn:hover {
             background: var(--accent, #06b6d4);
@@ -1397,7 +1401,7 @@
         .runway-empty-text {
             font-size: 0.7rem;
             font-style: italic;
-            opacity: 0.5;
+            opacity: 0.7;
         }
         .runway-viz.empty .runway-section {
             display: none;
@@ -1731,7 +1735,7 @@
             padding: 4px 4px 0;
             font-size: 0.55rem;
             color: var(--text-secondary);
-            opacity: 0.6;
+            opacity: 0.75;
         }
         .runway-legend-item {
             display: flex;

@@ -33,14 +33,16 @@
     };
 
     AnomalyDetectionManager.prototype.createSparkline = function(dataPoints) {
+        if (dataPoints.length === 0) return '';
         var width = 60;
         var height = 20;
         var max = Math.max.apply(Math, dataPoints);
         var min = Math.min.apply(Math, dataPoints);
         var range = max - min || 1;
 
+        var denominator = Math.max(1, dataPoints.length - 1);
         var points = dataPoints.map(function(val, i) {
-            var x = (i / (dataPoints.length - 1)) * width;
+            var x = (i / denominator) * width;
             var y = height - ((val - min) / range) * height;
             return x + ',' + y;
         }).join(' ');

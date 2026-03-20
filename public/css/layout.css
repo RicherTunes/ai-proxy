@@ -539,7 +539,7 @@
         }
 
         /* Mobile Small: <480px */
-        @media (max-width: 479px) {
+        @media (max-width: 480px) {
             :root { --header-h: 40px; }
             .sticky-header {
                 height: 40px;
@@ -603,7 +603,7 @@
         }
 
         /* Extra small: <360px */
-        @media (max-width: 359px) {
+        @media (max-width: 360px) {
             :root { --header-h: 36px; }
             .sticky-header {
                 height: 36px;
@@ -1072,7 +1072,7 @@
         /* Responsive page nav and toolbar */
         @media (max-width: 768px) {
             .page-nav {
-                overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+                overflow-x: auto; scrollbar-width: none;
                 top: auto; position: sticky;
                 padding: 0 var(--spacing-md);
             }
@@ -1121,7 +1121,7 @@
         .request-tab-content .tab-panel .max-h-400 { max-height: 60vh; }
 
         @media (max-width: 768px) {
-            .sub-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+            .sub-tabs { overflow-x: auto; scrollbar-width: none; }
             .sub-tabs::-webkit-scrollbar { display: none; }
             .sub-tab { white-space: nowrap; flex-shrink: 0; }
         }

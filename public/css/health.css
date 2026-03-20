@@ -113,7 +113,7 @@
 
         .health-score-badge.good {
             background: var(--score-good-bg);
-            color: #22d3ee;
+            color: var(--color-good);
         }
 
         .health-score-badge.fair {
@@ -200,7 +200,7 @@
             }
         }
 
-        @media (max-width: 1024px) {
+        @media (max-width: 860px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
             }
@@ -404,7 +404,7 @@
         }
 
         .health-score-fill.excellent { background: var(--success); }
-        .health-score-fill.good { background: #22d3ee; }
+        .health-score-fill.good { background: var(--color-good); }
         .health-score-fill.fair { background: var(--warning); }
         .health-score-fill.poor { background: var(--error); }
 
@@ -423,7 +423,7 @@
         }
 
         .health-score-value.excellent { color: var(--success); }
-        .health-score-value.good { color: #22d3ee; }
+        .health-score-value.good { color: var(--color-good); }
         .health-score-value.fair { color: var(--warning); }
         .health-score-value.poor { color: var(--error); }
 
@@ -532,7 +532,7 @@
         }
 
         .score-segment.excellent { background: var(--success); }
-        .score-segment.good { background: #22d3ee; }
+        .score-segment.good { background: var(--color-good); }
         .score-segment.fair { background: var(--warning); }
         .score-segment.poor { background: var(--error); }
 
@@ -560,7 +560,7 @@
         }
 
         .score-legend-dot.excellent { background: var(--success); }
-        .score-legend-dot.good { background: #22d3ee; }
+        .score-legend-dot.good { background: var(--color-good); }
         .score-legend-dot.fair { background: var(--warning); }
         .score-legend-dot.poor { background: var(--error); }
 
@@ -588,11 +588,16 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 16px;
+            min-width: 0;
         }
 
         .key-details-header h3 {
             font-size: 1rem;
             color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0;
         }
 
         .key-details-grid {
@@ -919,6 +924,8 @@
             margin-bottom: 2px;
             font-size: var(--font-base);
             color: var(--text-primary);
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .issue-description {
@@ -1027,7 +1034,7 @@
         }
 
         .health-radial .radial-fill.excellent { stroke: var(--success); filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.3)); }
-        .health-radial .radial-fill.good { stroke: #22d3ee; filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.3)); }
+        .health-radial .radial-fill.good { stroke: var(--color-good); filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.3)); }
         .health-radial .radial-fill.fair { stroke: var(--warning); filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.3)); }
         .health-radial .radial-fill.poor { stroke: var(--error); filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.3)); }
 
@@ -1256,7 +1263,7 @@
         }
 
         .key-progress-fill.excellent { background: var(--success); }
-        .key-progress-fill.good { background: #22d3ee; }
+        .key-progress-fill.good { background: var(--color-good); }
         .key-progress-fill.fair { background: var(--warning); }
         .key-progress-fill.poor { background: var(--error); }
 

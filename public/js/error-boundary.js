@@ -45,6 +45,9 @@
             return;
         }
 
+        if (this.lastErrors.size > 100) {
+            this.lastErrors.delete(this.lastErrors.keys().next().value);
+        }
         this.lastErrors.set(component + ':' + message, now);
 
         // Filter benign errors
@@ -103,66 +106,6 @@
         }, duration);
     };
 
-    // ========== ANIMATED NUMBERS ==========
-    var numberTransitions = new Map();
-
-    function animateNumber(elementId, newValue, suffix, duration) {
-        suffix = suffix || '';
-        duration = duration || 600;
-        var element = document.getElementById(elementId);
-        if (!element) return;
-
-        var currentValue = parseFloat(element.textContent) || 0;
-        if (currentValue === newValue) return;
-
-        if (numberTransitions.has(elementId)) {
-            cancelAnimationFrame(numberTransitions.get(elementId));
-        }
-
-        var startTime = performance.now();
-        var startValue = currentValue;
-        var change = newValue - startValue;
-
-        function update(currentTime) {
-            var elapsed = currentTime - startTime;
-            var progress = Math.min(elapsed / duration, 1);
-            var eased = 1 - Math.pow(1 - progress, 3);
-            var current = startValue + change * eased;
-
-            if (Number.isInteger(newValue)) {
-                element.textContent = Math.round(current) + suffix;
-            } else if (suffix === '%') {
-                element.textContent = current.toFixed(1) + suffix;
-            } else {
-                element.textContent = current.toFixed(0) + suffix;
-            }
-
-            if (progress < 1) {
-                numberTransitions.set(elementId, requestAnimationFrame(update));
-            } else {
-                numberTransitions.delete(elementId);
-            }
-        }
-
-        numberTransitions.set(elementId, requestAnimationFrame(update));
-    }
-
-    // ========== FULLSCREEN CHARTS ==========
-    function toggleFullscreen(containerId) {
-        var container = document.getElementById(containerId);
-        if (container) {
-            container.classList.toggle('fullscreen');
-            if (container.classList.contains('fullscreen')) {
-                document.addEventListener('keydown', function escHandler(e) {
-                    if (e.key === 'Escape') {
-                        container.classList.remove('fullscreen');
-                        document.removeEventListener('keydown', escHandler);
-                    }
-                });
-            }
-        }
-    }
-
     // Expose utilities for testing when debug mode is enabled
     if (DS.debugEnabled) {
         window.errorBoundary = errorBoundary;
@@ -177,9 +120,7 @@
     window.DashboardErrorBoundary = {
         ErrorBoundary: ErrorBoundary,
         errorBoundary: errorBoundary,
-        showToast: showToast,
-        animateNumber: animateNumber,
-        toggleFullscreen: toggleFullscreen
+        showToast: showToast
     };
 
 })(window);
