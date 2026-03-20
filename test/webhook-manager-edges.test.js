@@ -347,10 +347,7 @@ describe('Edge: Webhook URL validation and SSRF protection', () => {
             ['192.168.x private', 'http://192.168.1.1/hook'],
             ['169.254 link-local (AWS metadata)', 'http://169.254.169.254/latest/meta-data/'],
             ['0.0.0.0', 'http://0.0.0.0/hook'],
-            // Note: http://[::1]/hook is NOT blocked because Node's URL parser
-            // returns hostname='[::1]' (with brackets) which doesn't match the
-            // regex /^::1$/. This is a known gap in the SSRF filter.
-            // ['IPv6 loopback', 'http://[::1]/hook'],
+            ['IPv6 loopback [::1]', 'http://[::1]/hook'],
             ['ip6-localhost', 'http://ip6-localhost/hook'],
             ['100.64 CGNAT', 'http://100.64.0.1/hook'],
             ['198.18 benchmarking', 'http://198.18.0.1/hook'],
@@ -378,6 +375,36 @@ describe('Edge: Webhook URL validation and SSRF protection', () => {
 
         it('should block fe80 link-local IPv6', () => {
             expect(manager._isPrivateHost('fe80::1')).toBe(true);
+        });
+
+        it('should block bracketed [::1] (URL parser format)', () => {
+            expect(manager._isPrivateHost('[::1]')).toBe(true);
+        });
+
+        it('should block bracketed [::] (URL parser format)', () => {
+            expect(manager._isPrivateHost('[::]')).toBe(true);
+        });
+
+        it('should block bracketed [fc00::1] ULA', () => {
+            expect(manager._isPrivateHost('[fc00::1]')).toBe(true);
+        });
+
+        it('should block bracketed [fe80::1] link-local', () => {
+            expect(manager._isPrivateHost('[fe80::1]')).toBe(true);
+        });
+    });
+
+    describe('_validateWebhookUrl blocks bracketed IPv6 SSRF', () => {
+        it('should block http://[::1]/hook as SSRF', () => {
+            const result = manager._validateWebhookUrl('http://[::1]/hook');
+            expect(result.valid).toBe(false);
+            expect(result.error).toContain('Private/reserved');
+        });
+
+        it('should block http://[::]/hook as SSRF', () => {
+            const result = manager._validateWebhookUrl('http://[::]/hook');
+            expect(result.valid).toBe(false);
+            expect(result.error).toContain('Private/reserved');
         });
     });
 

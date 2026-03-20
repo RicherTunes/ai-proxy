@@ -421,6 +421,90 @@ describe('Pool 429 tracking', () => {
 });
 
 // ===========================================================================
+// 6b. Pool 429 maxModels eviction
+// ===========================================================================
+describe('Pool 429 maxModels eviction', () => {
+    beforeEach(() => {
+        jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
+    test('oldest model data is evicted when recording 429 for a new model beyond maxModels', () => {
+        const config = makeV2Config({
+            pool429Penalty: { enabled: true, windowMs: 120000, maxModels: 3, maxPenaltyHits: 20 }
+        });
+        const router = makeRouter(config);
+
+        // Record 429s for 3 models (fills the limit)
+        router.recordPool429('model-a');
+        jest.advanceTimersByTime(10);
+        router.recordPool429('model-b');
+        jest.advanceTimersByTime(10);
+        router.recordPool429('model-c');
+
+        expect(router._recentPool429s.size).toBe(3);
+
+        // Record 429 for a 4th model — should evict model-a (oldest last hit)
+        jest.advanceTimersByTime(10);
+        router.recordPool429('model-d');
+
+        expect(router._recentPool429s.size).toBe(3);
+        expect(router._recentPool429s.has('model-a')).toBe(false);
+        expect(router._recentPool429s.has('model-b')).toBe(true);
+        expect(router._recentPool429s.has('model-c')).toBe(true);
+        expect(router._recentPool429s.has('model-d')).toBe(true);
+    });
+
+    test('existing model is not evicted when recording additional 429 for it', () => {
+        const config = makeV2Config({
+            pool429Penalty: { enabled: true, windowMs: 120000, maxModels: 2, maxPenaltyHits: 20 }
+        });
+        const router = makeRouter(config);
+
+        router.recordPool429('model-a');
+        jest.advanceTimersByTime(10);
+        router.recordPool429('model-b');
+
+        // Recording more 429s for existing model should not evict anything
+        jest.advanceTimersByTime(10);
+        router.recordPool429('model-a');
+
+        expect(router._recentPool429s.size).toBe(2);
+        expect(router.getPool429Count('model-a')).toBe(2);
+        expect(router.getPool429Count('model-b')).toBe(1);
+    });
+
+    test('eviction picks the model with the oldest most-recent 429', () => {
+        const config = makeV2Config({
+            pool429Penalty: { enabled: true, windowMs: 120000, maxModels: 2, maxPenaltyHits: 20 }
+        });
+        const router = makeRouter(config);
+
+        // model-a: last hit at t=0
+        router.recordPool429('model-a');
+        jest.advanceTimersByTime(100);
+
+        // model-b: last hit at t=100
+        router.recordPool429('model-b');
+        jest.advanceTimersByTime(100);
+
+        // Refresh model-a so its last hit is now at t=200
+        router.recordPool429('model-a');
+        jest.advanceTimersByTime(100);
+
+        // Add model-c — should evict model-b (last hit t=100, older than model-a t=200)
+        router.recordPool429('model-c');
+
+        expect(router._recentPool429s.has('model-a')).toBe(true);
+        expect(router._recentPool429s.has('model-b')).toBe(false);
+        expect(router._recentPool429s.has('model-c')).toBe(true);
+    });
+});
+
+// ===========================================================================
 // 7. Pool 429 window expiry (fake timers)
 // ===========================================================================
 describe('Pool 429 window expiry', () => {

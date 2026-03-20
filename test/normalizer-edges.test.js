@@ -236,6 +236,27 @@ describe('Normalizer Edge Cases', () => {
             expect(result.hash).toBe('h1');
             expect(result.extra).toBe('field');
         });
+
+        test('marker with future migratedAt timestamp is still valid', () => {
+            const futureDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+            const data = { hash: 'future-hash', migratedAt: futureDate };
+            fs.writeFileSync(markerPath, JSON.stringify(data), 'utf8');
+
+            const result = readMigrationMarker(markerPath);
+            expect(result).not.toBeNull();
+            expect(result.hash).toBe('future-hash');
+            expect(result.migratedAt).toBe(futureDate);
+        });
+
+        test('marker with missing hash field returns object without hash', () => {
+            const data = { migratedAt: '2025-06-01T00:00:00.000Z' };
+            fs.writeFileSync(markerPath, JSON.stringify(data), 'utf8');
+
+            const result = readMigrationMarker(markerPath);
+            expect(result).not.toBeNull();
+            expect(result.hash).toBeUndefined();
+            expect(result.migratedAt).toBe('2025-06-01T00:00:00.000Z');
+        });
     });
 
     // ---------------------------------------------------------------

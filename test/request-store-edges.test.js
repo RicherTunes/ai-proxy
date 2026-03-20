@@ -172,6 +172,50 @@ describe('RequestStore Edge Cases', () => {
     });
 
     // ================================================================
+    // 1b. TTL exact boundary
+    // ================================================================
+    describe('TTL exact boundary', () => {
+        test('item at exactly TTL ms is still valid (expiresAt uses strict >)', () => {
+            jest.useFakeTimers();
+            try {
+                const ttlHours = 1;
+                const ttlMs = ttlHours * 60 * 60 * 1000;
+                const s = createStore({ ttlHours });
+
+                const id = s.store('req_boundary', makeReq(), Buffer.from('data'), 'err', 0, { errorType: 'timeout' });
+                const stored = s.requests.get(id);
+                const expiresAt = stored.expiresAt;
+
+                // Advance to exactly expiresAt — Date.now() === expiresAt
+                // The get() check is: Date.now() > request.expiresAt
+                // So at exactly the boundary, it should still be valid
+                jest.setSystemTime(expiresAt);
+                expect(s.get(id)).not.toBeNull();
+            } finally {
+                jest.useRealTimers();
+            }
+        });
+
+        test('item 1ms past TTL is expired', () => {
+            jest.useFakeTimers();
+            try {
+                const ttlHours = 1;
+                const s = createStore({ ttlHours });
+
+                const id = s.store('req_boundary', makeReq(), Buffer.from('data'), 'err', 0, { errorType: 'timeout' });
+                const stored = s.requests.get(id);
+                const expiresAt = stored.expiresAt;
+
+                // Advance 1ms past expiresAt — Date.now() > request.expiresAt
+                jest.setSystemTime(expiresAt + 1);
+                expect(s.get(id)).toBeNull();
+            } finally {
+                jest.useRealTimers();
+            }
+        });
+    });
+
+    // ================================================================
     // 2. Max store size
     // ================================================================
     describe('Max store size', () => {

@@ -361,6 +361,51 @@ describe('CircuitBreaker Edge Cases', () => {
             expect(stateChanges.some(sc => sc.info.reason === 'half_open_timeout')).toBe(true);
         });
 
+        test('HALF_OPEN timeout resets halfOpenRequestInFlight and refreshes openedAt', () => {
+            cb.recordFailure('err');
+            cb.recordFailure('err');
+            cb.recordFailure('err');
+            const firstOpenedAt = cb.openedAt;
+
+            jest.advanceTimersByTime(5000);
+            cb.updateState();
+            expect(cb.state).toBe(STATES.HALF_OPEN);
+
+            // Acquire a test request (in-flight flag set)
+            cb.tryAcquireTestRequest();
+            expect(cb.halfOpenRequestInFlight).toBe(true);
+
+            stateChanges = [];
+
+            // Timer fires -- auto-revert to OPEN
+            jest.advanceTimersByTime(3000);
+
+            expect(cb.state).toBe(STATES.OPEN);
+            expect(cb.halfOpenRequestInFlight).toBe(false);
+            // openedAt should be refreshed (later than first open)
+            expect(cb.openedAt).toBeGreaterThanOrEqual(firstOpenedAt);
+            expect(stateChanges[0].info.reason).toBe('half_open_timeout');
+        });
+
+        test('HALF_OPEN timeout via updateState (manual poll) also reverts to OPEN', () => {
+            cb.recordFailure('err');
+            cb.recordFailure('err');
+            cb.recordFailure('err');
+            jest.advanceTimersByTime(5000);
+            cb.updateState();
+            expect(cb.state).toBe(STATES.HALF_OPEN);
+
+            // Clear the automatic timeout so we test the updateState() path
+            cb._clearHalfOpenTimeout();
+
+            // Advance past halfOpenTimeout
+            jest.advanceTimersByTime(3000);
+
+            // Manually call updateState — should detect halfOpenTimeout exceeded
+            cb.updateState();
+            expect(cb.state).toBe(STATES.OPEN);
+        });
+
         test('full idle cycle: OPEN -> idle -> HALF_OPEN -> timeout -> OPEN -> idle -> HALF_OPEN', () => {
             cb.recordFailure('err');
             cb.recordFailure('err');
