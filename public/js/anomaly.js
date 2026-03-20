@@ -9,14 +9,24 @@
     'use strict';
 
     function AnomalyDetectionManager() {
+        this._abortController = null;
         this.init();
     }
 
     AnomalyDetectionManager.prototype.init = function() {
         var self = this;
-        window.addEventListener('investigate-anomaly', function(e) {
+
+        // Abort any previous listeners before attaching new ones
+        if (self._abortController) {
+            self._abortController.abort();
+        }
+        self._abortController = new AbortController();
+        var signal = self._abortController.signal;
+
+        self._onInvestigateAnomaly = function(e) {
             self.investigate(e.detail.element);
-        });
+        };
+        window.addEventListener('investigate-anomaly', self._onInvestigateAnomaly, { signal: signal });
     };
 
     AnomalyDetectionManager.prototype.investigate = function(element) {
@@ -59,6 +69,13 @@
         }, 0) / baseline.length);
         var mean = baseline.reduce(function(sum, val) { return sum + val; }, 0) / baseline.length;
         return Math.abs(value - mean) > threshold * stdDev;
+    };
+
+    AnomalyDetectionManager.prototype.destroy = function() {
+        if (this._abortController) {
+            this._abortController.abort();
+            this._abortController = null;
+        }
     };
 
     // ========== EXPORT ==========

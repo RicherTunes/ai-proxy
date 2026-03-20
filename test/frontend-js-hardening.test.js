@@ -358,3 +358,213 @@ describe('Group 6: TierBuilder event listener cleanup', () => {
     expect(tierBuilderContent).toContain('_destroyed = true');
   });
 });
+
+// ============================================================
+// Group 7: context-menu.js uses removable event listeners
+// ============================================================
+describe('Group 7: context-menu.js uses removable event listeners', () => {
+  test('addEventListener calls use named handlers or AbortController, not anonymous functions', () => {
+    const content = jsFiles['context-menu.js'];
+    expect(content).toBeDefined();
+
+    // Find all addEventListener calls
+    const addListenerRegex = /addEventListener\(\s*['"][^'"]+['"]\s*,\s*(function\s*\(|(?:\([^)]*\)|[a-zA-Z_$]\w*)\s*=>)/g;
+    const anonymousMatches = [];
+    let match;
+    while ((match = addListenerRegex.exec(content)) !== null) {
+      anonymousMatches.push({
+        snippet: content.substring(match.index, match.index + 80).trim(),
+        line: content.substring(0, match.index).split('\n').length
+      });
+    }
+
+    // Should have zero anonymous handlers in addEventListener calls
+    expect(anonymousMatches).toEqual([]);
+  });
+
+  test('has a destroy() or cleanup() method that can remove all listeners', () => {
+    const content = jsFiles['context-menu.js'];
+    expect(content).toBeDefined();
+
+    const hasDestroyOrCleanup =
+      content.includes('.destroy') ||
+      content.includes('.cleanup') ||
+      content.includes('AbortController');
+
+    expect(hasDestroyOrCleanup).toBe(true);
+  });
+});
+
+// ============================================================
+// Group 8: progressive-disclosure.js uses removable event listeners
+// ============================================================
+describe('Group 8: progressive-disclosure.js uses removable event listeners', () => {
+  test('addEventListener calls use named handlers or AbortController, not anonymous functions', () => {
+    const content = jsFiles['progressive-disclosure.js'];
+    expect(content).toBeDefined();
+
+    // Find all addEventListener calls with anonymous function or arrow handlers
+    const addListenerRegex = /addEventListener\(\s*['"][^'"]+['"]\s*,\s*(function\s*\(|(?:\([^)]*\)|[a-zA-Z_$]\w*)\s*=>)/g;
+    const anonymousMatches = [];
+    let match;
+    while ((match = addListenerRegex.exec(content)) !== null) {
+      anonymousMatches.push({
+        snippet: content.substring(match.index, match.index + 80).trim(),
+        line: content.substring(0, match.index).split('\n').length
+      });
+    }
+
+    expect(anonymousMatches).toEqual([]);
+  });
+
+  test('has a destroy() or cleanup() method', () => {
+    const content = jsFiles['progressive-disclosure.js'];
+    expect(content).toBeDefined();
+
+    const hasDestroyOrCleanup =
+      content.includes('.destroy') ||
+      content.includes('.cleanup') ||
+      content.includes('AbortController');
+
+    expect(hasDestroyOrCleanup).toBe(true);
+  });
+});
+
+// ============================================================
+// Group 9: All manager classes with init() have matching destroy/cleanup
+// ============================================================
+describe('Group 9: managers with init() + addEventListener have destroy/cleanup', () => {
+  test('every manager/class with init() that calls addEventListener also has destroy/cleanup/dispose', () => {
+    const violations = [];
+
+    for (const [name, content] of Object.entries(jsFiles)) {
+      // Find constructor functions (function Foo() { ... })
+      const constructorPattern = /function\s+([A-Z]\w+)\s*\(\)/g;
+      let ctorMatch;
+      while ((ctorMatch = constructorPattern.exec(content)) !== null) {
+        const className = ctorMatch[1];
+
+        // Check if this class has an init() method
+        const hasInit =
+          content.includes(className + '.prototype.init') ||
+          content.includes('this.init()');
+
+        if (!hasInit) continue;
+
+        // Check if init() or the constructor calls addEventListener
+        // We look for addEventListener in the constructor body and in prototype.init
+        const hasAddEventListener = content.includes('addEventListener');
+
+        if (!hasAddEventListener) continue;
+
+        // Check for destroy/cleanup/dispose method
+        const hasCleanup =
+          content.includes(className + '.prototype.destroy') ||
+          content.includes(className + '.prototype.cleanup') ||
+          content.includes(className + '.prototype.dispose') ||
+          content.includes('AbortController');
+
+        if (!hasCleanup) {
+          violations.push({ file: name, class: className });
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+});
+
+// ============================================================
+// Group 10: No duplicate event listener registration risk
+// ============================================================
+describe('Group 10: addEventListener in repeatable methods is guarded', () => {
+  test('addEventListener inside init()/render()/update() uses AbortController or guard', () => {
+    const violations = [];
+
+    for (const [name, content] of Object.entries(jsFiles)) {
+      const lines = content.split('\n');
+
+      // Find all addEventListener calls
+      for (let i = 0; i < lines.length; i++) {
+        if (!lines[i].includes('addEventListener')) continue;
+
+        // Check if this addEventListener is inside a method that could be called multiple times
+        // Look backward for method definition patterns
+        let insideRepeatableMethod = false;
+        let methodName = '';
+        for (let j = i; j >= Math.max(0, i - 30); j--) {
+          // Prototype method: Foo.prototype.init = function
+          const protoMatch = lines[j].match(/\.prototype\.(init|render|update|refresh|start|attach|connect)\s*=/);
+          if (protoMatch) {
+            insideRepeatableMethod = true;
+            methodName = protoMatch[1];
+            break;
+          }
+          // Object method: init: function
+          const objMatch = lines[j].match(/\b(init|render|update|refresh|start|attach|connect)\s*[:=]\s*function/);
+          if (objMatch) {
+            insideRepeatableMethod = true;
+            methodName = objMatch[1];
+            break;
+          }
+        }
+
+        if (!insideRepeatableMethod) continue;
+
+        // Check if guarded: look for AbortController signal, or an idempotency guard
+        let isGuarded = false;
+
+        // Check for AbortController signal in the addEventListener options
+        // Look at the current addEventListener call and nearby lines
+        const nearbyContent = lines.slice(Math.max(0, i - 5), Math.min(lines.length, i + 5)).join('\n');
+        if (nearbyContent.includes('signal') || nearbyContent.includes('AbortController')) {
+          isGuarded = true;
+        }
+
+        // Check for idempotency guard earlier in the method (e.g., "if (this._listenersAttached) return")
+        for (let j = i; j >= Math.max(0, i - 20); j--) {
+          if (lines[j].includes('_attached') || lines[j].includes('_initialized') ||
+              lines[j].includes('_bound') || lines[j].includes('_listening') ||
+              lines[j].includes('if (this._') || lines[j].includes('_sseAttached')) {
+            isGuarded = true;
+            break;
+          }
+        }
+
+        // Check for removeEventListener or abort() before the addEventListener
+        for (let j = i; j >= Math.max(0, i - 10); j--) {
+          if (lines[j].includes('removeEventListener') || lines[j].includes('.abort()') ||
+              lines[j].includes('.disconnect()')) {
+            isGuarded = true;
+            break;
+          }
+        }
+
+        // Skip DOMContentLoaded since it only fires once
+        if (lines[i].includes('DOMContentLoaded')) {
+          isGuarded = true;
+        }
+
+        // Skip event delegation on dynamically created elements (these are new elements each time)
+        // e.g., inside forEach on querySelectorAll results that are rendered fresh
+        for (let j = i; j >= Math.max(0, i - 10); j--) {
+          if (lines[j].includes('.forEach(') || lines[j].includes('createElement(')) {
+            isGuarded = true;
+            break;
+          }
+        }
+
+        if (!isGuarded) {
+          violations.push({
+            file: name,
+            line: i + 1,
+            method: methodName,
+            content: lines[i].trim().substring(0, 120)
+          });
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+});

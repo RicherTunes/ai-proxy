@@ -21,6 +21,7 @@
     function FilterStateManager() {
         this.filters = this.loadFromURL();
         this.filterChipsContainer = null;
+        this._abortController = null;
     }
 
     FilterStateManager.prototype.loadFromURL = function() {
@@ -105,24 +106,57 @@
 
     FilterStateManager.prototype.init = function() {
         var self = this;
+
+        // Abort any previous listeners before attaching new ones
+        if (self._abortController) {
+            self._abortController.abort();
+        }
+        self._abortController = new AbortController();
+        var signal = self._abortController.signal;
+
         self.renderFilterChips();
-        window.addEventListener('popstate', function() {
+        self._onPopstate = function() {
             self.filters = self.loadFromURL();
             self.renderFilterChips();
             self.applyFilters();
-        });
+        };
+        window.addEventListener('popstate', self._onPopstate, { signal: signal });
+    };
+
+    FilterStateManager.prototype.destroy = function() {
+        if (this._abortController) {
+            this._abortController.abort();
+            this._abortController = null;
+        }
     };
 
     // ========== URLStateManager — Shareable URLs (UX #9) ==========
     function URLStateManager() {
         this.state = {};
+        this._abortController = null;
         this.init();
     }
 
     URLStateManager.prototype.init = function() {
         var self = this;
+
+        // Abort any previous listeners before attaching new ones
+        if (self._abortController) {
+            self._abortController.abort();
+        }
+        self._abortController = new AbortController();
+        var signal = self._abortController.signal;
+
         self.loadFromHash();
-        window.addEventListener('hashchange', function() { self.loadFromHash(); });
+        self._onHashChange = function() { self.loadFromHash(); };
+        window.addEventListener('hashchange', self._onHashChange, { signal: signal });
+    };
+
+    URLStateManager.prototype.destroy = function() {
+        if (this._abortController) {
+            this._abortController.abort();
+            this._abortController = null;
+        }
     };
 
     URLStateManager.prototype.loadFromHash = function() {
@@ -173,6 +207,7 @@
         this.currentMatchIndex = -1;
         this.matches = [];
         this.lastQuery = null;
+        this._abortController = null;
         this.init();
     }
 
@@ -183,26 +218,37 @@
 
         if (!self.searchInput) return;
 
+        // Abort any previous listeners before attaching new ones
+        if (self._abortController) {
+            self._abortController.abort();
+        }
+        self._abortController = new AbortController();
+        var signal = self._abortController.signal;
+
         self.debouncedPerformSearch = debounce(function(query) {
             self.performSearch(query);
             self._setSearching(false);
         }, SEARCH_DEBOUNCE_DELAY);
 
-        self.searchInput.addEventListener('input', function(e) { self.handleSearch(e.target.value); });
-        self.searchInput.addEventListener('focus', function() { self.showHistory(); });
-        self.searchInput.addEventListener('blur', function() {
+        self._onInput = function(e) { self.handleSearch(e.target.value); };
+        self._onFocus = function() { self.showHistory(); };
+        self._onBlur = function() {
             setTimeout(function() { self.hideHistory(); }, HISTORY_HIDE_DELAY);
-        });
+        };
+        self.searchInput.addEventListener('input', self._onInput, { signal: signal });
+        self.searchInput.addEventListener('focus', self._onFocus, { signal: signal });
+        self.searchInput.addEventListener('blur', self._onBlur, { signal: signal });
 
-        document.addEventListener('keydown', function(e) {
+        self._onGlobalKeydown = function(e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
                 self.searchInput.focus();
                 self.searchInput.select();
             }
-        });
+        };
+        document.addEventListener('keydown', self._onGlobalKeydown, { signal: signal });
 
-        self.searchInput.addEventListener('keydown', function(e) {
+        self._onSearchKeydown = function(e) {
             if (e.key === 'Escape') {
                 self.hideHistory();
                 self.searchInput.focus();
@@ -219,10 +265,11 @@
                 self.navigateDropdown(e.key === 'ArrowDown' ? 1 : -1);
                 return;
             }
-        });
+        };
+        self.searchInput.addEventListener('keydown', self._onSearchKeydown, { signal: signal });
 
         // Handle Enter and Escape on focused dropdown items (roving tabindex keyboard activation)
-        self.historyDropdown && self.historyDropdown.addEventListener('keydown', function(e) {
+        self._onDropdownKeydown = function(e) {
             var focused = document.activeElement;
             if (!focused || !self.historyDropdown.contains(focused)) return;
             if (e.key === 'Enter') {
@@ -236,7 +283,17 @@
                 e.preventDefault();
                 self.navigateDropdown(e.key === 'ArrowDown' ? 1 : -1);
             }
-        });
+        };
+        if (self.historyDropdown) {
+            self.historyDropdown.addEventListener('keydown', self._onDropdownKeydown, { signal: signal });
+        }
+    };
+
+    GlobalSearchManager.prototype.destroy = function() {
+        if (this._abortController) {
+            this._abortController.abort();
+            this._abortController = null;
+        }
     };
 
     GlobalSearchManager.prototype.navigateDropdown = function(direction) {

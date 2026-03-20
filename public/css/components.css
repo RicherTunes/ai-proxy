@@ -38,7 +38,7 @@
         /* Button Variants */
         .btn-primary {
             background: var(--accent);
-            color: white;
+            color: var(--text-on-accent);
         }
 
         .btn-primary:hover {
@@ -63,7 +63,7 @@
 
         .btn-success {
             background: var(--success);
-            color: #1a1a2e;
+            color: var(--text-on-dark);
         }
 
         .btn-success:hover {
@@ -73,7 +73,7 @@
 
         .btn-warning {
             background: var(--warning);
-            color: #1a1a2e;
+            color: var(--text-on-dark);
         }
 
         .btn-warning:hover {
@@ -83,7 +83,7 @@
 
         .btn-danger {
             background: var(--error);
-            color: white;
+            color: var(--text-on-accent);
         }
 
         .btn-danger:hover {
@@ -147,9 +147,11 @@
         }
 
         .status-dot {
+            display: inline-flex;
             width: 12px;
             height: 12px;
             border-radius: 50%;
+            margin-right: 6px;
             animation: pulse 2s infinite;
         }
 
@@ -473,7 +475,7 @@
 
         .fullscreen-btn:hover {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         .chart-container.fullscreen {
@@ -741,7 +743,7 @@
         .quick-action-btn:hover {
             background: var(--accent);
             border-color: var(--accent);
-            color: white;
+            color: var(--text-on-accent);
         }
 
         /* Visual alert borders on components */
@@ -941,7 +943,7 @@
             align-items: center;
             padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
             background: var(--accent);
-            color: white;
+            color: var(--text-on-accent);
             border-radius: 10px;
             font-size: var(--font-xs);
             font-weight: 600;
@@ -1257,14 +1259,6 @@
             animation: pulse 2s ease-in-out infinite;
         }
 
-        .heartbeat-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-            font-size: var(--font-xs);
-            color: var(--text-secondary);
-        }
-
         .heartbeat-dot {
             width: 8px;
             height: 8px;
@@ -1383,13 +1377,6 @@
         }
 
         /* 7. GLOBAL SEARCH - Search in toolbar */
-        .global-search-container {
-            position: relative;
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-        }
-
         .global-search-input {
             width: 240px;
             padding: var(--spacing-sm) var(--spacing-md) 6px 32px;
@@ -1893,7 +1880,7 @@
         }
         .upstream-badge.down {
             background: var(--error);
-            color: #fff;
+            color: var(--text-on-accent);
             animation: pulse 1.5s infinite;
         }
         .upstream-badge.degraded {
@@ -2077,5 +2064,67 @@
         }
         .tooltip-sparkline svg {
             display: block;
+        }
+
+        /* Per-Model Breakdown table (moved from tokens.css) */
+        .model-breakdown-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .model-breakdown-table th {
+            text-align: left;
+            padding: 4px 8px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            font-weight: 500;
+        }
+        .model-breakdown-table td {
+            padding: 4px 8px;
+            border-bottom: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
+            color: var(--text-primary);
+        }
+        .model-breakdown-table tr:hover td {
+            background: color-mix(in srgb, var(--accent) 5%, transparent);
+        }
+        .model-breakdown-table .model-name {
+            font-family: monospace;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        /* Welcome banner (moved from tokens.css) */
+        .welcome-banner {
+            margin-bottom: 12px;
+        }
+        .welcome-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: var(--radius-md);
+            font-size: var(--font-sm);
+            line-height: 1.5;
+        }
+        .welcome-content .welcome-icon {
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        /* Welcome banner responsive */
+        @media (max-width: 480px) {
+            .welcome-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 10px 12px;
+                font-size: var(--font-xs);
+            }
+            .welcome-content .welcome-icon {
+                display: none;
+            }
         }
 

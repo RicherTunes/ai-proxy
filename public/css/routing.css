@@ -881,7 +881,7 @@
         }
         .model-card-remove:hover {
             background: var(--error, #ef4444);
-            color: white;
+            color: var(--text-on-accent);
         }
 
         /* Model Card - Concurrency Bar (Enhanced) */
@@ -912,7 +912,7 @@
         .model-card-bar-text {
             font-size: 0.6rem;
             font-weight: 600;
-            color: white;
+            color: var(--text-on-accent);
             white-space: nowrap;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
@@ -1527,7 +1527,7 @@
         }
         .runway-badge.error {
             background: var(--error, #ef4444);
-            color: #fff;
+            color: var(--text-on-accent);
         }
         .runway-badge.warning {
             background: var(--warning, #f59e0b);
@@ -1942,17 +1942,6 @@
             margin-top: 2px;
         }
 
-        @keyframes runway-row-exit {
-            from {
-                opacity: 0.6;
-                transform: translateY(0);
-            }
-            to {
-                opacity: 0;
-                transform: translateY(8px);
-            }
-        }
-
         /* Reduced motion */
         @media (prefers-reduced-motion: reduce) {
             .runway-row {
@@ -2094,7 +2083,52 @@
         }
         .routing-status-pill.active {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
             font-weight: 600;
+        }
+
+        /* Routing disabled CTA (moved from tokens.css) */
+        .routing-disabled-cta {
+            display: none;
+            text-align: center;
+            padding: 32px 16px;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-lg);
+            margin: 12px 0;
+        }
+        .routing-disabled-cta .routing-disabled-icon {
+            margin-bottom: 12px;
+            opacity: 0.4;
+        }
+        .routing-disabled-cta .routing-disabled-hero-icon { color: var(--accent); }
+        .routing-disabled-cta .routing-disabled-title {
+            font-size: var(--font-md);
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        .routing-disabled-cta .routing-disabled-desc {
+            font-size: var(--font-sm);
+            color: var(--text-secondary);
+            max-width: 400px;
+            margin: 0 auto 16px;
+            line-height: 1.5;
+        }
+        .routing-disabled-cta .routing-disabled-hint {
+            font-size: var(--font-xs);
+            color: var(--text-secondary);
+            margin-top: 12px;
+            opacity: 0.7;
+        }
+        .routing-disabled-cta .routing-disabled-hint code {
+            font-family: var(--font-mono);
+            background: var(--surface-overlay);
+            padding: 1px 4px;
+            border-radius: var(--radius-sm);
+        }
+        .routing-toggle-btn {
+            font-size: 11px;
+            padding: 2px 10px;
+            margin-left: 8px;
+            cursor: pointer;
         }
 

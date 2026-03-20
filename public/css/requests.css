@@ -28,12 +28,12 @@
 
         .time-range-btn.active {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         [data-theme="light"] .time-range-btn.active {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
 
@@ -402,12 +402,12 @@
 
         .btn-icon:hover {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         .btn-icon.active {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         .stream-footer {
@@ -529,7 +529,7 @@
 
         .copy-btn:hover {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
             border-color: var(--accent);
         }
 
@@ -580,7 +580,7 @@
         }
 
         .retry-step-marker.success { background: var(--success); color: #000; }
-        .retry-step-marker.error { background: var(--error); color: #fff; }
+        .retry-step-marker.error { background: var(--error); color: var(--text-on-accent); }
         .retry-step-marker.pending { background: var(--warning); color: #000; }
 
         .retry-step-content {
@@ -681,7 +681,7 @@
         .export-btn:hover {
             background: var(--accent);
             border-color: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         /* Responsive */
@@ -904,7 +904,7 @@
             align-items: center;
             justify-content: center;
             font-size: var(--font-xs);
-            color: white;
+            color: var(--text-on-accent);
             min-width: 2px;
         }
         .trace-timeline-bar.queue { background: var(--warning); }

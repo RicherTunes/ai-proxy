@@ -444,4 +444,295 @@ describe('Frontend Hardening', () => {
       expect(violations).toEqual([]);
     });
   });
+
+  // ─── GROUP 7: No cross-file selector conflicts ──────────────────────
+  describe('Group 7: No cross-file selector conflicts', () => {
+    let healthCss, layoutCss, componentsCss, utilitiesCss;
+
+    beforeAll(() => {
+      healthCss = fs.readFileSync(path.join(CSS_DIR, 'health.css'), 'utf8');
+      layoutCss = fs.readFileSync(path.join(CSS_DIR, 'layout.css'), 'utf8');
+      componentsCss = fs.readFileSync(path.join(CSS_DIR, 'components.css'), 'utf8');
+      utilitiesCss = fs.readFileSync(path.join(CSS_DIR, 'utilities.css'), 'utf8');
+    });
+
+    /**
+     * Helper: count how many times a top-level selector block defines a given
+     * property in a CSS string.  Only counts rules NOT inside @media / @keyframes.
+     */
+    function countTopLevelProperty(css, selector, property) {
+      let count = 0;
+      let depth = 0;
+      let inAtRule = false;
+      let atRuleDepth = -1;
+      let currentSelector = '';
+      let buf = '';
+      let inComment = false;
+
+      for (let i = 0; i < css.length; i++) {
+        // Comments
+        if (!inComment && css[i] === '/' && css[i + 1] === '*') { inComment = true; i++; continue; }
+        if (inComment && css[i] === '*' && css[i + 1] === '/') { inComment = false; i++; continue; }
+        if (inComment) continue;
+
+        if (css[i] === '{') {
+          if (depth === 0) {
+            const trimmed = buf.trim();
+            if (trimmed.startsWith('@')) {
+              inAtRule = true;
+              atRuleDepth = depth;
+            } else {
+              currentSelector = trimmed;
+            }
+            buf = '';
+          }
+          depth++;
+        } else if (css[i] === '}') {
+          depth--;
+          if (depth === 0) {
+            if (!inAtRule && currentSelector === selector) {
+              // Check if buf contains the property
+              const declarations = buf.split(';');
+              for (const decl of declarations) {
+                const colonIdx = decl.indexOf(':');
+                if (colonIdx === -1) continue;
+                const prop = decl.substring(0, colonIdx).trim();
+                if (prop === property) count++;
+              }
+            }
+            buf = '';
+            currentSelector = '';
+            if (inAtRule && depth <= atRuleDepth) {
+              inAtRule = false;
+              atRuleDepth = -1;
+            }
+          } else if (inAtRule && depth <= atRuleDepth) {
+            inAtRule = false;
+            atRuleDepth = -1;
+          }
+        } else {
+          buf += css[i];
+        }
+      }
+      return count;
+    }
+
+    /**
+     * Helper: check if a CSS string contains a given selector (exact, top-level)
+     * that defines a specific property.
+     */
+    function hasTopLevelSelectorWithProperty(css, selector, property) {
+      return countTopLevelProperty(css, selector, property) > 0;
+    }
+
+    test('Test 1: .chart-container height is defined in exactly ONE file (layout.css)', () => {
+      const inHealth = hasTopLevelSelectorWithProperty(healthCss, '.chart-container', 'height');
+      const inLayout = hasTopLevelSelectorWithProperty(layoutCss, '.chart-container', 'height');
+
+      // Canonical owner is layout.css (uses JS dynamic variable)
+      expect(inLayout).toBe(true);
+      // Must NOT also be in health.css
+      expect(inHealth).toBe(false);
+    });
+
+    test('Test 2: .status-dot width/height is defined in exactly ONE file', () => {
+      const inComponents = hasTopLevelSelectorWithProperty(componentsCss, '.status-dot', 'width');
+      const inUtilities = hasTopLevelSelectorWithProperty(utilitiesCss, '.status-dot', 'width');
+
+      const filesDefining = [
+        inComponents && 'components.css',
+        inUtilities && 'utilities.css',
+      ].filter(Boolean);
+
+      expect(filesDefining).toHaveLength(1);
+    });
+
+    test('Test 3: .overflow-menu-trigger:hover background is defined in exactly ONE file', () => {
+      const inLayout = hasTopLevelSelectorWithProperty(layoutCss, '.overflow-menu-trigger:hover', 'background');
+      const inUtilities = hasTopLevelSelectorWithProperty(utilitiesCss, '.overflow-menu-trigger:hover', 'background');
+
+      const filesDefining = [
+        inLayout && 'layout.css',
+        inUtilities && 'utilities.css',
+      ].filter(Boolean);
+
+      expect(filesDefining).toHaveLength(1);
+    });
+
+    test('Test 4: .heartbeat-indicator display is defined in exactly ONE file', () => {
+      const inComponents = hasTopLevelSelectorWithProperty(componentsCss, '.heartbeat-indicator', 'display');
+      const inHealth = hasTopLevelSelectorWithProperty(healthCss, '.heartbeat-indicator', 'display');
+
+      const filesDefining = [
+        inComponents && 'components.css',
+        inHealth && 'health.css',
+      ].filter(Boolean);
+
+      expect(filesDefining).toHaveLength(1);
+    });
+
+    test('Test 5: .empty-state base styles defined in exactly ONE file', () => {
+      const inHealth = hasTopLevelSelectorWithProperty(healthCss, '.empty-state', 'display');
+      const inUtilities = hasTopLevelSelectorWithProperty(utilitiesCss, '.empty-state', 'display');
+
+      const filesDefining = [
+        inHealth && 'health.css',
+        inUtilities && 'utilities.css',
+      ].filter(Boolean);
+
+      expect(filesDefining).toHaveLength(1);
+    });
+
+    test('Test 6: no duplicate selector blocks in same CSS file (.global-search-container in components.css)', () => {
+      // Count how many times .global-search-container appears as a top-level selector in components.css
+      // We count all properties from all blocks — if the selector appears more than once that's a duplicate
+      let selectorBlockCount = 0;
+      let depth = 0;
+      let buf = '';
+      let inComment = false;
+      let inAtRule = false;
+      let atRuleDepth = -1;
+
+      for (let i = 0; i < componentsCss.length; i++) {
+        if (!inComment && componentsCss[i] === '/' && componentsCss[i + 1] === '*') { inComment = true; i++; continue; }
+        if (inComment && componentsCss[i] === '*' && componentsCss[i + 1] === '/') { inComment = false; i++; continue; }
+        if (inComment) continue;
+
+        if (componentsCss[i] === '{') {
+          if (depth === 0) {
+            const trimmed = buf.trim();
+            if (trimmed.startsWith('@')) {
+              inAtRule = true;
+              atRuleDepth = depth;
+            } else if (trimmed === '.global-search-container' && !inAtRule) {
+              selectorBlockCount++;
+            }
+            buf = '';
+          }
+          depth++;
+        } else if (componentsCss[i] === '}') {
+          depth--;
+          if (depth === 0) {
+            buf = '';
+            if (inAtRule && depth <= atRuleDepth) {
+              inAtRule = false;
+              atRuleDepth = -1;
+            }
+          }
+        } else {
+          buf += componentsCss[i];
+        }
+      }
+
+      expect(selectorBlockCount).toBe(1);
+    });
+  });
+
+  // ─── GROUP 8: tokens.css contains only tokens ───────────────────────
+  describe('Group 8: tokens.css contains only tokens', () => {
+    /**
+     * tokens.css should contain ONLY:
+     *  - CSS custom property definitions (:root, [data-theme], @media prefers-color-scheme)
+     *  - Universal reset (* { ... })
+     *  - Base body styles (body, body.density-*)
+     *
+     * It must NOT contain component-specific selectors like .model-breakdown-*,
+     * .routing-disabled-*, .welcome-*, .routing-toggle-*, etc.
+     */
+
+    // Selectors that are ALLOWED in tokens.css (token definitions + reset/base)
+    const ALLOWED_SELECTOR_PATTERNS = [
+      /^:root$/,
+      /^\[data-theme/,
+      /^:root:not\(/,
+      /^\*$/,
+      /^body$/,
+      /^body\.density-/,
+    ];
+
+    // Component selector patterns that must NOT appear in tokens.css
+    const FORBIDDEN_COMPONENT_PATTERNS = [
+      /\.model-breakdown/,
+      /\.routing-disabled/,
+      /\.welcome-/,
+      /\.routing-toggle/,
+    ];
+
+    /**
+     * Extract all top-level CSS selectors from a CSS string.
+     * Skips @-rules (they are allowed), CSS variable definitions inside :root, etc.
+     */
+    function extractTopLevelSelectors(css) {
+      const selectors = [];
+      let depth = 0;
+      let buf = '';
+      let inComment = false;
+
+      for (let i = 0; i < css.length; i++) {
+        if (!inComment && css[i] === '/' && css[i + 1] === '*') { inComment = true; i++; continue; }
+        if (inComment && css[i] === '*' && css[i + 1] === '/') { inComment = false; i++; continue; }
+        if (inComment) continue;
+
+        if (css[i] === '{') {
+          if (depth === 0) {
+            const trimmed = buf.trim();
+            // Skip @-rules (media queries, keyframes, etc.)
+            if (trimmed && !trimmed.startsWith('@')) {
+              selectors.push(trimmed);
+            }
+            buf = '';
+          }
+          depth++;
+        } else if (css[i] === '}') {
+          depth--;
+          if (depth === 0) {
+            buf = '';
+          }
+        } else {
+          if (depth === 0) {
+            buf += css[i];
+          }
+        }
+      }
+      return selectors;
+    }
+
+    test('Test 1: tokens.css contains no component selectors', () => {
+      const selectors = extractTopLevelSelectors(tokensCss);
+      const violations = [];
+
+      for (const selector of selectors) {
+        for (const pattern of FORBIDDEN_COMPONENT_PATTERNS) {
+          if (pattern.test(selector)) {
+            violations.push(`Forbidden component selector in tokens.css: "${selector}"`);
+          }
+        }
+      }
+
+      expect(violations).toEqual([]);
+    });
+
+    test('Test 2: tokens.css selectors are limited to reset/base styles', () => {
+      const selectors = extractTopLevelSelectors(tokensCss);
+      const componentSelectors = [];
+
+      for (const selector of selectors) {
+        const isAllowed = ALLOWED_SELECTOR_PATTERNS.some(p => p.test(selector));
+        if (!isAllowed) {
+          componentSelectors.push(selector);
+        }
+      }
+
+      // tokens.css should have fewer than 5 non-reset/non-base selectors
+      // Ideally 0, but we allow a small threshold for edge cases
+      expect(componentSelectors.length).toBeLessThan(5);
+
+      // Also assert specific forbidden patterns are absent
+      for (const sel of componentSelectors) {
+        for (const pattern of FORBIDDEN_COMPONENT_PATTERNS) {
+          expect(sel).not.toMatch(pattern);
+        }
+      }
+    });
+  });
 });

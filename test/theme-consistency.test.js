@@ -352,11 +352,13 @@ describe('Group 7: Hardcoded rgba backgrounds that may need light overrides', ()
         // .model-breakdown-table td previously used rgba(51, 65, 85, 0.3) which is
         // #334155 (dark border color) with alpha. This is invisible in light theme.
         // It should use color-mix or var(--border) instead.
-        expect(tokensCss).toContain('.model-breakdown-table td');
+        // These styles live in components.css (moved from tokens.css).
+        const componentsCssContent = allCssFiles['components.css'] || '';
+        expect(componentsCssContent).toContain('.model-breakdown-table td');
         // Should NOT contain the hardcoded dark rgba
-        expect(tokensCss).not.toMatch(/\.model-breakdown-table td[\s\S]*?rgba\(51,\s*65,\s*85/);
+        expect(componentsCssContent).not.toMatch(/\.model-breakdown-table td[\s\S]*?rgba\(51,\s*65,\s*85/);
         // Should use a theme-aware approach
-        expect(tokensCss).toMatch(/\.model-breakdown-table td[\s\S]*?(?:var\(--border\)|color-mix)/);
+        expect(componentsCssContent).toMatch(/\.model-breakdown-table td[\s\S]*?(?:var\(--border\)|color-mix)/);
     });
 
     test('filter-chip active state uses hardcoded accent rgba', () => {
@@ -365,5 +367,97 @@ describe('Group 7: Hardcoded rgba backgrounds that may need light overrides', ()
         // since it's just accent with alpha. Verify it exists.
         const hasFilterChipActive = componentsCss.includes('.filter-chip.active');
         expect(hasFilterChipActive).toBe(true);
+    });
+});
+
+// ── GROUP 8: Hardcoded #1a1a2e should use token ──────────────────────────
+
+describe('Group 8: #1a1a2e dark text should use --text-on-dark token', () => {
+    test('#1a1a2e should not appear as hardcoded color outside tokens.css', () => {
+        // #1a1a2e is a dark background color used for text on colored badges.
+        // It should be replaced with var(--text-on-dark) or var(--bg-darkest).
+        const lines = allCssContent.split('\n');
+        const violations = [];
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmed = line.trim();
+            // Skip comments
+            if (trimmed.startsWith('/*') || trimmed.startsWith('*')) continue;
+            // Skip CSS variable definitions (--var-name: #hex)
+            if (/^\s*--[\w-]+\s*:/.test(line)) continue;
+
+            if (line.includes('#1a1a2e')) {
+                violations.push(`Line ${i + 1}: ${trimmed}`);
+            }
+        }
+
+        expect(violations).toEqual([]);
+    });
+});
+
+// ── GROUP 9: Reduce hardcoded color: white below threshold ───────────────
+
+describe('Group 9: Hardcoded color: white/fff/ffffff under threshold (excluding tokens.css)', () => {
+    test('color: white / color: #fff / color: #ffffff count should be under 15 outside tokens.css', () => {
+        // We want to reduce hardcoded white text from ~22 to under 15.
+        // Excludes tokens.css variable definitions.
+        const lines = allCssContent.split('\n');
+        const whiteLiterals = [];
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            // Skip comments
+            if (line.startsWith('/*') || line.startsWith('*')) continue;
+            // Skip CSS variable definitions
+            if (/^\s*--[\w-]+\s*:/.test(line)) continue;
+
+            if (/color\s*:\s*(white|#fff(?:fff)?)\s*[;!]/.test(line)) {
+                whiteLiterals.push(`Line ${i + 1}: ${line}`);
+            }
+        }
+
+        expect(whiteLiterals.length).toBeLessThan(15);
+    });
+});
+
+// ── GROUP 10: Missing CSS variables are defined ──────────────────────────
+
+describe('Group 10: Missing CSS variables are defined in :root', () => {
+    test('--bg-input should be defined in :root', () => {
+        const rootVars = extractVarsFromBlock(tokensCss, ':root');
+        expect(rootVars).toContain('--bg-input');
+    });
+
+    test('--text-tertiary should be defined in :root', () => {
+        const rootVars = extractVarsFromBlock(tokensCss, ':root');
+        expect(rootVars).toContain('--text-tertiary');
+    });
+
+    test('--text-on-dark should be defined in :root', () => {
+        const rootVars = extractVarsFromBlock(tokensCss, ':root');
+        expect(rootVars).toContain('--text-on-dark');
+    });
+});
+
+// ── GROUP 11: layout.css should not set global color: white ──────────────
+
+describe('Group 11: layout.css global color fix', () => {
+    test('layout.css should not have bare color: white at the top level', () => {
+        const layoutCss = allCssFiles['layout.css'] || '';
+        const lines = layoutCss.split('\n');
+
+        // Check lines near the top (~first 20 lines) for a bare color: white
+        // that is not inside a proper selector scope (skip-to-content is ok but
+        // a global "color: white" at the body/root level is wrong)
+        const topLines = lines.slice(0, 20);
+        const hasGlobalWhite = topLines.some(line => {
+            const trimmed = line.trim();
+            // Match "color: white;" that is the skip-to-content accessibility link
+            // The skip-to-content link is at line 9 — it should use var(--text-primary) or var(--text-on-accent)
+            return trimmed === 'color: white;';
+        });
+
+        expect(hasGlobalWhite).toBe(false);
     });
 });

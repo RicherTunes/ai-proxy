@@ -173,7 +173,6 @@
 
         .chart-container {
             position: relative;
-            height: clamp(140px, 15vw, 220px);
         }
 
         /* Three-Column Dashboard Grid */
@@ -263,7 +262,7 @@
 
         .density-btn.active {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         /* Keys Section */
@@ -368,7 +367,7 @@
             top: -4px;
             right: -4px;
             background: var(--accent);
-            color: white;
+            color: var(--text-on-accent);
             font-size: 0.5rem;
             padding: 1px 3px;
             border-radius: var(--radius-full);
@@ -452,7 +451,7 @@
         .key-chip .slow-badge {
             font-size: 0.5rem;
             background: var(--warning);
-            color: #1a1a2e;
+            color: var(--text-on-dark);
             padding: var(--spacing-xs, 4px);
             border-radius: 3px;
             margin-left: 4px;
@@ -518,7 +517,7 @@
         .score-segment-text {
             font-size: 0.65rem;
             font-weight: 600;
-            color: white;
+            color: var(--text-on-accent);
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
             white-space: nowrap;
             overflow: hidden;
@@ -722,7 +721,7 @@
         .progress-fill-text {
             font-size: 0.7rem;
             font-weight: 600;
-            color: white;
+            color: var(--text-on-accent);
             white-space: nowrap;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
@@ -807,10 +806,10 @@
             line-height: 1.5;
         }
 
-        .log-level.INFO { background: #3b82f6; color: white; }
-        .log-level.WARN { background: var(--warning); color: #1a1a2e; }
-        .log-level.ERROR { background: var(--error); color: white; }
-        .log-level.DEBUG { background: #6b7280; color: white; }
+        .log-level.INFO { background: #3b82f6; color: var(--text-on-accent); }
+        .log-level.WARN { background: var(--warning); color: var(--text-on-dark); }
+        .log-level.ERROR { background: var(--error); color: var(--text-on-accent); }
+        .log-level.DEBUG { background: #6b7280; color: var(--text-on-accent); }
 
         .log-message {
             color: var(--text-primary);
@@ -938,7 +937,7 @@
             border: none;
             border-radius: 4px;
             background: var(--accent);
-            color: white;
+            color: var(--text-on-accent);
             cursor: pointer;
             font-size: var(--font-sm);
             font-weight: 500;
@@ -1095,6 +1094,7 @@
             border-radius: 12px;
             font-size: var(--font-xs);
             font-weight: 500;
+            color: var(--text-secondary);
         }
 
         .heartbeat-indicator.healthy {
@@ -1177,17 +1177,17 @@
 
         .key-rank.rank-1 {
             background: linear-gradient(135deg, #ffd700, #ffb800);
-            color: #1a1a2e;
+            color: var(--text-on-dark);
         }
 
         .key-rank.rank-2 {
             background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
-            color: #1a1a2e;
+            color: var(--text-on-dark);
         }
 
         .key-rank.rank-3 {
             background: linear-gradient(135deg, #cd7f32, #b8722d);
-            color: white;
+            color: var(--text-on-accent);
         }
 
         /* Info Card Section Icons */
@@ -1386,17 +1386,6 @@
             opacity: 1;
         }
         .histogram-bucket.critical { background: var(--error); }
-
-        /* Empty State Improvements */
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: var(--spacing-xl);
-            color: var(--text-secondary);
-            text-align: center;
-        }
 
         .empty-state-icon {
             width: 48px;

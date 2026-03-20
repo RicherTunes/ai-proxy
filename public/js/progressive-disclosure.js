@@ -16,30 +16,48 @@
     };
 
     function ProgressiveDisclosureManager() {
+        this._abortController = null;
         this.init();
     }
 
     ProgressiveDisclosureManager.prototype.init = function() {
         var self = this;
 
+        // Abort any previous listeners before attaching new ones
+        if (self._abortController) {
+            self._abortController.abort();
+        }
+        self._abortController = new AbortController();
+        var signal = self._abortController.signal;
+
         // Attach to all collapsible sections
         document.querySelectorAll('.collapsible-header').forEach(function(header) {
-            // Click handler
-            header.addEventListener('click', function(e) {
-                self.toggleSection(header);
-            });
+            // Named click handler
+            header.addEventListener('click', self._makeClickHandler(header), { signal: signal });
 
-            // Keyboard handler for accessibility
-            header.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    self.toggleSection(header);
-                }
-            });
+            // Named keyboard handler for accessibility
+            header.addEventListener('keydown', self._makeKeydownHandler(header), { signal: signal });
         });
 
         // Restore collapsed state from localStorage
         self.restoreCollapseState();
+    };
+
+    ProgressiveDisclosureManager.prototype._makeClickHandler = function(header) {
+        var self = this;
+        return function() {
+            self.toggleSection(header);
+        };
+    };
+
+    ProgressiveDisclosureManager.prototype._makeKeydownHandler = function(header) {
+        var self = this;
+        return function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                self.toggleSection(header);
+            }
+        };
     };
 
     ProgressiveDisclosureManager.prototype.toggleSection = function(header) {
@@ -104,19 +122,21 @@
                 content +
             '</div>';
 
-        // Attach handlers
+        // Attach handlers (use AbortController signal for cleanup)
         var header = section.querySelector('.collapsible-header');
-        header.addEventListener('click', function() {
-            self.toggleSection(header);
-        });
-        header.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                self.toggleSection(header);
-            }
-        });
+        var signal = self._abortController ? self._abortController.signal : undefined;
+        var opts = signal ? { signal: signal } : {};
+        header.addEventListener('click', self._makeClickHandler(header), opts);
+        header.addEventListener('keydown', self._makeKeydownHandler(header), opts);
 
         return section;
+    };
+
+    ProgressiveDisclosureManager.prototype.destroy = function() {
+        if (this._abortController) {
+            this._abortController.abort();
+            this._abortController = null;
+        }
     };
 
     // ========== EXPORT ==========

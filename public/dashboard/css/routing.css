@@ -78,7 +78,7 @@ body {
 
 .btn-primary {
     background: var(--accent);
-    color: white;
+    color: var(--text-on-accent);
 }
 
 .btn-primary:hover {
