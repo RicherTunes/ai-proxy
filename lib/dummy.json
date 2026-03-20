@@ -7,7 +7,7 @@
       "totalTokens": 0,
       "cost": 0,
       "requests": 0,
-      "startedAt": "2026-03-20T12:35:02.774Z"
+      "startedAt": "2026-03-20T12:44:07.435Z"
     },
     "thisWeek": {
       "inputTokens": 0,
@@ -15,7 +15,7 @@
       "totalTokens": 0,
       "cost": 0,
       "requests": 0,
-      "startedAt": "2026-03-20T12:35:02.774Z"
+      "startedAt": "2026-03-20T12:44:07.435Z"
     },
     "thisMonth": {
       "inputTokens": 0,
@@ -23,7 +23,7 @@
       "totalTokens": 0,
       "cost": 0,
       "requests": 0,
-      "startedAt": "2026-03-20T12:35:02.774Z"
+      "startedAt": "2026-03-20T12:44:07.435Z"
     },
     "allTime": {
       "inputTokens": 0,
@@ -31,7 +31,7 @@
       "totalTokens": 0,
       "cost": 0,
       "requests": 0,
-      "startedAt": "2026-03-20T12:35:02.774Z"
+      "startedAt": "2026-03-20T12:44:07.435Z"
     }
   },
   "byKeyId": {},
@@ -56,5 +56,5 @@
     "batchRecordCount": 0,
     "batchOperations": 0
   },
-  "savedAt": "2026-03-20T12:35:02.774Z"
+  "savedAt": "2026-03-20T12:44:07.436Z"
 }
