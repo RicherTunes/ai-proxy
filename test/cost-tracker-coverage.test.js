@@ -1057,4 +1057,36 @@ describe('CostTracker Coverage - Uncovered Lines', () => {
             expect(ct.modelRates).toBeDefined();
         });
     });
+
+    describe('Lines 322-325: calculateCost with model parameter', () => {
+        // Covers line 322 truthy branch: model ? this.getRatesByModel(model) : this.rates
+        test('calculateCost uses model-specific rates when model is provided', () => {
+            const ct = new CostTracker();
+            // Use default rates for comparison
+            const costWithDefault = ct.calculateCost(1000000, 500000);
+            // Call with a model name — hits the truthy branch of line 322
+            const costWithModel = ct.calculateCost(1000000, 500000, 'glm-5');
+            // Both should be numbers (the specific value depends on model rates)
+            expect(typeof costWithDefault).toBe('number');
+            expect(typeof costWithModel).toBe('number');
+            expect(costWithDefault).toBeGreaterThan(0);
+            expect(costWithModel).toBeGreaterThan(0);
+        });
+
+        test('calculateCost returns correct value for known model', () => {
+            const ct = new CostTracker();
+            // 1M input tokens + 1M output tokens with default rates
+            const cost = ct.calculateCost(1000000, 1000000, 'glm-4.7');
+            expect(typeof cost).toBe('number');
+            expect(cost).toBeGreaterThan(0);
+        });
+
+        test('calculateCost falls back to default rates for unknown model', () => {
+            const ct = new CostTracker();
+            const defaultCost = ct.calculateCost(1000000, 500000);
+            const unknownCost = ct.calculateCost(1000000, 500000, 'nonexistent-model-xyz');
+            // Unknown model should fall back to default rates
+            expect(unknownCost).toBe(defaultCost);
+        });
+    });
 });

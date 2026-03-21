@@ -1363,3 +1363,35 @@ describe('_loadDiscoveryCache: cache file loading', () => {
     expect(d._userCandidates).toEqual([]); // Should remain default empty array
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// userCandidates persistence via probeModels (line 710)
+// ═══════════════════════════════════════════════════════════════════════════
+describe('probeModels userCandidates persistence', () => {
+  let d, configDir;
+  afterEach(() => { jest.restoreAllMocks(); cleanup(configDir); });
+
+  // Covers line 710: new user candidate persisted to _userCandidates
+  test('userCandidates passed to probeModels are persisted', async () => {
+    ({ d, configDir } = freshDiscovery());
+    expect(d._userCandidates).toEqual([]); // Initially empty
+
+    jest.spyOn(d, '_probeModel').mockResolvedValue({
+      modelId: 'custom-user-model',
+      availability: 'coding_subscription',
+      responseTimeMs: 10,
+      rateLimitConcurrency: 5
+    });
+
+    const result = await d.probeModels({
+      apiKey: 'test-key',
+      probeKnown: false,
+      probeCandidates: false,
+      userCandidates: ['custom-user-model']
+    });
+
+    // The candidate should be persisted for future probes
+    expect(d._userCandidates).toContain('custom-user-model');
+    expect(result.results.discovered).toContain('custom-user-model');
+  });
+});

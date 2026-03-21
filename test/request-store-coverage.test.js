@@ -445,4 +445,68 @@ describe('RequestStore Coverage Gap Tests', () => {
             expect(s.requests.has('inf_2')).toBe(true);
         });
     });
+
+    // ---------------------------------------------------------------
+    // Line 78: Cleanup interval callback (function coverage gap)
+    // ---------------------------------------------------------------
+    describe('cleanup interval callback (line 78)', () => {
+        it('should trigger cleanup via setInterval callback', () => {
+            // Covers line 78: the arrow function () => this.cleanup() passed to setInterval
+            jest.useFakeTimers();
+
+            const s = createStore();
+            const cleanupSpy = jest.spyOn(s, 'cleanup').mockReturnValue(0);
+
+            // Add an expired entry so cleanup has something to do
+            const storeId = s.store('req_1', makeReq(), Buffer.from('data'), 'timeout', 0, {
+                errorType: 'timeout'
+            });
+            const stored = s.requests.get(storeId);
+            stored.expiresAt = Date.now() - 1000; // Already expired
+
+            cleanupSpy.mockRestore();
+
+            // Advance time by 1 hour to trigger the interval callback
+            jest.advanceTimersByTime(60 * 60 * 1000);
+
+            // The interval callback should have triggered cleanup
+            // which removes the expired entry
+            expect(s.requests.has(storeId)).toBe(false);
+
+            jest.useRealTimers();
+        });
+
+        it('should log when cleanup removes expired requests via interval', () => {
+            // Covers the logging branch inside cleanup when removed > 0
+            jest.useFakeTimers();
+
+            const mockLogger = {
+                info: jest.fn(),
+                error: jest.fn(),
+                warn: jest.fn(),
+                debug: jest.fn()
+            };
+
+            const s = createStore({ logger: mockLogger });
+
+            // Add an expired entry
+            const storeId = s.store('req_1', makeReq(), Buffer.from('data'), 'timeout', 0, {
+                errorType: 'timeout'
+            });
+            const stored = s.requests.get(storeId);
+            stored.expiresAt = Date.now() - 1000;
+
+            // Advance time by 1 hour to trigger the interval callback
+            jest.advanceTimersByTime(60 * 60 * 1000);
+
+            // Cleanup should have been called and logged
+            // _log calls logger[level](message, context) - context is undefined here
+            expect(mockLogger.info).toHaveBeenCalledWith(
+                expect.stringContaining('Cleaned up'),
+                undefined
+            );
+
+            jest.useRealTimers();
+        });
+    });
 });
