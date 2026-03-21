@@ -480,4 +480,358 @@ describe('auth-controller - coverage tests', () => {
         });
     });
 
+    // Covers line 166: too_many_attempts error returns 429 status
+    describe('requireAuth - too_many_attempts error (line 166)', () => {
+        it('should return 429 status when authResult.error is too_many_attempts', () => {
+            mockAdminAuth.authenticate.mockReturnValue({
+                authenticated: false,
+                error: 'too_many_attempts'
+            });
+
+            const mockReq = {
+                url: '/test',
+                headers: { host: 'localhost' }
+            };
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                setHeader: jest.fn()
+            };
+
+            const result = controller.requireAuth(mockReq, mockRes);
+
+            expect(result).toBe(false);
+            expect(mockRes.writeHead).toHaveBeenCalledWith(429, expect.objectContaining({
+                'content-type': 'application/json',
+                'cache-control': 'no-store'
+            }));
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.error).toBe('too_many_attempts');
+            expect(responseData.message).toBe('Too many failed authentication attempts');
+        });
+    });
+
+    // Covers line 171-172: retryAfterMs header inclusion
+    describe('requireAuth - retryAfterMs header (line 171-172)', () => {
+        it('should include retry-after header when retryAfterMs is provided', () => {
+            mockAdminAuth.authenticate.mockReturnValue({
+                authenticated: false,
+                error: 'too_many_attempts',
+                retryAfterMs: 5000
+            });
+
+            const mockReq = {
+                url: '/test',
+                headers: { host: 'localhost' }
+            };
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                setHeader: jest.fn()
+            };
+
+            controller.requireAuth(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(429, expect.objectContaining({
+                'retry-after': '5'
+            }));
+        });
+
+        // Covers line 171-172: no retry-after header when retryAfterMs is absent
+        it('should not include retry-after header when retryAfterMs is absent', () => {
+            mockAdminAuth.authenticate.mockReturnValue({
+                authenticated: false,
+                error: 'invalid_token'
+            });
+
+            const mockReq = {
+                url: '/test',
+                headers: { host: 'localhost' }
+            };
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                setHeader: jest.fn()
+            };
+
+            controller.requireAuth(mockReq, mockRes);
+
+            const callArgs = mockRes.writeHead.mock.calls[0];
+            expect(callArgs[0]).toBe(401);
+            expect(callArgs[1]).not.toHaveProperty('retry-after');
+        });
+    });
+
+    // Covers line 195: adminAuth exists but is disabled
+    describe('requiresAdminAuth - adminAuth disabled (line 195)', () => {
+        it('should return false when adminAuth exists but is disabled', () => {
+            controller._adminAuth = { enabled: false };
+
+            const result = controller.requiresAdminAuth('/logs', 'GET');
+
+            expect(result).toBe(false);
+        });
+
+        // Covers line 195: adminAuth is null
+        it('should return false when adminAuth is null', () => {
+            controller._adminAuth = null;
+
+            const result = controller.requiresAdminAuth('/logs', 'GET');
+
+            expect(result).toBe(false);
+        });
+    });
+
+    // Covers lines 198-203: SENSITIVE_GET_PATHS matching
+    describe('requiresAdminAuth - sensitive path matching (lines 198-203)', () => {
+        beforeEach(() => {
+            controller._adminAuth = { enabled: true };
+        });
+
+        // Covers line 199-200: sensitivePath.endsWith('/') true branch
+        it('should require auth for sensitive GET path with trailing slash prefix', () => {
+            // '/replay/' is in SENSITIVE_GET_PATHS and ends with '/'
+            const result = controller.requiresAdminAuth('/replay/something', 'GET');
+
+            expect(result).toBe(true);
+        });
+
+        // Covers line 202: sensitivePath does NOT end with '/'
+        it('should require auth for sensitive GET path without trailing slash', () => {
+            // '/logs' does not end with '/'
+            const result = controller.requiresAdminAuth('/logs', 'GET');
+
+            expect(result).toBe(true);
+        });
+
+        // Covers line 202: startsWith check for non-trailing-slash path
+        it('should require auth for model-routing path', () => {
+            const result = controller.requiresAdminAuth('/model-routing', 'GET');
+
+            expect(result).toBe(true);
+        });
+
+        // Covers line 208: HEAD method is not a mutation
+        it('should not require auth for HEAD request on admin route', () => {
+            // HEAD is not a mutation, and /health is not a sensitive GET path
+            const result = controller.requiresAdminAuth('/health', 'HEAD');
+
+            expect(result).toBe(false);
+        });
+
+        // Covers line 208: POST is a mutation
+        it('should require auth for POST request on admin route', () => {
+            const result = controller.requiresAdminAuth('/health', 'POST');
+
+            expect(result).toBe(true);
+        });
+
+        // Covers line 208: DELETE is a mutation
+        it('should require auth for DELETE request on admin route', () => {
+            const result = controller.requiresAdminAuth('/logs', 'DELETE');
+
+            expect(result).toBe(true);
+        });
+
+        // Non-sensitive GET on non-sensitive path
+        it('should not require auth for GET on non-sensitive admin path', () => {
+            const result = controller.requiresAdminAuth('/health', 'GET');
+
+            expect(result).toBe(false);
+        });
+    });
+
+    // Covers lines 221-230: isAdminRoute path matching
+    describe('isAdminRoute - path matching (lines 221-230)', () => {
+        // Covers line 221-222: adminPath.endsWith('/') true branch
+        it('should return true for path starting with trailing-slash admin path', () => {
+            // '/debug/' ends with '/' in ADMIN_PATHS
+            const result = controller.isAdminRoute('/debug/something');
+
+            expect(result).toBe(true);
+        });
+
+        // Covers line 224: exact path match
+        it('should return true for exact path match', () => {
+            const result = controller.isAdminRoute('/health');
+
+            expect(result).toBe(true);
+        });
+
+        // Covers line 226: /requests dynamic pattern
+        it('should return true for /requests path with suffix', () => {
+            const result = controller.isAdminRoute('/requests/123');
+
+            expect(result).toBe(true);
+        });
+
+        // Covers line 227: /stats/latency-histogram dynamic pattern
+        it('should return true for /stats/latency-histogram path with suffix', () => {
+            const result = controller.isAdminRoute('/stats/latency-histogram/something');
+
+            expect(result).toBe(true);
+        });
+
+        // Not an admin route
+        it('should return false for non-admin path', () => {
+            const result = controller.isAdminRoute('/v1/chat/completions');
+
+            expect(result).toBe(false);
+        });
+
+        // Exact match for non-trailing path
+        it('should return true for exact /stats match', () => {
+            const result = controller.isAdminRoute('/stats');
+
+            expect(result).toBe(true);
+        });
+
+        // Path with trailing slash admin prefix
+        it('should return true for /control path', () => {
+            const result = controller.isAdminRoute('/control/something');
+
+            expect(result).toBe(true);
+        });
+    });
+
+    // Covers line 240: debugEndpointsAlwaysRequireAuth !== false
+    describe('debugEndpointsRequireAuth - config branch (line 240)', () => {
+        it('should return true when debugEndpointsAlwaysRequireAuth is undefined', () => {
+            controller._config = { security: {} };
+
+            const result = controller.debugEndpointsRequireAuth();
+
+            expect(result).toBe(true);
+        });
+
+        it('should return true when debugEndpointsAlwaysRequireAuth is true', () => {
+            controller._config = { security: { debugEndpointsAlwaysRequireAuth: true } };
+
+            const result = controller.debugEndpointsRequireAuth();
+
+            expect(result).toBe(true);
+        });
+
+        it('should return false when debugEndpointsAlwaysRequireAuth is false', () => {
+            controller._config = { security: { debugEndpointsAlwaysRequireAuth: false } };
+
+            const result = controller.debugEndpointsRequireAuth();
+
+            expect(result).toBe(false);
+        });
+    });
+
+    // Covers line 249: isDebugEndpoint
+    describe('isDebugEndpoint - path check (line 249)', () => {
+        it('should return true for /debug path', () => {
+            expect(controller.isDebugEndpoint('/debug')).toBe(true);
+        });
+
+        it('should return true for /debug/ path', () => {
+            expect(controller.isDebugEndpoint('/debug/something')).toBe(true);
+        });
+
+        it('should return false for non-debug path', () => {
+            expect(controller.isDebugEndpoint('/health')).toBe(false);
+        });
+    });
+
+    // Covers line 115: headerName fallback when _adminAuth is null
+    describe('handleAuthStatus - headerName fallback (line 115)', () => {
+        it('should use default headerName when _adminAuth is null', () => {
+            controller._adminAuth = null;
+
+            const mockReq = {
+                url: '/auth-status',
+                headers: { host: 'localhost' }
+            };
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                setHeader: jest.fn()
+            };
+
+            controller.handleAuthStatus(mockReq, mockRes);
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.headerName).toBe('x-admin-token');
+            expect(responseData.enabled).toBe(false);
+        });
+
+        it('should use default headerName when _adminAuth has no headerName', () => {
+            controller._adminAuth = { enabled: false };
+
+            const mockReq = {
+                url: '/auth-status',
+                headers: { host: 'localhost' }
+            };
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                setHeader: jest.fn()
+            };
+
+            controller.handleAuthStatus(mockReq, mockRes);
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.headerName).toBe('x-admin-token');
+        });
+    });
+
+    // Covers line 127 else-if branch: tokensRequired is false
+    describe('handleAuthStatus - tokensRequired false path (line 127)', () => {
+        it('should skip token validation when tokensRequired is false', () => {
+            delete mockAdminAuth.peekAuthentication;
+            mockAdminAuth.tokens = new Set(); // Empty set → tokensConfigured = 0 → tokensRequired = false
+
+            const mockReq = {
+                url: '/auth-status',
+                headers: { host: 'localhost' }
+            };
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                setHeader: jest.fn()
+            };
+
+            controller.handleAuthStatus(mockReq, mockRes);
+
+            // extractToken should not be called since tokensRequired is false
+            expect(mockAdminAuth.extractToken).not.toHaveBeenCalled();
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.tokensConfigured).toBe(0);
+            expect(responseData.tokensRequired).toBe(false);
+            expect(responseData.authenticated).toBe(false);
+        });
+    });
+
+    // Covers line 105: default addAuditEntry arrow function
+    describe('constructor - default addAuditEntry function (line 105)', () => {
+        it('should use default no-op addAuditEntry when not provided', () => {
+            // Create controller without addAuditEntry to use the default () => {}
+            const controllerNoAudit = new AuthController({
+                adminAuth: null,
+                config: { security: {} }
+                // addAuditEntry NOT provided - uses default () => {}
+            });
+
+            // Call the default function to cover it
+            // The default is a no-op, so it should return undefined and not throw
+            const result = controllerNoAudit._addAuditEntry('test-event', { foo: 'bar' });
+
+            expect(result).toBeUndefined();
+        });
+
+        it('should use default addAuditEntry when explicitly passed undefined', () => {
+            const controllerNoAudit = new AuthController({
+                adminAuth: null,
+                config: { security: {} },
+                addAuditEntry: undefined // Explicitly undefined - uses default
+            });
+
+            const result = controllerNoAudit._addAuditEntry('another-event');
+            expect(result).toBeUndefined();
+        });
+    });
+
 });

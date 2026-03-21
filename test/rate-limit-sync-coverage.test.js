@@ -1023,4 +1023,49 @@ describe('RateLimitSync – coverage tests', () => {
             expect(sync._baselines.get('catch-warn-model').concurrency).toBe(5);
         });
     });
+
+    // =================================================================
+    // 19. Default logger debug() and error() methods
+    // =================================================================
+    describe('default logger debug and error methods', () => {
+        // Covers line 49: default logger.debug() method execution
+        // The module never calls debug(), but we test it exists and is callable
+        test('default logger debug method is callable without throwing', () => {
+            const sync = new RateLimitSync(
+                { enabled: true },
+                { logger: undefined, keyManager }
+            );
+
+            // Directly invoke the default debug method
+            expect(() => sync._logger.debug('test debug message')).not.toThrow();
+            expect(typeof sync._logger.debug).toBe('function');
+        });
+
+        // Covers line 49: default logger.error() method execution
+        // The module never calls error(), but we test it exists and is callable
+        test('default logger error method is callable without throwing', () => {
+            const sync = new RateLimitSync(
+                { enabled: true },
+                { logger: undefined, keyManager }
+            );
+
+            // Directly invoke the default error method
+            expect(() => sync._logger.error('test error message')).not.toThrow();
+            expect(typeof sync._logger.error).toBe('function');
+        });
+
+        // Covers line 49: all default logger methods are no-ops
+        test('default logger methods return undefined', () => {
+            const sync = new RateLimitSync(
+                { enabled: true },
+                { logger: undefined, keyManager }
+            );
+
+            // All default logger methods should return undefined
+            expect(sync._logger.info('test')).toBeUndefined();
+            expect(sync._logger.warn('test')).toBeUndefined();
+            expect(sync._logger.debug('test')).toBeUndefined();
+            expect(sync._logger.error('test')).toBeUndefined();
+        });
+    });
 });

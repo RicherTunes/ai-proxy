@@ -1061,3 +1061,305 @@ describe('probeModels: model count tracking', () => {
     expect(result.modelCount.after).toBeGreaterThan(KNOWN_GLM_MODELS.length);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 21. exportForFrontend: fallback values for missing properties (lines 543, 550-553)
+// ═══════════════════════════════════════════════════════════════════════════
+describe('exportForFrontend: fallback values', () => {
+  let d, configDir;
+  afterEach(() => { jest.restoreAllMocks(); cleanup(configDir); });
+
+  // Covers lines 543, 550-553: model without displayName, maxConcurrency, availability, type, source
+  test('uses fallback values when model properties are missing', async () => {
+    ({ d, configDir } = freshDiscovery());
+    // Create a minimal model with only required fields
+    d._discoveredModels.set('minimal-model', {
+      id: 'minimal-model',
+      tier: 'LIGHT'
+      // Missing: displayName, maxConcurrency, availability, type, source, lastRefreshedAt
+    });
+
+    const exported = await d.exportForFrontend();
+    const minimal = exported.models.find(m => m.id === 'minimal-model');
+
+    // Line 543: displayName || m.id
+    expect(minimal.name).toBe('minimal-model');
+    // Line 550: maxConcurrency || 5
+    expect(minimal.maxConcurrency).toBe(5);
+    // Line 551: availability || 'coding_subscription'
+    expect(minimal.availability).toBe('coding_subscription');
+    // Line 552: type || 'chat'
+    expect(minimal.type).toBe('chat');
+    // Line 553: source || 'static'
+    expect(minimal.source).toBe('static');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 22. probeModels: options default parameter (line 662)
+// ═══════════════════════════════════════════════════════════════════════════
+describe('probeModels: options default parameter', () => {
+  let d, configDir;
+  afterEach(() => { jest.restoreAllMocks(); cleanup(configDir); });
+
+  // Covers line 662: options = {} default parameter used when called with no args
+  test('handles being called with no options argument', async () => {
+    ({ d, configDir } = freshDiscovery());
+    // When called with no options, options = {} kicks in, then apiKey check fails
+    const result = await d.probeModels();
+    expect(result.error).toBe('no_api_key');
+    expect(result.message).toBe('An API key is required for probing');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 23. probeModels: user candidate deduplication and persistence (lines 704-711)
+// ═══════════════════════════════════════════════════════════════════════════
+describe('probeModels: user candidate handling', () => {
+  let d, configDir;
+  afterEach(() => { jest.restoreAllMocks(); cleanup(configDir); });
+
+  // Covers lines 704-706: user candidate already in probeList is skipped
+  test('user candidate already in probeList is not duplicated', async () => {
+    ({ d, configDir } = freshDiscovery());
+    const probeSpy = jest.spyOn(d, '_probeModel').mockResolvedValue({
+      modelId: 'x',
+      availability: 'invalid',
+      responseTimeMs: 1,
+      rateLimitConcurrency: 0
+    });
+
+    // glm-5-turbo is in CANDIDATE_MODEL_PATTERNS, so will be in probeList
+    // Passing same as userCandidate should not add it again
+    await d.probeModels({
+      apiKey: 'test-key',
+      probeKnown: false,
+      probeCandidates: true,
+      userCandidates: ['glm-5-turbo']
+    });
+
+    // Count how many times glm-5-turbo was probed (should be exactly 1)
+    const turboCalls = probeSpy.mock.calls.filter(c => c[0] === 'glm-5-turbo');
+    expect(turboCalls.length).toBe(1);
+  });
+
+  // Covers lines 709-711: new user candidate is persisted to _userCandidates
+  test('new user candidate is persisted for future probes', async () => {
+    ({ d, configDir } = freshDiscovery());
+    jest.spyOn(d, '_probeModel').mockResolvedValue({
+      modelId: 'x',
+      availability: 'invalid',
+      responseTimeMs: 1,
+      rateLimitConcurrency: 0
+    });
+    jest.spyOn(d, '_saveDiscoveryCache').mockResolvedValue();
+
+    await d.probeModels({
+      apiKey: 'test-key',
+      probeKnown: false,
+      probeCandidates: false,
+      userCandidates: ['brand-new-model']
+    });
+
+    expect(d._userCandidates).toContain('brand-new-model');
+  });
+
+  // Covers line 706: empty normalized string is skipped
+  test('empty string after normalization is skipped', async () => {
+    ({ d, configDir } = freshDiscovery());
+    const probeSpy = jest.spyOn(d, '_probeModel').mockResolvedValue({
+      modelId: 'x',
+      availability: 'invalid',
+      responseTimeMs: 1,
+      rateLimitConcurrency: 0
+    });
+
+    await d.probeModels({
+      apiKey: 'test-key',
+      probeKnown: false,
+      probeCandidates: false,
+      userCandidates: ['   '] // Whitespace-only, normalizes to empty
+    });
+
+    // Should not probe anything
+    expect(probeSpy).not.toHaveBeenCalled();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 24. _probeModel: json.code error branch (line 900-901)
+// ═══════════════════════════════════════════════════════════════════════════
+describe('_probeModel: json.code error handling', () => {
+  let d, configDir, httpsSpy;
+  afterEach(() => { jest.restoreAllMocks(); cleanup(configDir); });
+
+  function mockTransport(responseBody, opts = {}) {
+    return (reqOpts, callback) => {
+      const mockReq = {
+        write: jest.fn(),
+        end: jest.fn(),
+        destroy: jest.fn(),
+        on: jest.fn()
+      };
+      setImmediate(() => {
+        const mockRes = {
+          statusCode: opts.statusCode || 200,
+          headers: opts.headers || {},
+          on: (event, handler) => {
+            if (event === 'data') setImmediate(() => handler(Buffer.from(responseBody)));
+            if (event === 'end') setImmediate(handler);
+          }
+        };
+        callback(mockRes);
+      });
+      return mockReq;
+    };
+  }
+
+  // Covers lines 900-901: json.code is non-200 and non-0
+  test('json.code 500 returns error with message from json.msg', async () => {
+    ({ d, configDir } = freshDiscovery());
+    const response = JSON.stringify({ code: 500, msg: 'Internal server error' });
+    httpsSpy = mockTransport(response);
+    jest.spyOn(https, 'request').mockImplementation(httpsSpy);
+
+    const result = await d._probeModel('glm-5', 'key', 'api.z.ai', '/api/anthropic', 'https:');
+    expect(result.availability).toBe('error');
+    expect(result.error).toBe('Internal server error');
+  });
+
+  // Covers line 901: json.code without json.msg uses code in message
+  test('json.code without msg uses code in error message', async () => {
+    ({ d, configDir } = freshDiscovery());
+    const response = JSON.stringify({ code: 503 }); // No msg field
+    httpsSpy = mockTransport(response);
+    jest.spyOn(https, 'request').mockImplementation(httpsSpy);
+
+    const result = await d._probeModel('glm-5', 'key', 'api.z.ai', '/api/anthropic', 'https:');
+    expect(result.availability).toBe('error');
+    expect(result.error).toBe('code 503');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 25. _loadDiscoveryCache: loading discoveredModels and userCandidates (lines 948-956)
+// ═══════════════════════════════════════════════════════════════════════════
+describe('_loadDiscoveryCache: cache file loading', () => {
+  let configDir;
+
+  afterEach(() => { cleanup(configDir); });
+
+  // Covers lines 948-951: discoveredModels object iteration
+  test('loads discoveredModels from cache file', () => {
+    configDir = tmpDir();
+    const cachePath = path.join(configDir, 'model-discovery-cache.json');
+    const cacheData = {
+      version: 1,
+      discoveredModels: {
+        'discovered-model-a': { id: 'discovered-model-a', tier: 'LIGHT', type: 'chat' },
+        'discovered-model-b': { id: 'discovered-model-b', tier: 'HEAVY', type: 'vision' }
+      },
+      userCandidates: []
+    };
+    fs.writeFileSync(cachePath, JSON.stringify(cacheData));
+
+    const d = new ModelDiscovery({ configDir });
+    expect(d._discoveredModels.has('discovered-model-a')).toBe(true);
+    expect(d._discoveredModels.has('discovered-model-b')).toBe(true);
+    expect(d._discoveredModels.get('discovered-model-a').tier).toBe('LIGHT');
+    expect(d._discoveredModels.get('discovered-model-b').type).toBe('vision');
+  });
+
+  // Covers lines 954-956: userCandidates array loading
+  test('loads userCandidates from cache file', () => {
+    configDir = tmpDir();
+    const cachePath = path.join(configDir, 'model-discovery-cache.json');
+    const cacheData = {
+      version: 1,
+      discoveredModels: {},
+      userCandidates: ['user-candidate-1', 'user-candidate-2']
+    };
+    fs.writeFileSync(cachePath, JSON.stringify(cacheData));
+
+    const d = new ModelDiscovery({ configDir });
+    expect(d._userCandidates).toEqual(['user-candidate-1', 'user-candidate-2']);
+  });
+
+  // Covers line 945: version check rejects wrong version
+  test('ignores cache file with wrong version', () => {
+    configDir = tmpDir();
+    const cachePath = path.join(configDir, 'model-discovery-cache.json');
+    const cacheData = {
+      version: 2, // Wrong version
+      discoveredModels: { 'model-x': { id: 'model-x' } },
+      userCandidates: ['should-not-load']
+    };
+    fs.writeFileSync(cachePath, JSON.stringify(cacheData));
+
+    const d = new ModelDiscovery({ configDir });
+    expect(d._discoveredModels.has('model-x')).toBe(false);
+    expect(d._userCandidates).toEqual([]);
+  });
+
+  // Covers line 948 else branch: cache without discoveredModels field
+  test('handles cache file without discoveredModels field', () => {
+    configDir = tmpDir();
+    const cachePath = path.join(configDir, 'model-discovery-cache.json');
+    const cacheData = {
+      version: 1,
+      // discoveredModels intentionally missing
+      userCandidates: ['test-candidate']
+    };
+    fs.writeFileSync(cachePath, JSON.stringify(cacheData));
+
+    const d = new ModelDiscovery({ configDir });
+    expect(d._discoveredModels.size).toBe(0);
+    expect(d._userCandidates).toEqual(['test-candidate']);
+  });
+
+  // Covers line 948: discoveredModels is not an object (is null)
+  test('handles cache with null discoveredModels', () => {
+    configDir = tmpDir();
+    const cachePath = path.join(configDir, 'model-discovery-cache.json');
+    const cacheData = {
+      version: 1,
+      discoveredModels: null,
+      userCandidates: []
+    };
+    fs.writeFileSync(cachePath, JSON.stringify(cacheData));
+
+    const d = new ModelDiscovery({ configDir });
+    expect(d._discoveredModels.size).toBe(0);
+  });
+
+  // Covers line 955 else branch: cache without userCandidates field
+  test('handles cache file without userCandidates field', () => {
+    configDir = tmpDir();
+    const cachePath = path.join(configDir, 'model-discovery-cache.json');
+    const cacheData = {
+      version: 1,
+      discoveredModels: { 'model-y': { id: 'model-y' } }
+      // userCandidates intentionally missing
+    };
+    fs.writeFileSync(cachePath, JSON.stringify(cacheData));
+
+    const d = new ModelDiscovery({ configDir });
+    expect(d._discoveredModels.has('model-y')).toBe(true);
+    expect(d._userCandidates).toEqual([]); // Default empty array
+  });
+
+  // Covers line 955: userCandidates is not an array
+  test('handles cache with non-array userCandidates', () => {
+    configDir = tmpDir();
+    const cachePath = path.join(configDir, 'model-discovery-cache.json');
+    const cacheData = {
+      version: 1,
+      discoveredModels: {},
+      userCandidates: 'not-an-array'
+    };
+    fs.writeFileSync(cachePath, JSON.stringify(cacheData));
+
+    const d = new ModelDiscovery({ configDir });
+    expect(d._userCandidates).toEqual([]); // Should remain default empty array
+  });
+});

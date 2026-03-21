@@ -3593,4 +3593,168 @@ describe('model-controller - coverage tests', () => {
             jest.restoreAllMocks();
         });
     });
+
+    // DEFAULT FUNCTIONS COVERAGE - Constructor default arrow functions
+    // These are on lines 45-46 and only execute when no options are provided
+
+    describe('default modelDiscovery functions (lines 45-46)', () => {
+        // Covers line 45: async () => [] default for modelDiscovery.getModels
+        it('should use default getModels when modelDiscovery not provided', async () => {
+            const controllerNoDiscovery = new ModelController({
+                modelRouter: mockModelRouter,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry
+                // No modelDiscovery provided - should use defaults
+            });
+
+            const mockReq = {
+                method: 'GET',
+                url: '/models',
+                headers: { host: 'localhost' }
+            };
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await controllerNoDiscovery.handleModelsRequest(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.models).toEqual([]);
+            expect(responseData.count).toBe(0);
+            expect(responseData.cacheStats).toEqual({});
+        });
+
+        // Covers line 45: async () => [] default for modelDiscovery.getModelsByTier
+        it('should use default getModelsByTier when modelDiscovery not provided', async () => {
+            const controllerNoDiscovery = new ModelController({
+                modelRouter: mockModelRouter,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry
+                // No modelDiscovery provided - should use defaults
+            });
+
+            const mockReq = {
+                method: 'GET',
+                url: '/models?tier=medium',
+                headers: { host: 'localhost' }
+            };
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await controllerNoDiscovery.handleModelsRequest(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.models).toEqual([]);
+            expect(responseData.count).toBe(0);
+            expect(responseData.cacheStats).toEqual({});
+        });
+
+        // Covers line 45: () => ({}) default for modelDiscovery.getCacheStats
+        it('should use default getCacheStats when modelDiscovery not provided', async () => {
+            const controllerNoDiscovery = new ModelController({
+                modelRouter: mockModelRouter,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry
+                // No modelDiscovery provided - should use defaults
+            });
+
+            const mockReq = {
+                method: 'GET',
+                url: '/models',
+                headers: { host: 'localhost' }
+            };
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await controllerNoDiscovery.handleModelsRequest(mockReq, mockRes);
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            // getCacheStats is called in handleModelsRequest (line 342)
+            expect(responseData.cacheStats).toBeDefined();
+            expect(responseData.cacheStats).toEqual({});
+        });
+    });
+
+    describe('default modelMappingManager functions (line 46)', () => {
+        // Covers line 46: () => [] default for modelMappingManager.getKeyOverrides
+        it('should use default getKeyOverrides when modelMappingManager not provided', async () => {
+            const controllerNoMapping = new ModelController({
+                modelRouter: mockModelRouter,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry
+                // No modelMappingManager provided - should use defaults
+            });
+
+            const mockReq = {
+                method: 'GET',
+                url: '/model-mapping',
+                headers: { host: 'localhost' }
+            };
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await controllerNoMapping.handleModelMapping(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            // getKeyOverrides is called in handleModelMapping (line 411)
+            expect(responseData.keyOverrides).toBeDefined();
+            expect(responseData.keyOverrides).toEqual([]);
+        });
+
+        // Covers line 46: () => ({}) default for modelMappingManager.toConfig
+        it('should use default toConfig when modelMappingManager not provided', async () => {
+            const controllerNoMapping = new ModelController({
+                modelRouter: mockModelRouter,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry
+                // No modelMappingManager provided - should use defaults
+            });
+
+            const mockReq = {
+                method: 'GET',
+                url: '/model-mapping',
+                headers: { host: 'localhost' }
+            };
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await controllerNoMapping.handleModelMapping(mockReq, mockRes);
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            // toConfig is called in handleModelMapping (line 410)
+            expect(responseData.config).toBeDefined();
+            expect(responseData.config).toEqual({});
+        });
+    });
 });

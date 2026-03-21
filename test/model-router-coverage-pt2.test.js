@@ -378,13 +378,13 @@ describe('ModelRouter Coverage Pt2 - Uncovered Branches', () => {
     });
 
     // ---------------------------------------------------------------
-    // Line 1412: cooldown decay check (now - entry.lastHit > decayMs)
+    // Line 1412: cooldown decay check in failover path (now - entry.lastHit > decayMs)
+    // This is hit when ALL fallbacks are cooled/attempted and we pick the shortest cooldown
     // ---------------------------------------------------------------
-    describe('cooldown decay - old cooldown entries decay to zero', () => {
+    describe('cooldown decay in failover - old cooldown entries decay to zero', () => {
         // Covers line 1412: sets cooldown to 0 when entry.lastHit is older than decayMs
-        test('sets cooldown to 0 when entry.lastHit is older than decayMs', async () => {
-            jest.useFakeTimers();
-
+        // This happens in the "all fallbacks unavailable" path
+        test('sets cooldown to 0 when entry.lastHit is older than decayMs in failover path', async () => {
             const modelMeta = {
                 'model-a': { maxConcurrency: 10, pricing: { input: 0.1, output: 0.5 }, contextLength: 4000 },
                 'model-b': { maxConcurrency: 10, pricing: { input: 0.2, output: 1.0 }, contextLength: 8000 }
@@ -408,36 +408,44 @@ describe('ModelRouter Coverage Pt2 - Uncovered Branches', () => {
                     lightThresholds: { maxTokensLte: 4096 }
                 },
                 cooldown: {
-                    decayMs: 1000 // Short decay for testing
+                    decayMs: 1000, // Short decay for testing
+                    defaultMs: 5000
+                },
+                failover: {
+                    maxModelSwitchesPerRequest: 5 // Allow switches
                 }
             };
 
             const router = new ModelRouter(config, { persistEnabled: false, modelDiscovery: discovery });
 
-            // Put model-a in cooldown at the current time
+            // Put BOTH models in cooldown to trigger the "all fallbacks unavailable" path
             router.recordModelCooldown('model-a', 5000);
+            router.recordModelCooldown('model-b', 5000);
 
-            // Advance time past the decay window
-            jest.advanceTimersByTime(1500);
+            // Set model-b's lastHit to be older than decayMs (1000ms)
+            // This simulates the passage of time
+            const cooldownEntryB = router._cooldowns.get('model-b');
+            if (cooldownEntryB) {
+                cooldownEntryB.lastHit = Date.now() - 1500; // 1500ms ago, past the 1000ms decay
+            }
 
-            // Now request a decision - the cooldown should be decayed to 0
+            // Request a decision with both models in cooldown
+            // This triggers the "all fallbacks cooled/attempted" path (line 1398)
+            // which then checks cooldown decay (line 1411-1412)
             const result = await router.computeDecision({
                 parsedBody: {
                     model: 'claude-haiku-4-5-20251001',
                     messages: [{ role: 'user', content: 'test' }],
                     max_tokens: 100
                 },
-                requestModel: 'claude-haiku-4-5-20251001',
-                includeTrace: true
+                requestModel: 'claude-haiku-4-5-20251001'
             });
 
-            // The decision should succeed with model-a (since its cooldown decayed)
+            // The decision should succeed
             expect(result).toBeDefined();
             expect(result.tier).toBe('light');
-            // model-a should be selectable since its cooldown decayed
+            // One of the models should be selected (model-b has decayed cooldown)
             expect(['model-a', 'model-b']).toContain(result.model);
-
-            jest.useRealTimers();
         });
     });
 
