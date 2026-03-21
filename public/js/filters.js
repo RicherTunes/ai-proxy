@@ -86,15 +86,17 @@
                 var label = filterLabels[key];
                 chip.innerHTML = '<span>' + label + ': ' + escapeHtml(value) + '</span>' +
                     '<span class="filter-chip-remove" aria-hidden="true">\u2715</span>';
-                chip.addEventListener('click', function() {
+                var handleChipClick = function() {
                     self.removeFilter(key);
-                });
-                chip.addEventListener('keydown', function(e) {
+                };
+                chip.addEventListener('click', handleChipClick);
+                var handleChipKeydown = function(e) {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
                         self.removeFilter(key);
                     }
-                });
+                };
+                chip.addEventListener('keydown', handleChipKeydown);
                 self.filterChipsContainer.appendChild(chip);
             }
         });
@@ -491,7 +493,7 @@
                 item.setAttribute('tabindex', '-1');
                 item.setAttribute('aria-selected', 'false');
                 item.innerHTML = '<span class="command-icon">↪</span> ' + DS.escapeHtml(cmd.label);
-                item.addEventListener('click', function() {
+                var handleCmdClick = function() {
                     self.searchInput.value = '';
                     self.hideHistory();
 
@@ -516,7 +518,8 @@
                         // Action command
                         self.executeAction(cmd.action, cmd.label);
                     }
-                });
+                };
+                item.addEventListener('click', handleCmdClick);
                 self.historyDropdown.appendChild(item);
             });
             this.historyDropdown.classList.add('visible');
@@ -627,11 +630,12 @@
             item.setAttribute('tabindex', '-1');
             item.setAttribute('aria-selected', 'false');
             item.textContent = query;
-            item.addEventListener('click', function() {
+            var handleHistoryClick = function() {
                 self.searchInput.value = query;
                 self.handleSearch(query);
                 self.hideHistory();
-            });
+            };
+            item.addEventListener('click', handleHistoryClick);
             self.historyDropdown.appendChild(item);
         });
         self.historyDropdown.classList.add('visible');
@@ -977,11 +981,12 @@
         if (filterStatus) filterStatus.addEventListener('change', applyFilters);
         if (filterKey) filterKey.addEventListener('change', applyFilters);
         if (filterModel) filterModel.addEventListener('change', applyFilters);
-        if (tenantSelect) tenantSelect.addEventListener('change', function(e) {
+        var handleTenantChange = function(e) {
             if (window.DashboardInit?.selectTenant) {
                 window.DashboardInit.selectTenant(e.target.value);
             }
-        });
+        };
+        if (tenantSelect) tenantSelect.addEventListener('change', handleTenantChange);
 
         var autoScrollBtn = document.getElementById('autoScrollToggle');
         if (autoScrollBtn) {

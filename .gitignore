@@ -41,6 +41,7 @@ test/.tmp-*
 test/temp-test-*/
 test/model-routing-retry-*/
 test/model-routing-e2e-*/
+test/int-smoke-*/
 test/test-destroy-history.json
 test/__temp_*
 test-results/

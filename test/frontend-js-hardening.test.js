@@ -644,3 +644,63 @@ describe('Group 13: cooldownList innerHTML escapes values in data.js', () => {
     // If it uses textContent, that's inherently safe — test passes
   });
 });
+
+// ============================================================
+// Group 14: No anonymous addEventListener handlers in filters.js
+// ============================================================
+describe('Group 14: no anonymous addEventListener handlers in filters.js', () => {
+  test('addEventListener calls do not use anonymous function() as the handler argument', () => {
+    const content = jsFiles['filters.js'];
+    expect(content).toBeDefined();
+
+    const lines = content.split('\n');
+    const violations = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.includes('addEventListener')) continue;
+
+      // Check if the handler argument is an anonymous function(
+      // Pattern: addEventListener('event', function(
+      const anonPattern = /addEventListener\(\s*['"][^'"]+['"]\s*,\s*function\s*\(/;
+      if (anonPattern.test(line)) {
+        violations.push({
+          line: i + 1,
+          content: line.trim().substring(0, 120)
+        });
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+});
+
+// ============================================================
+// Group 15: No anonymous addEventListener handlers in tier-builder.js
+// ============================================================
+describe('Group 15: no anonymous addEventListener handlers in tier-builder.js', () => {
+  test('addEventListener calls do not use anonymous function() as the handler argument', () => {
+    const content = jsFiles['tier-builder.js'];
+    expect(content).toBeDefined();
+
+    const lines = content.split('\n');
+    const violations = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.includes('addEventListener')) continue;
+
+      // Check if the handler argument is an anonymous function(
+      // Pattern: addEventListener('event', function(
+      const anonPattern = /addEventListener\(\s*['"][^'"]+['"]\s*,\s*function\s*\(/;
+      if (anonPattern.test(line)) {
+        violations.push({
+          line: i + 1,
+          content: line.trim().substring(0, 120)
+        });
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+});

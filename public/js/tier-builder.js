@@ -219,11 +219,12 @@
             this.container.insertBefore(panel, this.container.firstChild);
         }
 
-        toggle.addEventListener('click', function() {
+        var handleToggleClick = function() {
             var isExpanded = content.classList.contains('expanded');
             content.classList.toggle('expanded');
             toggle.classList.toggle('expanded');
-        });
+        };
+        toggle.addEventListener('click', handleToggleClick);
     };
 
     TierBuilder.prototype._extractTierState = function(routingData) {
@@ -348,11 +349,12 @@
             removeBtn.className = 'model-card-remove';
             removeBtn.textContent = '\u00d7';
             removeBtn.title = 'Remove from tier';
-            removeBtn.addEventListener('click', function(e) {
+            var handleRemoveClick = function(e) {
                 e.stopPropagation();
                 card.remove();
                 self._onDragEnd();
-            });
+            };
+            removeBtn.addEventListener('click', handleRemoveClick);
             card.appendChild(removeBtn);
         }
 
@@ -418,11 +420,12 @@
                         removeBtn.className = 'model-card-remove';
                         removeBtn.textContent = '\u00d7';
                         removeBtn.title = 'Remove from tier';
-                        removeBtn.addEventListener('click', function(e) {
+                        var handleCloneRemoveClick = function(e) {
                             e.stopPropagation();
                             clone.remove();
                             self._onDragEnd();
-                        });
+                        };
+                        removeBtn.addEventListener('click', handleCloneRemoveClick);
                         clone.appendChild(removeBtn);
                     }
                 }
@@ -447,11 +450,12 @@
                         removeBtn.className = 'model-card-remove';
                         removeBtn.textContent = '\u00d7';
                         removeBtn.title = 'Remove from tier';
-                        removeBtn.addEventListener('click', function(e) {
+                        var handleLaneRemoveClick = function(e) {
                             e.stopPropagation();
                             card.remove();
                             self._onDragEnd();
-                        });
+                        };
+                        removeBtn.addEventListener('click', handleLaneRemoveClick);
                         card.appendChild(removeBtn);
                     }
                     self._onDragEnd();
@@ -1721,7 +1725,7 @@
     }
 
     // Wire event listeners for model refresh buttons
-    document.addEventListener('DOMContentLoaded', function() {
+    var handleDOMContentLoaded = function() {
         var refreshBtn = document.getElementById('modelsRefreshBtn');
         if (refreshBtn) refreshBtn.addEventListener('click', refreshModels);
 
@@ -1733,14 +1737,16 @@
 
         var probeInput = document.getElementById('customModelInput');
         if (probeInput) {
-            probeInput.addEventListener('keydown', function(e) {
+            var handleProbeKeydown = function(e) {
                 if (e.key === 'Enter') probeCustomModel();
-            });
+            };
+            probeInput.addEventListener('keydown', handleProbeKeydown);
         }
 
         // Fetch discovery state for system tab
         fetchDiscoveryState();
-    });
+    };
+    document.addEventListener('DOMContentLoaded', handleDOMContentLoaded);
 
     // ========== EXPORT ==========
     window.DashboardTierBuilder = {

@@ -11,6 +11,8 @@ const path = require('path');
  * format consistency, ASSET_VERSION determinism, and default fallback safety.
  */
 
+const { execSync } = require('child_process');
+
 const LIB_DIR = path.join(__dirname, '..', 'lib');
 const CONTROLLERS_DIR = path.join(LIB_DIR, 'proxy', 'controllers');
 const ROOT_DIR = path.join(__dirname, '..');
@@ -275,6 +277,74 @@ describe('Codebase Hygiene', () => {
             }
 
             expect(violations).toEqual([]);
+        });
+    });
+
+    // ─── TEST 13: .depcheckrc exists ─────────────────────────────────────
+    describe('Test 13: .depcheckrc exists', () => {
+        test('.depcheckrc file should exist at repo root', () => {
+            const depcheckrcPath = path.join(ROOT_DIR, '.depcheckrc');
+            expect(fs.existsSync(depcheckrcPath)).toBe(true);
+        });
+    });
+
+    // ─── TEST 14: No test artifacts in lib/ ────────────────────────────────
+    describe('Test 14: No test artifacts in lib/', () => {
+        test('lib/ should contain only .js files tracked in git (no .json artifacts, no .bak)', () => {
+            const tracked = execSync(
+                'git ls-files -- "lib/"',
+                { cwd: ROOT_DIR, encoding: 'utf8' }
+            ).trim();
+            const files = tracked ? tracked.split('\n') : [];
+            const nonJsFiles = files.filter(f => !f.endsWith('.js'));
+            expect(nonJsFiles).toEqual([]);
+        });
+    });
+
+    // ─── TEST 15: No temporary test directories tracked in git ─────────────
+    describe('Test 15: No temporary test directories tracked in git', () => {
+        test('no test/int-smoke-*, test/__temp_*, or test/proxy-test-* files should be tracked', () => {
+            // Use git ls-tree HEAD to check what's actually committed (not staged state)
+            let tracked = '';
+            try {
+                tracked = execSync(
+                    'git ls-tree -r --name-only HEAD -- test/',
+                    { cwd: ROOT_DIR, encoding: 'utf8' }
+                ).trim();
+            } catch (e) { /* empty repo or no HEAD */ }
+            const files = tracked ? tracked.split('\n').filter(f =>
+                f.match(/^test\/(int-smoke-|__temp_|proxy-test-)/)
+            ) : [];
+            expect(files).toEqual([]);
+        });
+    });
+
+    // ─── TEST 16: No wildcard dependency versions ──────────────────────────
+    describe('Test 16: No wildcard dependency versions', () => {
+        test('all deps and devDeps should use exact or caret versions (no * or latest)', () => {
+            const pkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
+            const violations = [];
+
+            for (const section of ['dependencies', 'devDependencies']) {
+                const deps = pkg[section] || {};
+                for (const [name, version] of Object.entries(deps)) {
+                    if (version === '*' || version === 'latest') {
+                        violations.push({ name, version, section });
+                    }
+                }
+            }
+
+            expect(violations).toEqual([]);
+        });
+    });
+
+    // ─── TEST 17: License field exists ─────────────────────────────────────
+    describe('Test 17: License field exists in package.json', () => {
+        test('package.json should have a license field', () => {
+            const pkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
+            expect(pkg.license).toBeDefined();
+            expect(typeof pkg.license).toBe('string');
+            expect(pkg.license.length).toBeGreaterThan(0);
         });
     });
 
