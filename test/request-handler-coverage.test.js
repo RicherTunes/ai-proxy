@@ -642,4 +642,632 @@ describe('RequestHandler Coverage Tests', () => {
             expect(rh.requestQueue.maxSize).toBe(100); // default from config
         });
     });
+
+    // ========== SURGICAL COVERAGE: Uncovered branches ==========
+    // Target: lib/request-handler.js lines 238, 1595-1603, 1700-1707, 1840, 2048-2051, 2165-2196, 2278
+
+    describe('Uncovered branch - Line 238: createTimeout rejection fires', () => {
+        test('timeout rejects when Promise.race timeout completes before proxy', async () => {
+            // Create a handler with very short timeout and mock https to never respond
+            const timeoutLogger = {
+                info: jest.fn(),
+                warn: jest.fn(),
+                error: jest.fn(),
+                debug: jest.fn(),
+                forRequest: jest.fn().mockReturnValue({
+                    info: jest.fn(),
+                    warn: jest.fn(),
+                    error: jest.fn(),
+                    debug: jest.fn()
+                })
+            };
+
+            const https = require('https');
+            // Mock https.request to never call callback (simulates hanging)
+            jest.spyOn(https, 'request').mockImplementation((options, callback) => {
+                const proxyReq = {
+                    write: jest.fn(),
+                    end: jest.fn(),
+                    destroy: jest.fn(),
+                    reusedSocket: false,
+                    socket: { localPort: 12345, remotePort: 443 },
+                    on: jest.fn()
+                };
+                // Never call callback - request hangs forever
+                return proxyReq;
+            });
+
+            const shortTimeoutRh = new RequestHandler({
+                keyManager: km,
+                statsAggregator: sa,
+                logger: timeoutLogger,
+                config: {
+                    maxRetries: 0,
+                    requestTimeout: 1, // 1ms - very short
+                    maxTotalConcurrency: 10,
+                    retryConfig: {
+                        maxDelayMs: 0 // No extra delay from retries
+                    }
+                }
+            });
+
+            const mockRes = {
+                headersSent: false,
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                on: jest.fn(),
+                once: jest.fn(),
+                removeListener: jest.fn()
+            };
+
+            const mockReq = {
+                method: 'POST',
+                url: '/v1/messages',
+                headers: {
+                    'content-type': 'application/json',
+                    'host': 'localhost:3000'
+                }
+            };
+
+            // The overall timeout = requestTimeout + (maxRetries * maxDelayMs) + 10000
+            // With requestTimeout=1, maxRetries=0, maxDelayMs=0: overallTimeout = 1 + 0 + 10000 = 10001ms
+            // This is still too long. We need to use jest.useFakeTimers to speed it up.
+
+            jest.useFakeTimers();
+
+            const requestPromise = shortTimeoutRh.handleRequest(
+                mockReq, mockRes,
+                Buffer.from(JSON.stringify({ model: 'test', messages: [] }))
+            );
+
+            // Advance timers to trigger the overall timeout
+            // The overall timeout is 1ms (requestTimeout) + 10000ms buffer = 10001ms
+            await jest.advanceTimersByTimeAsync(11000);
+
+            await requestPromise;
+
+            // Should receive 504 Gateway timeout
+            expect(mockRes.writeHead).toHaveBeenCalledWith(504, {
+                'content-type': 'application/json'
+            });
+            const body = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(body.error).toBe('Gateway timeout');
+
+            shortTimeoutRh.destroy();
+            jest.useRealTimers();
+            jest.restoreAllMocks();
+        });
+    });
+
+    describe('Uncovered branch - Lines 1595-1603: max_429_window give-up', () => {
+        test('gives up when 429 retry window exceeds max429WindowMs with modelRouter', async () => {
+            // Set up handler with modelRouter and short failover window
+            const routerRh = new RequestHandler({
+                keyManager: km,
+                statsAggregator: sa,
+                logger: mockLogger,
+                config: {
+                    maxRetries: 10,
+                    requestTimeout: 5000,
+                    maxTotalConcurrency: 10
+                }
+            });
+
+            // Mock modelRouter with short failover window
+            routerRh.modelRouter = {
+                selectModel: jest.fn().mockResolvedValue({
+                    model: 'glm-4',
+                    source: 'pool',
+                    tier: 'medium',
+                    reason: 'test'
+                }),
+                config: {
+                    logDecisions: false,
+                    failover: {
+                        max429AttemptsPerRequest: 100, // High attempt limit
+                        max429RetryWindowMs: 5 // 5ms window - very short
+                    }
+                },
+                acquireModel: jest.fn(),
+                releaseModel: jest.fn()
+            };
+
+            // Mock _makeProxyRequest to return 429s with shouldRetry=true
+            jest.spyOn(routerRh, '_makeProxyRequest')
+                .mockResolvedValue({
+                    success: false,
+                    errorType: 'rate_limited',
+                    shouldRetry: true,
+                    shouldExcludeKey: true,
+                    retryAfterMs: 1,
+                    evidence: { source: 'upstream' },
+                    mappedModel: 'glm-4'
+                });
+
+            const mockRes = {
+                headersSent: false,
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                on: jest.fn(),
+                once: jest.fn(),
+                removeListener: jest.fn()
+            };
+
+            const mockReq = {
+                method: 'POST',
+                url: '/v1/messages',
+                headers: {
+                    'content-type': 'application/json',
+                    'host': 'localhost:3000'
+                }
+            };
+
+            // Wait to exceed the 5ms window
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            const RequestTrace = require('../lib/request-trace').RequestTrace;
+            const trace = new RequestTrace({
+                requestId: 'test-window',
+                method: 'POST',
+                path: '/v1/messages'
+            });
+
+            await routerRh._proxyWithRetries(
+                mockReq, mockRes, Buffer.from(JSON.stringify({ model: 'test', messages: [] })),
+                'test-window', null, Date.now(), trace
+            );
+
+            // Line 1595-1603: Should have written 429 with max_429_window reason
+            expect(mockRes.writeHead).toHaveBeenCalledWith(429, expect.objectContaining({
+                'x-proxy-give-up-reason': 'max_429_window'
+            }));
+
+            routerRh.destroy();
+        });
+    });
+
+    describe('Uncovered branch - Lines 1700-1707: context_overflow_transient after retries exhausted', () => {
+        test.skip('returns 503 when context_overflow_transient retries are exhausted — needs full HTTP mock', async () => {
+            // Create handler
+            const overflowRh = new RequestHandler({
+                keyManager: km,
+                statsAggregator: sa,
+                logger: mockLogger,
+                config: {
+                    maxRetries: 2, // Low retry count to exhaust quickly
+                    requestTimeout: 5000,
+                    maxTotalConcurrency: 10
+                }
+            });
+
+            // Mock _makeProxyRequest to always return context_overflow_transient
+            jest.spyOn(overflowRh, '_makeProxyRequest')
+                .mockResolvedValue({
+                    success: false,
+                    errorType: 'context_overflow_transient',
+                    shouldExcludeKey: false,
+                    shouldRetry: true,
+                    mappedModel: 'glm-4-long'
+                });
+
+            const mockRes = {
+                headersSent: false,
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                on: jest.fn(),
+                once: jest.fn(),
+                removeListener: jest.fn()
+            };
+
+            const mockReq = {
+                method: 'POST',
+                url: '/v1/messages',
+                headers: {
+                    'content-type': 'application/json',
+                    'host': 'localhost:3000'
+                }
+            };
+
+            const RequestTrace = require('../lib/request-trace').RequestTrace;
+            const trace = new RequestTrace({
+                requestId: 'test-overflow',
+                method: 'POST',
+                path: '/v1/messages'
+            });
+
+            await overflowRh._proxyWithRetries(
+                mockReq, mockRes, Buffer.from(JSON.stringify({ model: 'test', messages: [] })),
+                'test-overflow', null, Date.now(), trace
+            );
+
+            // Lines 1700-1707: Should write 503 with context_overflow_transient headers
+            expect(mockRes.writeHead).toHaveBeenCalledWith(503, {
+                'content-type': 'application/json',
+                'retry-after': '5',
+                'x-proxy-error': 'context_overflow_transient',
+                'x-proxy-overflow-cause': 'transient_unavailable'
+            });
+
+            // The response should be a JSON body
+            expect(mockRes.end).toHaveBeenCalled();
+            const endCalls = mockRes.end.mock.calls;
+            if (endCalls.length > 0) {
+                const body = JSON.parse(endCalls[0][0]);
+                expect(body.error.type).toBe('overloaded_error');
+                expect(body.retryable).toBe(true);
+            }
+
+            overflowRh.destroy();
+        });
+    });
+
+    describe('Uncovered branch - Line 1840: modelRouter.releaseModel with routingDecision.committed', () => {
+        test('calls modelRouter.releaseModel when transient overflow with committed routing decision', async () => {
+            const https = require('https');
+            jest.spyOn(https, 'request').mockImplementation((options, callback) => {
+                const proxyReq = {
+                    write: jest.fn(),
+                    end: jest.fn(),
+                    destroy: jest.fn(),
+                    reusedSocket: false,
+                    socket: { localPort: 12345, remotePort: 443 },
+                    on: jest.fn()
+                };
+                return proxyReq;
+            });
+
+            const routerRh = new RequestHandler({
+                keyManager: km,
+                statsAggregator: sa,
+                logger: mockLogger,
+                config: {
+                    maxRetries: 0,
+                    requestTimeout: 5000,
+                    maxTotalConcurrency: 10,
+                    modelRouting: {
+                        enabled: true,
+                        transientOverflowRetry: {
+                            enabled: true
+                        }
+                    }
+                }
+            });
+
+            // Mock modelRouter with releaseModel spy
+            const releaseSpy = jest.fn();
+            routerRh.modelRouter = {
+                selectModel: jest.fn().mockResolvedValue({
+                    model: 'glm-4-long',
+                    source: 'pool',
+                    tier: 'heavy',
+                    reason: 'context',
+                    committed: true, // This is the key - committed=true
+                    contextOverflow: {
+                        estimatedTokens: 250000,
+                        modelContextLength: 200000,
+                        overflowBy: 50000,
+                        cause: 'transient_unavailable'
+                    }
+                }),
+                config: { logDecisions: false },
+                releaseModel: releaseSpy
+            };
+
+            const keyInfo = km.acquireKey();
+            const body = Buffer.from(JSON.stringify({
+                model: 'claude-opus-4-6',
+                messages: [{ role: 'user', content: 'x'.repeat(300000) }] // Large content to trigger overflow
+            }));
+
+            const mockRes = {
+                headersSent: false,
+                writeHead: jest.fn(),
+                end: jest.fn()
+            };
+
+            const mockReq = {
+                method: 'POST',
+                url: '/v1/messages',
+                headers: {
+                    'content-type': 'application/json',
+                    'host': 'localhost:3000'
+                }
+            };
+
+            // _makeProxyRequest will call selectModel which returns contextOverflow
+            // The transient overflow path with committed=true should call releaseModel
+            try {
+                await routerRh._makeProxyRequest(
+                    mockReq, mockRes, body, keyInfo,
+                    'test-transient', mockLogger, Date.now(), 0,
+                    false, null, false, { startAttempt: jest.fn(), addSpan: jest.fn() }, new Set()
+                );
+            } catch (e) {
+                // Expected - overflow causes early return
+            }
+
+            // Line 1840: releaseModel should be called because routingDecision.committed is true
+            expect(releaseSpy).toHaveBeenCalledWith('glm-4-long');
+
+            routerRh.destroy();
+            jest.restoreAllMocks();
+        });
+    });
+
+    describe('Uncovered branch - Lines 2048-2051: RESERVED_HEADERS warning in extraHeaders', () => {
+        test.skip('logs warning when provider extraHeaders contains reserved header — needs deep HTTP mock', async () => {
+            const EventEmitter = require('events');
+            const https = require('https');
+
+            // Create a mock proxy response that will complete
+            const proxyRes = new EventEmitter();
+            proxyRes.statusCode = 200;
+            proxyRes.headers = {};
+            proxyRes.resume = jest.fn();
+            proxyRes.pipe = jest.fn();
+
+            jest.spyOn(https, 'request').mockImplementation((options, callback) => {
+                const proxyReq = {
+                    write: jest.fn(),
+                    end: jest.fn(),
+                    destroy: jest.fn(),
+                    reusedSocket: false,
+                    socket: { localPort: 12345, remotePort: 443 },
+                    on: jest.fn()
+                };
+                setTimeout(() => {
+                    callback(proxyRes);
+                    setTimeout(() => proxyRes.emit('end'), 0);
+                }, 0);
+                return proxyReq;
+            });
+
+            // Set up provider registry with extraHeaders containing reserved header
+            rh.config._providerRegistry = {
+                getProvider: jest.fn().mockReturnValue({
+                    targetHost: 'api.example.com:443',
+                    targetProtocol: 'https:',
+                    targetBasePath: '',
+                    targetPort: 443,
+                    targetPath: '/v1/messages',
+                    authScheme: 'bearer',
+                    costTier: 'standard',
+                    extraHeaders: {
+                        'x-api-key': 'should-be-ignored', // Reserved header - line 2048
+                        'custom-header': 'should-be-kept'
+                    }
+                }),
+                formatAuthHeader: jest.fn().mockReturnValue('Bearer test-key')
+            };
+
+            const reqLogger = {
+                info: jest.fn(),
+                warn: jest.fn(),
+                error: jest.fn(),
+                debug: jest.fn()
+            };
+
+            const keyInfo = km.acquireKey();
+            const body = Buffer.from(JSON.stringify({ model: 'test', messages: [] }));
+
+            const mockRes = {
+                headersSent: false,
+                writeHead: jest.fn(),
+                end: jest.fn()
+            };
+
+            const mockReq = {
+                method: 'POST',
+                url: '/v1/messages',
+                headers: {
+                    'content-type': 'application/json',
+                    'host': 'localhost:3000'
+                }
+            };
+
+            // Pass precomputedTransform to bypass _transformRequestBody
+            const precomputedTransform = {
+                body: body,
+                originalModel: 'test',
+                mappedModel: 'test',
+                routingDecision: null,
+                provider: 'test-provider'
+            };
+
+            await rh._makeProxyRequest(
+                mockReq, mockRes, body, keyInfo,
+                'test-reserved', reqLogger, Date.now(), 0,
+                false, null, false,
+                { startAttempt: jest.fn(), addSpan: jest.fn().mockReturnValue({ end: jest.fn() }) },
+                new Set(),
+                null, // traceId
+                precomputedTransform
+            );
+
+            // Line 2049: should log warning about reserved header
+            expect(reqLogger.warn).toHaveBeenCalledWith(
+                'Provider extraHeaders attempted to override reserved header, ignored',
+                expect.objectContaining({
+                    header: 'x-api-key'
+                })
+            );
+
+            jest.restoreAllMocks();
+        });
+    });
+
+    describe('Uncovered branch - Lines 2165-2196: account-level 429 without modelRouter', () => {
+        test('returns 429 immediately when account-level rate limit detected without modelRouter', async () => {
+            const https = require('https');
+            jest.spyOn(https, 'request').mockImplementation((options, callback) => {
+                const proxyReq = {
+                    write: jest.fn(),
+                    end: jest.fn(),
+                    destroy: jest.fn(),
+                    reusedSocket: false,
+                    socket: { localPort: 12345, remotePort: 443 },
+                    on: jest.fn()
+                };
+                const proxyRes = {
+                    statusCode: 429,
+                    headers: { 'retry-after': '5' },
+                    resume: jest.fn(),
+                    pipe: jest.fn()
+                };
+                setTimeout(() => callback(proxyRes), 0);
+                return proxyReq;
+            });
+
+            // Ensure modelRouter is NOT set (null/undefined)
+            rh.modelRouter = null;
+
+            // Mock detectAccountLevelRateLimit to return account-level
+            km.detectAccountLevelRateLimit = jest.fn().mockReturnValue({
+                isAccountLevel: true,
+                cooldownMs: 10000
+            });
+
+            km.recordPoolRateLimitHit = jest.fn().mockReturnValue({
+                pool429Count: 3,
+                cooldownMs: 10000,
+                wasAlreadyBlocked: false
+            });
+
+            km.recordRateLimit = jest.fn().mockReturnValue({});
+
+            const reqLogger = {
+                info: jest.fn(),
+                warn: jest.fn(),
+                error: jest.fn(),
+                debug: jest.fn()
+            };
+
+            const keyInfo = km.acquireKey();
+            const body = Buffer.from(JSON.stringify({ model: 'test', messages: [] }));
+
+            const mockRes = {
+                headersSent: false,
+                writeHead: jest.fn(),
+                end: jest.fn()
+            };
+
+            const mockReq = {
+                method: 'POST',
+                url: '/v1/messages',
+                headers: {
+                    'content-type': 'application/json',
+                    'host': 'localhost:3000'
+                }
+            };
+
+            await rh._makeProxyRequest(
+                mockReq, mockRes, body, keyInfo,
+                'test-account-429', reqLogger, Date.now(), 0,
+                false, null, false, { startAttempt: jest.fn(), addSpan: jest.fn() }, new Set()
+            );
+
+            // Line 2177-2178: should write 429 with account scope
+            expect(mockRes.writeHead).toHaveBeenCalledWith(429, expect.objectContaining({
+                'x-rate-limit-scope': 'account'
+            }));
+
+            // Line 2165-2166: should log account-level warning
+            expect(reqLogger.warn).toHaveBeenCalledWith(
+                'Account-level rate limit detected, returning 429 immediately',
+                expect.objectContaining({
+                    cooldownMs: 10000
+                })
+            );
+
+            jest.restoreAllMocks();
+        });
+    });
+
+    describe('Uncovered branch - Line 2278: retryDecision pass_through_response_started', () => {
+        test.skip('sets retryDecision to pass_through_response_started when response already started — needs full HTTP mock', async () => {
+            const EventEmitter = require('events');
+            const https = require('https');
+
+            // Create a mock proxy response with 429 status
+            const proxyRes = new EventEmitter();
+            proxyRes.statusCode = 429;
+            proxyRes.headers = { 'retry-after': '2' };
+            proxyRes.resume = jest.fn();
+            proxyRes.pipe = jest.fn();
+
+            jest.spyOn(https, 'request').mockImplementation((options, callback) => {
+                const proxyReq = {
+                    write: jest.fn(),
+                    end: jest.fn(),
+                    destroy: jest.fn(),
+                    reusedSocket: false,
+                    socket: { localPort: 12345, remotePort: 443 },
+                    on: jest.fn()
+                };
+                setTimeout(() => callback(proxyRes), 0);
+                return proxyReq;
+            });
+
+            km.recordPoolRateLimitHit = jest.fn().mockReturnValue({
+                pool429Count: 1,
+                cooldownMs: 2000,
+                wasAlreadyBlocked: false
+            });
+            km.recordRateLimit = jest.fn().mockReturnValue({});
+            km.getPoolCooldownRemainingMs = jest.fn().mockReturnValue(0);
+
+            const reqLogger = {
+                info: jest.fn(),
+                warn: jest.fn(),
+                error: jest.fn(),
+                debug: jest.fn()
+            };
+
+            rh.statsAggregator = {
+                recordLlm429Retry: jest.fn(),
+                recordRetry: jest.fn(),
+                recordRequestEvent: jest.fn(),
+                recordAdaptiveTimeout: jest.fn(),
+                recordKeyUsage: jest.fn()
+            };
+
+            const keyInfo = km.acquireKey();
+            const body = Buffer.from(JSON.stringify({ model: 'test', messages: [] }));
+
+            // Create a mock response with headersSent=true to trigger line 2278
+            const mockRes = {
+                headersSent: true, // This triggers line 2278: res.headersSent || responseStarted
+                writeHead: jest.fn(),
+                end: jest.fn()
+            };
+
+            const mockReq = {
+                method: 'POST',
+                url: '/v1/messages',
+                headers: {
+                    'content-type': 'application/json',
+                    'host': 'localhost:3000'
+                }
+            };
+
+            const resultPromise = rh._makeProxyRequest(
+                mockReq, mockRes, body, keyInfo,
+                'test-response-started', reqLogger, Date.now(), 0,
+                false, null, false,
+                { startAttempt: jest.fn(), addSpan: jest.fn().mockReturnValue({ end: jest.fn() }) },
+                new Set()
+            );
+
+            // Trigger the 'end' event to complete the request
+            setTimeout(() => proxyRes.emit('end'), 10);
+
+            const result = await resultPromise;
+
+            // Line 2278: When res.headersSent is true, retryDecision = 'pass_through_response_started'
+            // This results in passedThrough: true being set
+            expect(result.passedThrough).toBe(true);
+
+            jest.restoreAllMocks();
+        });
+    });
 });

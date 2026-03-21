@@ -254,4 +254,121 @@ describe('StatsAggregator - Coverage Tests', () => {
             expect(sa.configMigration.writeFailures).toBe(3);
         });
     });
+
+    // ================================================================
+    // 6. Line 337: keyStats.totalRequests += data.requests || 0
+    //    Need truthy data.requests to avoid || 0 branch
+    // ================================================================
+    describe('recordKeyUsage with truthy requests', () => {
+        test('should add requests when data.requests is truthy', () => {
+            // Covers line 337: data.requests is truthy, doesn't use || 0
+            sa.recordKeyUsage('key-test-337', { requests: 5, successes: 5, failures: 0 });
+
+            const stats = sa.stats.keys['key-test-337'];
+            expect(stats.totalRequests).toBe(5);
+        });
+
+        test('should add to totals when data.requests is truthy', () => {
+            // Covers line 344: data.requests is truthy in totals accumulation
+            sa.recordKeyUsage('key-test-344', { requests: 10, successes: 8, failures: 2 });
+
+            expect(sa.stats.totals.requests).toBe(10);
+        });
+    });
+
+    // ================================================================
+    // 7. Line 356: recordModelUsage(model, data = {})
+    //    Need to call without data arg to trigger default parameter
+    // ================================================================
+    describe('recordModelUsage default parameter', () => {
+        test('should use default empty object when data is omitted', () => {
+            // Covers line 356: data = {} default parameter
+            // When called with only model argument, data should default to {}
+            expect(() => {
+                sa.recordModelUsage('default-param-model');
+            }).not.toThrow();
+
+            // Model should exist but with minimal/empty data
+            expect(sa.modelStats.has('default-param-model')).toBe(true);
+        });
+
+        test('should handle undefined data argument explicitly', () => {
+            // Covers line 356: data = {} when undefined is passed
+            sa.recordModelUsage('explicit-undefined', undefined);
+
+            expect(sa.modelStats.has('explicit-undefined')).toBe(true);
+        });
+    });
+
+    // ================================================================
+    // 8. Line 485: successRate when completedRequests > 0
+    // ================================================================
+    describe('getModelStats successRate calculation', () => {
+        test('should calculate successRate when completedRequests > 0', () => {
+            // Covers line 485: ternary true branch, calculates successRate
+            sa.recordModelUsage('success-rate-model', {
+                success: true,
+                latencyMs: 100,
+                inputTokens: 10,
+                outputTokens: 5
+            });
+            sa.recordModelUsage('success-rate-model', {
+                success: true,
+                latencyMs: 150,
+                inputTokens: 15,
+                outputTokens: 10
+            });
+            sa.recordModelUsage('success-rate-model', {
+                success: false,
+                latencyMs: 50,
+                is429: false
+            });
+
+            const modelStats = sa.getModelStats();
+            const stats = modelStats['success-rate-model'];
+
+            // completedRequests = successes + failures = 2 + 1 = 3
+            // successRate = (2 / 3) * 100 = 66.666... rounded to 66.7
+            expect(stats.successRate).toBe(66.7);
+        });
+    });
+
+    // ================================================================
+    // 9. Line 705: recordAdmissionHold with unknown tier
+    //    Need tier NOT in byTier (else case - no increment)
+    // ================================================================
+    describe('recordAdmissionHold with unknown tier', () => {
+        test('should handle unknown tier without incrementing byTier', () => {
+            // Covers line 705: tier NOT in byTier, so no increment
+            // Initialized tiers are: light, medium, heavy
+            const beforeStats = sa.getAdmissionHoldStats();
+
+            // Record with a tier that doesn't exist
+            sa.recordAdmissionHold('unknown-tier');
+
+            const afterStats = sa.getAdmissionHoldStats();
+
+            // Total should increment
+            expect(afterStats.total).toBe(beforeStats.total + 1);
+
+            // But byTier should NOT have unknown-tier
+            expect(afterStats.byTier['unknown-tier']).toBeUndefined();
+
+            // Known tiers should remain at 0
+            expect(afterStats.byTier.light).toBe(0);
+            expect(afterStats.byTier.medium).toBe(0);
+            expect(afterStats.byTier.heavy).toBe(0);
+        });
+
+        test('should increment count for known tiers', () => {
+            // Covers line 705: tier IS in byTier, so increment happens
+            sa.recordAdmissionHold('light');
+            sa.recordAdmissionHold('medium');
+
+            const stats = sa.getAdmissionHoldStats();
+            expect(stats.byTier.light).toBe(1);
+            expect(stats.byTier.medium).toBe(1);
+            expect(stats.total).toBe(2);
+        });
+    });
 });

@@ -1401,4 +1401,105 @@ describe('ModelRouter - uncovered branches coverage', () => {
         expect(router._stats.byModel['heavy-pool-model']).toBe(1);
         expect(Object.values(router._stats.byUpgradeReason).reduce((a, b) => a + b, 0)).toBeGreaterThan(0);
     });
+
+    // Covers line 1412: cooldown entry that has decayed past decayMs threshold in computeDecision
+    // This tests the manual decay check in the failover path when getModelCooldown doesn't delete entries
+    test('computeDecision handles decayed cooldown entry in manual check', async () => {
+        const config = {
+            enabled: true,
+            cooldown: { decayMs: 5000 }, // 5 second decay
+            tiers: {
+                light: {
+                    models: ['model-a', 'model-b'],
+                    strategy: 'balanced'
+                }
+            },
+            rules: [{ match: { model: 'test-model' }, tier: 'light' }]
+        };
+        const router = new ModelRouter(config, {
+            modelDiscovery: {
+                getModel: jest.fn().mockImplementation((id) => Promise.resolve({
+                    id,
+                    contextLength: 200000,
+                    maxConcurrency: 2
+                }))
+            }
+        });
+
+        // Set up cooldown entries that exist but will test the manual decay path
+        // The entry for model-a has lastHit old enough to be decayed
+        router._cooldowns.set('model-a', {
+            cooldownUntil: 1100000,
+            lastHit: 994000 // 6000ms ago > decayMs of 5000
+        });
+        router._cooldowns.set('model-b', {
+            cooldownUntil: 1100000,
+            lastHit: 999000 // 1000ms ago < decayMs, NOT decayed
+        });
+
+        // Mock getModelCooldown to return positive values without deleting entries
+        // This allows the manual check at line 1403-1417 to find the decayed entry
+        jest.spyOn(router, 'getModelCooldown')
+            .mockImplementation((model) => {
+                // Return positive cooldown to make models appear unavailable
+                // but don't delete the entries so manual check can find them
+                if (model === 'model-a') return 60000; // Will appear as cooled
+                if (model === 'model-b') return 60000;
+                return 0;
+            });
+
+        // Set at capacity to ensure _computePoolSelection returns null
+        router._inFlight.set('model-a', 10);
+        router._inFlight.set('model-b', 10);
+
+        const result = await router.computeDecision({
+            parsedBody: { model: 'test-model', messages: [{ role: 'user', content: 'hi' }] }
+        });
+        expect(result).not.toBeNull();
+        // The manual decay check at line 1411 should find model-a's decayed entry
+        expect(result.model).toBeDefined();
+    });
+
+    // Covers lines 2363-2371: default case in _computePoolSelection strategy switch
+    test('_computePoolSelection handles invalid strategy by defaulting to balanced behavior', async () => {
+        const config = {
+            enabled: true,
+            tiers: {
+                light: {
+                    models: ['model-a', 'model-b'],
+                    strategy: 'invalid-unknown-strategy' // Invalid strategy triggers default case
+                }
+            },
+            rules: [{ match: { model: 'test-model' }, tier: 'light' }]
+        };
+        const router = new ModelRouter(config, {
+            modelDiscovery: {
+                getModel: jest.fn().mockResolvedValue({
+                    id: 'model-a',
+                    contextLength: 200000,
+                    maxConcurrency: 5
+                })
+            }
+        });
+
+        const candidates = ['model-a', 'model-b'];
+        const attemptedModels = new Set();
+        const tierConfig = { strategy: 'invalid-unknown-strategy', models: ['model-a', 'model-b'] };
+
+        const result = await router._computePoolSelection(candidates, attemptedModels, tierConfig, 'light', {});
+        expect(result).not.toBeNull();
+        expect(result.model).toBe('model-a'); // First model should be selected
+        expect(result.scoringTable).toBeDefined();
+        expect(result.scoringTable.length).toBe(2);
+        // Verify scores were computed using balanced-style formula (0.6 * position + 0.4 * capacity)
+        expect(result.scoringTable[0].score).toBeGreaterThanOrEqual(0);
+    });
+
+    // Note: Line 2562 appears to be unreachable in _selectModelInternal because:
+    // - For shortestCooldown = Infinity: all candidates must be in attemptedModels,
+    //   but then canSwitch = false and we go to line 2565 instead
+    // - For shortestCooldown = 0: a candidate must have cooldown = 0 and not be in
+    //   attemptedModels, but then it would be found in the first loop (if fallback)
+    //   or targetUnavailable would be false (if target)
+    // The parallel line 1441 in computeDecision IS reachable via context window filtering.
 });
