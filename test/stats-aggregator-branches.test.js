@@ -131,5 +131,47 @@ describe('StatsAggregator - Branch Coverage', () => {
                 done();
             }, 10);
         });
+
+        test('cleanup function returned by addRequestListener should remove listener', () => {
+            // Covers line 1605: anonymous cleanup function returned by addRequestListener
+            const listener = jest.fn();
+
+            // Add listener and get the cleanup function
+            const cleanup = sa.addRequestListener(listener);
+
+            expect(sa.requestListeners.size).toBe(1);
+
+            // Record a request - listener should be called
+            sa.recordRequest({ keyIndex: 0, method: 'POST', path: '/v1/messages' });
+            expect(listener).toHaveBeenCalledTimes(1);
+
+            // Call the cleanup function to remove the listener
+            cleanup();
+
+            expect(sa.requestListeners.size).toBe(0);
+
+            // Record another request - listener should NOT be called
+            jest.clearAllMocks();
+            sa.recordRequest({ keyIndex: 1, method: 'POST', path: '/v1/chat' });
+            expect(listener).not.toHaveBeenCalled();
+        });
+
+        test('cleanup function can be called multiple times safely', () => {
+            // Covers line 1605: cleanup function handles edge cases
+            const listener = jest.fn();
+            const cleanup = sa.addRequestListener(listener);
+
+            expect(sa.requestListeners.size).toBe(1);
+
+            // Call cleanup multiple times - should not throw
+            expect(() => {
+                cleanup();
+                cleanup();
+                cleanup();
+            }).not.toThrow();
+
+            // Listener should still be removed after first call
+            expect(sa.requestListeners.size).toBe(0);
+        });
     });
 });

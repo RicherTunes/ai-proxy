@@ -172,9 +172,9 @@ describe('CostTracker', () => {
             });
 
             // Should still have all default models
-            expect(ct.modelRates['glm-5']).toBeDefined();
             expect(ct.modelRates['glm-5'].inputTokenPer1M).toBe(1.00);
-            expect(ct.modelRates['claude-sonnet-4-5']).toBeDefined();
+            expect(ct.modelRates['claude-sonnet-4-5'].inputTokenPer1M).toBe(3.00);
+            expect(ct.modelRates['claude-sonnet-4-5'].outputTokenPer1M).toBe(15.00);
         });
 
         test('should fallback to default pricing when config invalid', () => {
@@ -187,8 +187,8 @@ describe('CostTracker', () => {
             });
 
             // Should still have all default models
-            expect(ct.modelRates['glm-5']).toBeDefined();
             expect(ct.modelRates['glm-5'].inputTokenPer1M).toBe(1.00);
+            expect(ct.modelRates['glm-5'].outputTokenPer1M).toBe(3.20);
         });
 
         test('should use default pricing path when not specified', () => {
@@ -199,7 +199,8 @@ describe('CostTracker', () => {
             });
 
             // Should still work with defaults
-            expect(ct.modelRates['glm-5']).toBeDefined();
+            expect(ct.modelRates['glm-5'].inputTokenPer1M).toBe(1.00);
+            expect(ct.modelRates['glm-5'].outputTokenPer1M).toBe(3.20);
         });
     });
 
@@ -280,11 +281,12 @@ describe('CostTracker', () => {
             const ct = new CostTracker();
             const result = ct.recordUsage('key1', 1000, 0, 'model');
 
-            expect(result).toBeDefined();
-            expect(result.inputTokens).toBe(1000);
-            expect(result.outputTokens).toBe(0);
-            expect(result.totalTokens).toBe(1000);
-            expect(result.cost).toBeCloseTo(0.003, 6);
+            expect(result).toEqual({
+                cost: 0.003,
+                totalTokens: 1000,
+                inputTokens: 1000,
+                outputTokens: 0
+            });
         });
 
         test('should record usage with non-zero output tokens only', () => {
@@ -293,10 +295,12 @@ describe('CostTracker', () => {
 
             // Implementation: if (!inputTokens && !outputTokens) return;
             // Since outputTokens=1000 is truthy, it proceeds
-            expect(result).toBeDefined();
-            expect(result.inputTokens).toBe(0);
-            expect(result.outputTokens).toBe(1000);
-            expect(result.cost).toBeCloseTo(0.015, 6);
+            expect(result).toEqual({
+                cost: 0.015,
+                totalTokens: 1000,
+                inputTokens: 0,
+                outputTokens: 1000
+            });
         });
 
         test('should accumulate usage across periods', () => {
@@ -422,7 +426,6 @@ describe('CostTracker', () => {
 
             ct.recordUsage('key1', 30000, 30000, 'model');
 
-            expect(alerts[0].remaining).toBeDefined();
             expect(alerts[0].remaining).toBeGreaterThanOrEqual(0);
             expect(alerts[0].budgetLimit).toBe(1.00);
         });
@@ -454,8 +457,9 @@ describe('CostTracker', () => {
             ct.recordUsage('key1', 1000, 500, 'model');
 
             const stats = ct.getStats();
-            expect(stats.avgCostPerRequest).toBeDefined();
-            expect(stats.avgCostPerRequest).toBeGreaterThan(0);
+            // Each call: 1000 input + 500 output = 1500 tokens
+            // Cost per call: 0.003 + 0.0075 = 0.0105, rounded to 4dp = 0.0105
+            expect(stats.avgCostPerRequest).toBe(0.0105);
         });
 
         test('should include budget info when budget set', () => {
@@ -465,9 +469,12 @@ describe('CostTracker', () => {
             ct.recordUsage('key1', 1000, 500, 'model');
 
             const stats = ct.getStats('today');
-            expect(stats.budget).toBeDefined();
-            expect(stats.budget.limit).toBe(10);
-            expect(stats.budget.percentUsed).toBeDefined();
+            expect(stats.budget).toEqual({
+                limit: 10,
+                used: 0.0105,
+                remaining: 9.9895,
+                percentUsed: 0
+            });
         });
 
         test('should return null budget when no budget set', () => {
@@ -479,8 +486,10 @@ describe('CostTracker', () => {
         test('should include current rates', () => {
             const ct = new CostTracker();
             const stats = ct.getStats();
-            expect(stats.rates).toBeDefined();
-            expect(stats.rates.inputTokenPer1M).toBe(3.00);
+            expect(stats.rates).toEqual({
+                inputTokenPer1M: 3.00,
+                outputTokenPer1M: 15.00
+            });
         });
     });
 
@@ -497,8 +506,6 @@ describe('CostTracker', () => {
             ct.recordUsage('key2', 2000, 1000, 'model');
 
             const byKey = ct.getCostByKey();
-            expect(byKey['key1']).toBeDefined();
-            expect(byKey['key2']).toBeDefined();
             expect(byKey['key1'].inputTokens).toBe(1000);
             expect(byKey['key2'].inputTokens).toBe(2000);
         });
@@ -519,8 +526,10 @@ describe('CostTracker', () => {
             ct.recordUsage('key1', 1000000, 1000000, 'model');
 
             const projection = ct.getProjection();
-            expect(projection.daily).toBeDefined();
-            expect(projection.monthly).toBeDefined();
+            expect(projection.daily.current).toBe(18);
+            expect(projection.monthly.current).toBe(18);
+            expect(typeof projection.daily.projected).toBe('number');
+            expect(typeof projection.monthly.projected).toBe('number');
         });
 
         test('should include current and projected values', () => {
@@ -562,16 +571,15 @@ describe('CostTracker', () => {
             ct.recordUsage('key1', 1000, 500, 'model');
 
             const report = ct.getFullReport();
-            expect(report.periods).toBeDefined();
-            expect(report.periods.today).toBeDefined();
-            expect(report.periods.thisWeek).toBeDefined();
-            expect(report.periods.thisMonth).toBeDefined();
-            expect(report.periods.allTime).toBeDefined();
-            expect(report.projection).toBeDefined();
-            expect(report.byKey).toBeDefined();
-            expect(report.history).toBeDefined();
-            expect(report.rates).toBeDefined();
-            expect(report.budget).toBeDefined();
+            expect(report.periods.today.period).toBe('today');
+            expect(report.periods.thisWeek.period).toBe('this_week');
+            expect(report.periods.thisMonth.period).toBe('this_month');
+            expect(report.periods.allTime.period).toBe('all_time');
+            expect(report.projection.daily.current).toBe(0.0105);
+            expect(report.byKey.key1.inputTokens).toBe(1000);
+            expect(Array.isArray(report.history)).toBe(true);
+            expect(report.rates.inputTokenPer1M).toBe(3.00);
+            expect(report.budget.daily).toBe(10);
         });
     });
 
