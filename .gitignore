@@ -9,6 +9,9 @@ coverage/
 
 # Runtime data
 persistent-stats.json
+model-discovery-cache.json
+sessions/
+lib/dummy.json
 
 # Logs
 *.log

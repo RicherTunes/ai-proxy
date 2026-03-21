@@ -532,9 +532,9 @@
                 var histRows = data.history.map(function(o) {
                     var dur = o.durationMs ? (o.durationMs < 60000 ? Math.round(o.durationMs/1000) + 's' : Math.round(o.durationMs/60000) + 'm') : '?';
                     return '<div class="upstream-history-row">' +
-                        '<span>' + new Date(o.startedAt).toLocaleString() + '</span>' +
-                        '<span class="upstream-history-duration">' + dur + '</span>' +
-                        (o.failoverEndpoint ? '<span class="upstream-history-failover">' + o.failoverEndpoint + '</span>' : '') +
+                        '<span>' + escapeHtml(new Date(o.startedAt).toLocaleString()) + '</span>' +
+                        '<span class="upstream-history-duration">' + escapeHtml(String(dur)) + '</span>' +
+                        (o.failoverEndpoint ? '<span class="upstream-history-failover">' + escapeHtml(o.failoverEndpoint) + '</span>' : '') +
                         '</div>';
                 }).join('');
                 histEl.innerHTML = '<h5>Recent Outages</h5>' + histRows;

@@ -1209,7 +1209,7 @@
         var banner = document.createElement('div');
         banner.id = 'smart-banner-' + id;
         banner.className = 'smart-banner smart-banner-' + severity;
-        banner.innerHTML = '<span class="smart-banner-text">' + message + '</span>' +
+        banner.innerHTML = '<span class="smart-banner-text">' + escapeHtml(message) + '</span>' +
             '<button class="smart-banner-close" aria-label="Close">&times;</button>';
         banner.querySelector('.smart-banner-close').addEventListener('click', function() {
             banner.remove();
@@ -2848,7 +2848,7 @@
             var insightsList = document.getElementById('insightsList');
             if (insightsList) {
                 var insights = data.insights || [];
-                insightsList.innerHTML = insights.map(function(ins) { return '<div class="insight ' + ins.type + '">' + ins.message + '</div>'; }).join('');
+                insightsList.innerHTML = insights.map(function(ins) { return '<div class="insight ' + escapeHtml(ins.type) + '">' + escapeHtml(ins.message) + '</div>'; }).join('');
             }
             return true;
         }).catch(function() { /* Silently ignore - comparison endpoint may not exist */
