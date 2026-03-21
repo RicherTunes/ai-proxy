@@ -542,7 +542,7 @@ describe('AdaptiveConcurrencyController', () => {
             const result = controller.setMode('observe_only');
             expect(result.previousMode).toBe('enforce');
             expect(result.currentMode).toBe('observe_only');
-            expect(mockKeyManager.restoreStaticLimits).toHaveBeenCalled();
+            expect(mockKeyManager.restoreStaticLimits).toHaveBeenCalledTimes(1);
         });
 
         test('setMode throws on invalid mode', () => {
@@ -924,7 +924,7 @@ describe('AdaptiveConcurrencyController', () => {
 
             // Stop → should restore static limits
             controller.stop();
-            expect(mockKeyManager.restoreStaticLimits).toHaveBeenCalled();
+            expect(mockKeyManager.restoreStaticLimits).toHaveBeenCalledTimes(1);
         });
 
         test('stop() does not restore static limits in observe_only mode', () => {
@@ -1129,7 +1129,7 @@ describe('AdaptiveConcurrencyController', () => {
             expect(controller.getEffectiveConcurrency('glm-4.5')).toBe(5);
 
             controller.stop();
-            expect(mockKeyManager.restoreStaticLimits).toHaveBeenCalled();
+            expect(mockKeyManager.restoreStaticLimits).toHaveBeenCalledTimes(1);
         });
 
         test('mode toggle from observe_only to enforce pushes current windows', () => {
@@ -1155,7 +1155,7 @@ describe('AdaptiveConcurrencyController', () => {
             controller._tick();
 
             // Now in enforce mode, decrease should be written (5 * 0.5 = 2, clamped to minWindow=1)
-            expect(mockKeyManager.setEffectiveModelLimit).toHaveBeenCalled();
+            expect(mockKeyManager.setEffectiveModelLimit).toHaveBeenCalledWith('glm-4.5', 2);
             expect(controller.getEffectiveConcurrency('glm-4.5')).toBeLessThan(5);
         });
     });

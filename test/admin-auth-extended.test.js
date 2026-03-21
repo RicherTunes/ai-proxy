@@ -269,7 +269,7 @@ describe('AdminAuth Extended Coverage', () => {
             const middleware = auth.middleware();
             middleware(req, res, next);
 
-            expect(next).toHaveBeenCalled();
+            expect(next).toHaveBeenCalledTimes(1);
             expect(res.writeHead).not.toHaveBeenCalled();
             expect(res.end).not.toHaveBeenCalled();
         });
@@ -297,7 +297,7 @@ describe('AdminAuth Extended Coverage', () => {
             const middleware = auth.middleware();
             middleware(req, res, next);
 
-            expect(next).toHaveBeenCalled();
+            expect(next).toHaveBeenCalledTimes(1);
             expect(res.writeHead).not.toHaveBeenCalled();
         });
     });

@@ -45,7 +45,7 @@ describe('Logger', () => {
         test('should log debug messages when level is DEBUG', () => {
             const logger = new Logger({ level: 'DEBUG', output: mockOutput });
             logger.debug('test message');
-            expect(mockOutput.log).toHaveBeenCalled();
+            expect(mockOutput.log).toHaveBeenCalledWith(expect.stringContaining('[DEBUG]'));
         });
 
         test('should not log debug messages when level is INFO', () => {
@@ -57,25 +57,25 @@ describe('Logger', () => {
         test('should log info messages', () => {
             const logger = new Logger({ level: 'INFO', output: mockOutput });
             logger.info('test message');
-            expect(mockOutput.log).toHaveBeenCalled();
+            expect(mockOutput.log).toHaveBeenCalledWith(expect.stringContaining('[INFO]'));
         });
 
         test('should log warn messages', () => {
             const logger = new Logger({ level: 'INFO', output: mockOutput });
             logger.warn('test message');
-            expect(mockOutput.warn).toHaveBeenCalled();
+            expect(mockOutput.warn).toHaveBeenCalledWith(expect.stringContaining('[WARN]'));
         });
 
         test('should log error messages', () => {
             const logger = new Logger({ level: 'INFO', output: mockOutput });
             logger.error('test message');
-            expect(mockOutput.error).toHaveBeenCalled();
+            expect(mockOutput.error).toHaveBeenCalledWith(expect.stringContaining('[ERROR]'));
         });
 
         test('should include context in log messages', () => {
             const logger = new Logger({ level: 'INFO', output: mockOutput });
             logger.info('test message', { foo: 'bar' });
-            expect(mockOutput.log).toHaveBeenCalled();
+            expect(mockOutput.log).toHaveBeenCalledWith(expect.stringContaining('[INFO]'));
             const loggedMessage = mockOutput.log.mock.calls[0][0];
             expect(loggedMessage).toContain('foo=');
         });
@@ -125,7 +125,7 @@ describe('Logger', () => {
 
             logger.setLevel('DEBUG');
             logger.debug('should log');
-            expect(mockOutput.log).toHaveBeenCalled();
+            expect(mockOutput.log).toHaveBeenCalledWith(expect.stringContaining('[DEBUG]'));
         });
     });
 });
