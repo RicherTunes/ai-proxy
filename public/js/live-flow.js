@@ -66,12 +66,13 @@
         if (this.streamEl) {
             this.streamEl.addEventListener('scroll', this._scrollHandler, { passive: true });
         }
+        this._jumpHandler = function() {
+            self._scrollToBottom();
+            self._autoScroll = true;
+            if (self.jumpEl) self.jumpEl.style.display = 'none';
+        };
         if (this.jumpBtn) {
-            this.jumpBtn.addEventListener('click', function() {
-                self._scrollToBottom();
-                self._autoScroll = true;
-                if (self.jumpEl) self.jumpEl.style.display = 'none';
-            });
+            this.jumpBtn.addEventListener('click', this._jumpHandler);
         }
 
         // Probe progress state
@@ -748,15 +749,15 @@
         el.style.cursor = 'pointer';
         el.setAttribute('tabindex', '0');
         el.setAttribute('role', 'button');
-        el.addEventListener('click', function() {
-            self2._toggleRowDetail(el, row);
-        });
-        el.addEventListener('keydown', function(e) {
+        var _onRowClick = function() { self2._toggleRowDetail(el, row); };
+        var _onRowKeydown = function(e) {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 el.click();
             }
-        });
+        };
+        el.addEventListener('click', _onRowClick);
+        el.addEventListener('keydown', _onRowKeydown);
 
         // ID
         var idEl = document.createElement('span');

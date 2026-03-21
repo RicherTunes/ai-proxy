@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "firstSeen": "2026-03-21T19:56:54.592Z",
+  "lastUpdated": "2026-03-21T19:57:54.601Z",
+  "keys": {
+    "testkey1": {
+      "firstSeen": "2026-03-21T19:56:54.613Z",
+      "lastUsed": "2026-03-21T19:56:54.613Z",
+      "totalRequests": 1,
+      "successes": 0,
+      "failures": 1,
+      "keyPrefix": "testkey1"
+    }
+  },
+  "totals": {
+    "requests": 1,
+    "successes": 0,
+    "failures": 1,
+    "retries": 1
+  }
+}

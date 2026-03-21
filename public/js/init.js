@@ -493,7 +493,7 @@
     }
 
     // Listen for hash changes (back/forward button)
-    window.addEventListener('hashchange', function() {
+    var _onHashChange = function() {
         if (isNavigatingFromCode) return; // Prevent loop
 
         var hash = window.location.hash.slice(1);
@@ -512,7 +512,8 @@
             }
             isNavigatingFromCode = false;
         }
-    });
+    };
+    window.addEventListener('hashchange', _onHashChange);
 
     // ========== BREADCRUMB NAVIGATION ==========
     var PAGE_LABELS = {

@@ -1030,12 +1030,12 @@
         var cooldownList = document.getElementById('rlCooldownList');
         if (cooldownList) {
             if (rlStatus.cooldownKeys && rlStatus.cooldownKeys.length > 0) {
-                cooldownList.innerHTML = 'Cooldown: ' + rlStatus.cooldownKeys
+                cooldownList.textContent = 'Cooldown: ' + rlStatus.cooldownKeys
                     .map(function(k) { return 'K' + k.index + ' (' + Math.ceil(k.remainingMs / 1000) + 's)'; })
                     .join(', ');
                 cooldownList.style.color = 'var(--warning)';
             } else {
-                cooldownList.innerHTML = 'All keys available';
+                cooldownList.textContent = 'All keys available';
                 cooldownList.style.color = 'var(--success)';
             }
         }
@@ -1211,9 +1211,8 @@
         banner.className = 'smart-banner smart-banner-' + severity;
         banner.innerHTML = '<span class="smart-banner-text">' + escapeHtml(message) + '</span>' +
             '<button class="smart-banner-close" aria-label="Close">&times;</button>';
-        banner.querySelector('.smart-banner-close').addEventListener('click', function() {
-            banner.remove();
-        });
+        var _onBannerClose = function() { banner.remove(); };
+        banner.querySelector('.smart-banner-close').addEventListener('click', _onBannerClose);
         container.appendChild(banner);
     }
 

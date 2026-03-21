@@ -569,9 +569,8 @@
         retryBtn.style.fontSize = '11px';
         retryBtn.textContent = 'Retry';
         retryBtn.title = 'Reconnect to server';
-        retryBtn.addEventListener('click', function() {
-            reconnectSSE();
-        });
+        var _onRetryClick = function() { reconnectSSE(); };
+        retryBtn.addEventListener('click', _onRetryClick);
         container.appendChild(retryBtn);
     }
 

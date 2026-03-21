@@ -51,6 +51,7 @@ dashboard-test-results.txt
 
 # Temporary files
 *.tmp
+.tmp-*
 nul
 proxy.out
 proxy.err

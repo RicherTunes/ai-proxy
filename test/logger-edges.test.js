@@ -161,6 +161,29 @@ describe('Text format output', () => {
         expect(line).toContain('foo="bar"');
         expect(line).toContain('count=3');
     });
+
+    test('text-format primitive optimisation: numbers and booleans skip JSON.stringify', () => {
+        const log = new Logger({ level: 'INFO', format: 'text', output: out });
+        log.info('perf', { num: 42, flag: true, neg: -3.14, zero: 0, off: false });
+        const line = out.log.mock.calls[0][0];
+        // Numbers and booleans must render identically to JSON.stringify output
+        expect(line).toContain('num=42');
+        expect(line).toContain('flag=true');
+        expect(line).toContain('neg=-3.14');
+        expect(line).toContain('zero=0');
+        expect(line).toContain('off=false');
+        // Strings should still be JSON-quoted
+        log.info('str', { label: 'hello' });
+        const line2 = out.log.mock.calls[1][0];
+        expect(line2).toContain('label="hello"');
+    });
+
+    test('text-format null and undefined context values render correctly', () => {
+        const log = new Logger({ level: 'INFO', format: 'text', output: out });
+        log.info('edge', { a: null });
+        const line = out.log.mock.calls[0][0];
+        expect(line).toContain('a=null');
+    });
 });
 
 // ---------------------------------------------------------------------------

@@ -568,3 +568,79 @@ describe('Group 10: addEventListener in repeatable methods is guarded', () => {
     expect(violations).toEqual([]);
   });
 });
+
+// ============================================================
+// Group 11: No duplicate escapeHtml declarations in routing.js
+// ============================================================
+describe('Group 11: no duplicate escapeHtml in routing.js', () => {
+  test('public/dashboard/routing.js must NOT declare escapeHtml more than once', () => {
+    const routingPath = path.join(__dirname, '..', 'public', 'dashboard', 'routing.js');
+    const content = fs.readFileSync(routingPath, 'utf8');
+
+    // Match all declarations: const escapeHtml, let escapeHtml, var escapeHtml, function escapeHtml
+    const declarations = content.match(/\b(const|let|var|function)\s+escapeHtml\b/g) || [];
+    expect(declarations.length).toBe(1);
+  });
+});
+
+// ============================================================
+// Group 12: Filter chip value must be escaped in filters.js
+// ============================================================
+describe('Group 12: filter chip innerHTML escapes value in filters.js', () => {
+  test('the innerHTML assignment building filter chips wraps value in escapeHtml()', () => {
+    const content = jsFiles['filters.js'];
+    expect(content).toBeDefined();
+
+    // Find the innerHTML assignment that builds filter chips (label + value pattern)
+    const chipInnerHTMLLines = content.split('\n').filter(line =>
+      line.includes('chip.innerHTML') && line.includes('label')
+    );
+    expect(chipInnerHTMLLines.length).toBeGreaterThan(0);
+
+    for (const line of chipInnerHTMLLines) {
+      // The value variable must be wrapped in escapeHtml() before insertion
+      // We check that any occurrence of `+ value +` or `+ value '` is actually `+ escapeHtml(value) +`
+      // i.e., raw `value` should NOT appear unescaped in the innerHTML string
+      const hasUnescapedValue = /\+\s*value\s*\+/.test(line) || /\+\s*value\s*'/.test(line);
+      const hasEscapedValue = /escapeHtml\(value\)/.test(line);
+      expect(hasUnescapedValue && !hasEscapedValue).toBe(false);
+    }
+  });
+});
+
+// ============================================================
+// Group 13: Cooldown list in data.js must escape interpolated values
+// ============================================================
+describe('Group 13: cooldownList innerHTML escapes values in data.js', () => {
+  test('cooldownList innerHTML uses escapeHtml or textContent instead of raw interpolation', () => {
+    const content = jsFiles['data.js'];
+    expect(content).toBeDefined();
+
+    const lines = content.split('\n');
+    // Find the cooldownList innerHTML assignment
+    let cooldownBlock = '';
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes('cooldownList.innerHTML') && lines[i].includes('cooldownKeys')) {
+        // Grab surrounding lines for context (the block may span multiple lines)
+        cooldownBlock = lines.slice(i, Math.min(i + 5, lines.length)).join('\n');
+        break;
+      }
+      // Also match if cooldownList.innerHTML is on one line and cooldownKeys on the next
+      if (lines[i].includes('cooldownList.innerHTML') && i + 1 < lines.length && lines[i + 1].includes('cooldownKeys')) {
+        cooldownBlock = lines.slice(i, Math.min(i + 5, lines.length)).join('\n');
+        break;
+      }
+    }
+
+    // If the block uses innerHTML, it must either:
+    // 1. Use escapeHtml() on interpolated values, OR
+    // 2. Use textContent instead of innerHTML
+    if (cooldownBlock.includes('.innerHTML')) {
+      // The map function building HTML should use escapeHtml on k.index and the remainingMs expression
+      const usesTextContent = cooldownBlock.includes('.textContent');
+      const usesEscapeHtml = cooldownBlock.includes('escapeHtml');
+      expect(usesTextContent || usesEscapeHtml).toBe(true);
+    }
+    // If it uses textContent, that's inherently safe — test passes
+  });
+});

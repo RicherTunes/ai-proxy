@@ -84,7 +84,7 @@
                 chip.setAttribute('aria-label', 'Filter: ' + filterLabels[key] + ' is ' + value + '. Press to remove.');
                 chip.setAttribute('data-filter-key', key);
                 var label = filterLabels[key];
-                chip.innerHTML = '<span>' + label + ': ' + value + '</span>' +
+                chip.innerHTML = '<span>' + label + ': ' + escapeHtml(value) + '</span>' +
                     '<span class="filter-chip-remove" aria-hidden="true">\u2715</span>';
                 chip.addEventListener('click', function() {
                     self.removeFilter(key);
