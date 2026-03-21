@@ -555,4 +555,111 @@ describe('CostTracker Coverage - Uncovered Lines', () => {
             expect(ct.costTimeSeries.times.length).toBe(3);
         });
     });
+
+    describe('Line 1066: Trigger inner catch block via LRUMap.set error', () => {
+        // Covers line 1066: catch block for corrupted field loading
+        // The inner try block (lines 1045-1064) loads byKeyId and costsByTenant into LRUMaps.
+        // If LRUMap.set throws, we should hit the catch block at line 1066.
+        test('_load catches error when LRUMap.set throws during byKeyId loading', () => {
+            const { LRUMap } = require('../lib/lru-map');
+            const testFilePath = path.join(testDir, testFile);
+            const logMessages = [];
+
+            // Create valid data file that will be loaded
+            const data = {
+                schemaVersion: 2,
+                usage: {
+                    today: { inputTokens: 100, outputTokens: 50, totalTokens: 150, cost: 0.001, requests: 1, startedAt: new Date().toISOString() },
+                    thisWeek: { inputTokens: 0, outputTokens: 0, totalTokens: 0, cost: 0, requests: 0, startedAt: new Date().toISOString() },
+                    thisMonth: { inputTokens: 0, outputTokens: 0, totalTokens: 0, cost: 0, requests: 0, startedAt: new Date().toISOString() },
+                    allTime: { inputTokens: 0, outputTokens: 0, totalTokens: 0, cost: 0, requests: 0, startedAt: new Date().toISOString() }
+                },
+                byKeyId: { 'key1': { inputTokens: 100 } },  // This will trigger LRUMap.set
+                costsByTenant: {},
+                hourlyHistory: [],
+                _lastReset: { day: new Date().toISOString().split('T')[0], week: '2025-W01', month: '2025-01' }
+            };
+
+            fs.writeFileSync(testFilePath, JSON.stringify(data, null, 2));
+
+            // Mock LRUMap.set to throw an error
+            const setSpy = jest.spyOn(LRUMap.prototype, 'set').mockImplementation(() => {
+                throw new Error('LRUMap internal error');
+            });
+
+            const ct = new CostTracker({
+                configDir: testDir,
+                persistPath: testFile,
+                logger: {
+                    info: (msg, ctx) => logMessages.push({ level: 'info', msg, ctx }),
+                    warn: (msg, ctx) => logMessages.push({ level: 'warn', msg, ctx }),
+                    error: (msg, ctx) => logMessages.push({ level: 'error', msg, ctx }),
+                    debug: (msg, ctx) => logMessages.push({ level: 'debug', msg, ctx })
+                }
+            });
+
+            // Line 1066 should have been triggered
+            const corruptedWarnings = logMessages.filter(l =>
+                l.level === 'warn' && l.msg.includes('Cost data has corrupted fields')
+            );
+            expect(corruptedWarnings.length).toBeGreaterThan(0);
+            expect(corruptedWarnings[0].msg).toContain('LRUMap internal error');
+
+            setSpy.mockRestore();
+        });
+
+        test('_load catches error when Object.entries throws on byKeyId', () => {
+            const testFilePath = path.join(testDir, testFile);
+            const logMessages = [];
+
+            // Create valid data file
+            const data = {
+                schemaVersion: 2,
+                usage: {
+                    today: { inputTokens: 100, outputTokens: 50, totalTokens: 150, cost: 0.001, requests: 1, startedAt: new Date().toISOString() },
+                    thisWeek: { inputTokens: 0, outputTokens: 0, totalTokens: 0, cost: 0, requests: 0, startedAt: new Date().toISOString() },
+                    thisMonth: { inputTokens: 0, outputTokens: 0, totalTokens: 0, cost: 0, requests: 0, startedAt: new Date().toISOString() },
+                    allTime: { inputTokens: 0, outputTokens: 0, totalTokens: 0, cost: 0, requests: 0, startedAt: new Date().toISOString() }
+                },
+                byKeyId: { 'key1': { inputTokens: 100 } },
+                costsByTenant: {},
+                hourlyHistory: [],
+                _lastReset: { day: new Date().toISOString().split('T')[0], week: '2025-W01', month: '2025-01' }
+            };
+
+            fs.writeFileSync(testFilePath, JSON.stringify(data, null, 2));
+
+            // Mock Object.entries to throw when called with byKeyId data
+            const originalEntries = Object.entries;
+            let callCount = 0;
+            const entriesSpy = jest.spyOn(Object, 'entries').mockImplementation((obj) => {
+                callCount++;
+                // First call is for byKeyId (line 1048), throw on that
+                if (obj && obj.key1 !== undefined && obj.key1.inputTokens === 100) {
+                    throw new Error('Object.entries mocked error');
+                }
+                return originalEntries.call(Object, obj);
+            });
+
+            const ct = new CostTracker({
+                configDir: testDir,
+                persistPath: testFile,
+                logger: {
+                    info: (msg, ctx) => logMessages.push({ level: 'info', msg, ctx }),
+                    warn: (msg, ctx) => logMessages.push({ level: 'warn', msg, ctx }),
+                    error: (msg, ctx) => logMessages.push({ level: 'error', msg, ctx }),
+                    debug: (msg, ctx) => logMessages.push({ level: 'debug', msg, ctx })
+                }
+            });
+
+            // Line 1066 should have been triggered
+            const corruptedWarnings = logMessages.filter(l =>
+                l.level === 'warn' && l.msg.includes('Cost data has corrupted fields')
+            );
+            expect(corruptedWarnings.length).toBeGreaterThan(0);
+            expect(corruptedWarnings[0].msg).toContain('Object.entries mocked error');
+
+            entriesSpy.mockRestore();
+        });
+    });
 });

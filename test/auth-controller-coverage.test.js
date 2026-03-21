@@ -351,4 +351,133 @@ describe('auth-controller - coverage tests', () => {
         });
     });
 
+    describe('handleAuthStatus - fallback to _tokens property (line 131)', () => {
+        // Covers line 131: the _tokens fallback branch when tokens is falsy on second access
+        // Uses a getter so tokens returns a Set for tokensConfigured but null for line 131
+        it('should fall back to _tokens when tokens getter returns null after initial config check', () => {
+            delete mockAdminAuth.peekAuthentication;
+
+            const testToken = 'fallback-test-token';
+            const hashedToken = hashToken(testToken);
+            let tokensAccessCount = 0;
+
+            const authWithGetter = {
+                enabled: true,
+                get tokens() {
+                    tokensAccessCount++;
+                    // First two accesses (line 123 ternary + .size): return Set so tokensConfigured > 0
+                    // Third access (line 131): return null to force _tokens fallback
+                    return tokensAccessCount <= 2 ? new Set([hashedToken]) : null;
+                },
+                _tokens: new Set([hashedToken]),
+                headerName: 'x-admin-token',
+                authenticate: jest.fn(() => ({ authenticated: true })),
+                extractToken: jest.fn(() => testToken)
+            };
+
+            controller._adminAuth = authWithGetter;
+
+            const mockReq = {
+                url: '/auth-status',
+                headers: { host: 'localhost', 'x-admin-token': testToken }
+            };
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                setHeader: jest.fn()
+            };
+
+            controller.handleAuthStatus(mockReq, mockRes);
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            // Should authenticate via _tokens fallback on line 131
+            expect(responseData.authenticated).toBe(true);
+            expect(responseData.tokensConfigured).toBe(1);
+            expect(responseData.tokensRequired).toBe(true);
+        });
+
+        // Covers line 131: the new Set() fallback when both tokens and _tokens are falsy
+        // Uses a getter so tokens returns Set for config but null for comparison,
+        // and _tokens is also falsy → falls through to new Set()
+        it('should fall back to empty Set when both tokens and _tokens are falsy', () => {
+            delete mockAdminAuth.peekAuthentication;
+
+            const testToken = 'orphan-token';
+            const hashedToken = hashToken(testToken);
+            let tokensAccessCount = 0;
+
+            const authWithBothFalsy = {
+                enabled: true,
+                get tokens() {
+                    tokensAccessCount++;
+                    // First two accesses: Set for tokensConfigured > 0
+                    // Third access: null to force fallback chain
+                    return tokensAccessCount <= 2 ? new Set([hashedToken]) : null;
+                },
+                _tokens: null, // Also falsy → falls through to new Set()
+                headerName: 'x-admin-token',
+                authenticate: jest.fn(() => ({ authenticated: true })),
+                extractToken: jest.fn(() => testToken)
+            };
+
+            controller._adminAuth = authWithBothFalsy;
+
+            const mockReq = {
+                url: '/auth-status',
+                headers: { host: 'localhost', 'x-admin-token': testToken }
+            };
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                setHeader: jest.fn()
+            };
+
+            controller.handleAuthStatus(mockReq, mockRes);
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            // Iterating empty Set → no match → authenticated stays false
+            expect(responseData.authenticated).toBe(false);
+            expect(responseData.tokensConfigured).toBe(1);
+            expect(responseData.tokensRequired).toBe(true);
+        });
+
+        // Covers line 131: _tokens fallback path with undefined _tokens
+        it('should fall back to empty Set when _tokens is undefined', () => {
+            delete mockAdminAuth.peekAuthentication;
+
+            const testToken = 'missing-internal-token';
+            const hashedToken = hashToken(testToken);
+            let tokensAccessCount = 0;
+
+            const authWithUndefinedInternal = {
+                enabled: true,
+                get tokens() {
+                    tokensAccessCount++;
+                    return tokensAccessCount <= 2 ? new Set([hashedToken]) : null;
+                },
+                _tokens: undefined, // Falsy → new Set()
+                headerName: 'x-admin-token',
+                authenticate: jest.fn(() => ({ authenticated: true })),
+                extractToken: jest.fn(() => testToken)
+            };
+
+            controller._adminAuth = authWithUndefinedInternal;
+
+            const mockReq = {
+                url: '/auth-status',
+                headers: { host: 'localhost', 'x-admin-token': testToken }
+            };
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                setHeader: jest.fn()
+            };
+
+            controller.handleAuthStatus(mockReq, mockRes);
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.authenticated).toBe(false);
+        });
+    });
+
 });

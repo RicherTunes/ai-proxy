@@ -2257,4 +2257,1340 @@ describe('model-controller - coverage tests', () => {
             expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
         });
     });
+
+    describe('handleModelRouting GET - cluster primary with workers (line 136)', () => {
+        // Covers line 136: isActuallyClustered=true (cluster.isPrimary && workers) but isClusterWorker=false
+        // Tests the branch where the primary has workers but this is not a worker process
+        it('should add cooldowns_not_shared warning on primary with workers but not as worker', async () => {
+            const cluster = require('cluster');
+            const origIsPrimary = cluster.isPrimary;
+            const origWorkers = cluster.workers;
+
+            cluster.isPrimary = true;
+            cluster.workers = { 1: {} };
+
+            const clusterController = new ModelController({
+                modelRouter: mockModelRouter,
+                modelDiscovery: mockModelDiscovery,
+                modelMappingManager: mockModelMappingManager,
+                adminAuth: null,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry,
+                isClusterWorker: false
+            });
+
+            const mockReq = {
+                method: 'GET',
+                url: '/model-routing',
+                headers: { host: 'localhost' }
+            };
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await clusterController.handleModelRouting(mockReq, mockRes);
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.warnings).toContain('cooldowns_not_shared_in_cluster');
+            expect(responseData.warnings).not.toContain('overrides_not_persisted_on_worker');
+
+            cluster.isPrimary = origIsPrimary;
+            cluster.workers = origWorkers;
+        });
+    });
+
+    describe('handleModelRouting PUT - uncovered validation branches (lines 167, 172, 174, 177, 192)', () => {
+        // Covers line 167: normalizationResult.warnings is falsy (undefined) → use []
+        // Covers line 172: normalizedUpdates[key] is undefined → fall back to updates[key]
+        // Covers line 174: normalizedUpdates.version falsy, router version truthy
+        // Covers line 177: router config has no defaultModel → use null
+        // Covers line 192: normalizedUpdates has no tiers → skip deep merge
+        it('should handle normalizer returning no warnings, missing keys, and no defaultModel', async () => {
+            jest.resetModules();
+            jest.doMock('../lib/model-router-normalizer', () => ({
+                normalizeModelRoutingConfig: jest.fn().mockReturnValue({
+                    normalizedConfig: { enabled: true }, // no version, no tiers, no warnings returned
+                    migrated: false
+                    // Intentionally NO warnings property
+                }),
+                computeConfigHash: jest.fn().mockReturnValue('fake-hash'),
+                shouldPersistNormalizedConfig: jest.fn().mockReturnValue(false),
+                updateMigrationMarker: jest.fn()
+            }));
+            jest.doMock('../lib/model-router', () => ({
+                ModelRouter: {
+                    validateConfig: jest.fn().mockReturnValue({ valid: true })
+                }
+            }));
+            jest.doMock('../lib/body-parser', () => ({
+                parseJsonBody: jest.fn().mockResolvedValue({ enabled: true, someExtraKey: 'val' })
+            }));
+            jest.doMock('../lib/content-type-validator', () => ({
+                rejectNonJsonContentType: jest.fn().mockReturnValue(false)
+            }));
+            jest.doMock('../lib/client-ip', () => ({
+                getClientIp: jest.fn().mockReturnValue('127.0.0.1')
+            }));
+            jest.doMock('../lib/atomic-write', () => ({
+                atomicWrite: jest.fn().mockResolvedValue()
+            }));
+
+            const { ModelController: FreshController } = require('../lib/proxy/controllers/model-controller');
+
+            const freshRouter = {
+                config: {
+                    enabled: true,
+                    version: '3.0',
+                    defaultModel: null, // falsy → line 177 uses null
+                    tiers: {
+                        light: { models: ['glm-4-flash'], strategy: 'balanced' }
+                    },
+                    rules: []
+                },
+                toJSON: jest.fn(function() { return { ...this.config }; }),
+                updateConfig: jest.fn()
+            };
+
+            const freshController = new FreshController({
+                modelRouter: freshRouter,
+                modelDiscovery: mockModelDiscovery,
+                modelMappingManager: mockModelMappingManager,
+                adminAuth: null,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry,
+                isClusterWorker: false,
+                getClientIp: jest.fn(() => '127.0.0.1')
+            });
+
+            const bodyStr = JSON.stringify({ enabled: true, someExtraKey: 'val' });
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await freshController.handleModelRouting(mockReq, mockRes);
+
+            // Verify the response was successful
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.success).toBe(true);
+
+            // Verify updateConfig was called with merged config (no tiers deep merge since normalizedUpdates has no tiers)
+            expect(freshRouter.updateConfig).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    enabled: true,
+                    version: '3.0' // From router config fallback (line 174)
+                })
+            );
+
+            jest.restoreAllMocks();
+            jest.resetModules();
+        });
+
+        // Covers line 174: both normalizedUpdates.version and router config version are falsy → use '2.0'
+        it('should fallback to 2.0 when both normalized version and router version are missing', async () => {
+            jest.resetModules();
+            jest.doMock('../lib/model-router-normalizer', () => ({
+                normalizeModelRoutingConfig: jest.fn().mockReturnValue({
+                    normalizedConfig: { enabled: true }, // no version
+                    migrated: false
+                }),
+                computeConfigHash: jest.fn().mockReturnValue('fake-hash'),
+                shouldPersistNormalizedConfig: jest.fn().mockReturnValue(false),
+                updateMigrationMarker: jest.fn()
+            }));
+            jest.doMock('../lib/model-router', () => ({
+                ModelRouter: {
+                    validateConfig: jest.fn().mockReturnValue({ valid: true })
+                }
+            }));
+            jest.doMock('../lib/body-parser', () => ({
+                parseJsonBody: jest.fn().mockResolvedValue({ enabled: true })
+            }));
+            jest.doMock('../lib/content-type-validator', () => ({
+                rejectNonJsonContentType: jest.fn().mockReturnValue(false)
+            }));
+            jest.doMock('../lib/client-ip', () => ({
+                getClientIp: jest.fn().mockReturnValue('127.0.0.1')
+            }));
+            jest.doMock('../lib/atomic-write', () => ({
+                atomicWrite: jest.fn().mockResolvedValue()
+            }));
+
+            const { ModelController: FreshController } = require('../lib/proxy/controllers/model-controller');
+
+            const freshRouter = {
+                config: {
+                    enabled: true,
+                    // no version → undefined
+                    defaultModel: 'glm-4',
+                    tiers: {
+                        light: { models: ['glm-4-flash'], strategy: 'balanced' }
+                    },
+                    rules: []
+                },
+                toJSON: jest.fn(function() { return { ...this.config }; }),
+                updateConfig: jest.fn()
+            };
+
+            const freshController = new FreshController({
+                modelRouter: freshRouter,
+                modelDiscovery: mockModelDiscovery,
+                modelMappingManager: mockModelMappingManager,
+                adminAuth: null,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry,
+                isClusterWorker: false,
+                getClientIp: jest.fn(() => '127.0.0.1')
+            });
+
+            const bodyStr = JSON.stringify({ enabled: true });
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await freshController.handleModelRouting(mockReq, mockRes);
+
+            // Capture what was passed to validateConfig to verify version fallback
+            const { ModelRouter: MockedMR } = require('../lib/model-router');
+            expect(MockedMR.validateConfig).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    version: '2.0' // Fallback when both are missing (line 174)
+                })
+            );
+
+            jest.restoreAllMocks();
+            jest.resetModules();
+        });
+    });
+
+    describe('handleModelRouting PUT - persistence version branch (line 229)', () => {
+        // Covers line 229: mergedConfig.version is falsy → editableFields.version defaults to '2.0'
+        it('should use version 2.0 default when mergedConfig has no version', async () => {
+            jest.resetModules();
+            const writtenFiles = [];
+            jest.doMock('../lib/model-router-normalizer', () => ({
+                normalizeModelRoutingConfig: jest.fn().mockReturnValue({
+                    normalizedConfig: { enabled: true }, // no version
+                    migrated: false
+                }),
+                computeConfigHash: jest.fn().mockReturnValue('hash-abc'),
+                shouldPersistNormalizedConfig: jest.fn().mockReturnValue(true),
+                updateMigrationMarker: jest.fn()
+            }));
+            jest.doMock('../lib/model-router', () => ({
+                ModelRouter: {
+                    validateConfig: jest.fn().mockReturnValue({ valid: true })
+                }
+            }));
+            jest.doMock('../lib/body-parser', () => ({
+                parseJsonBody: jest.fn().mockResolvedValue({ enabled: true })
+            }));
+            jest.doMock('../lib/content-type-validator', () => ({
+                rejectNonJsonContentType: jest.fn().mockReturnValue(false)
+            }));
+            jest.doMock('../lib/client-ip', () => ({
+                getClientIp: jest.fn().mockReturnValue('127.0.0.1')
+            }));
+            jest.doMock('../lib/atomic-write', () => ({
+                atomicWrite: jest.fn().mockImplementation(async (filePath, data) => {
+                    writtenFiles.push({ path: filePath, data });
+                })
+            }));
+
+            const { ModelController: FreshController } = require('../lib/proxy/controllers/model-controller');
+
+            const freshRouter = {
+                config: {
+                    enabled: true,
+                    // no version
+                    defaultModel: 'glm-4',
+                    tiers: {
+                        light: { models: ['glm-4-flash'], strategy: 'balanced' }
+                    },
+                    rules: []
+                },
+                toJSON: jest.fn(function() { return { ...this.config }; }),
+                updateConfig: jest.fn()
+            };
+
+            const freshController = new FreshController({
+                modelRouter: freshRouter,
+                modelDiscovery: mockModelDiscovery,
+                modelMappingManager: mockModelMappingManager,
+                adminAuth: null,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry,
+                isClusterWorker: false,
+                getClientIp: jest.fn(() => '127.0.0.1')
+            });
+
+            freshController._routingPersistence = {
+                enabled: true,
+                configPath: tempConfigPath,
+                lastSavedAt: null,
+                lastSaveError: null,
+                lastLoadError: null
+            };
+
+            const bodyStr = JSON.stringify({ enabled: true });
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await freshController.handleModelRouting(mockReq, mockRes);
+
+            // Verify the persisted file has version: '2.0' (line 229 fallback)
+            const configWrite = writtenFiles.find(f => f.path === tempConfigPath);
+            expect(configWrite).toBeDefined();
+            const persisted = JSON.parse(configWrite.data);
+            expect(persisted.version).toBe('2.0');
+
+            jest.restoreAllMocks();
+            jest.resetModules();
+        });
+    });
+
+    describe('handleModelMappingReset - no adminAuth (line 447)', () => {
+        // Covers line 447: _adminAuth is falsy → skip auth check entirely
+        it('should return deprecation response when adminAuth is null', async () => {
+            const noAuthController = new ModelController({
+                modelRouter: mockModelRouter,
+                modelDiscovery: mockModelDiscovery,
+                modelMappingManager: mockModelMappingManager,
+                adminAuth: null,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry,
+                isClusterWorker: false
+            });
+
+            const mockReq = {
+                method: 'POST',
+                url: '/model-mapping/reset',
+                headers: { host: 'localhost' }
+            };
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await noAuthController.handleModelMappingReset(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.deprecated).toBe(true);
+            expect(responseData.useInstead).toBe('/model-routing');
+        });
+    });
+
+    describe('handleModelMappingKey - no adminAuth (line 475)', () => {
+        // Covers line 475: _adminAuth is falsy → skip auth check entirely
+        it('should return deprecation response on GET when adminAuth is null', async () => {
+            const noAuthController = new ModelController({
+                modelRouter: mockModelRouter,
+                modelDiscovery: mockModelDiscovery,
+                modelMappingManager: mockModelMappingManager,
+                adminAuth: null,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry,
+                isClusterWorker: false
+            });
+
+            const mockReq = {
+                method: 'GET',
+                url: '/model-mapping/keys/0',
+                headers: { host: 'localhost' }
+            };
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await noAuthController.handleModelMappingKey(mockReq, mockRes, '0');
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.deprecated).toBe(true);
+            expect(responseData.override).toBeDefined();
+        });
+
+        // Covers PUT and DELETE on handleModelMappingKey without adminAuth
+        it('should return deprecation response on PUT when adminAuth is null', async () => {
+            const noAuthController = new ModelController({
+                modelRouter: mockModelRouter,
+                modelDiscovery: mockModelDiscovery,
+                modelMappingManager: mockModelMappingManager,
+                adminAuth: null,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry,
+                isClusterWorker: false
+            });
+
+            const mockReq = {
+                method: 'PUT',
+                url: '/model-mapping/keys/0',
+                headers: { host: 'localhost' }
+            };
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await noAuthController.handleModelMappingKey(mockReq, mockRes, '0');
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.deprecated).toBe(true);
+            expect(responseData.message).toContain('deprecated');
+        });
+
+        it('should return deprecation response on DELETE when adminAuth is null', async () => {
+            const noAuthController = new ModelController({
+                modelRouter: mockModelRouter,
+                modelDiscovery: mockModelDiscovery,
+                modelMappingManager: mockModelMappingManager,
+                adminAuth: null,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry,
+                isClusterWorker: false
+            });
+
+            const mockReq = {
+                method: 'DELETE',
+                url: '/model-mapping/keys/0',
+                headers: { host: 'localhost' }
+            };
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await noAuthController.handleModelMappingKey(mockReq, mockRes, '0');
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.deprecated).toBe(true);
+            expect(responseData.message).toContain('deprecated');
+        });
+    });
+
+    describe('handleModelRoutingOverrides - error with custom statusCode (lines 674, 698)', () => {
+        // Covers line 674: catch block in PUT with error having custom statusCode
+        it('should use custom statusCode from error in PUT overrides', async () => {
+            jest.resetModules();
+            jest.doMock('../lib/content-type-validator', () => ({
+                rejectNonJsonContentType: jest.fn().mockReturnValue(false)
+            }));
+            jest.doMock('../lib/body-parser', () => ({
+                parseJsonBody: jest.fn().mockRejectedValue(Object.assign(new Error('Payload Too Large'), { statusCode: 413 }))
+            }));
+
+            const { ModelController: FreshController } = require('../lib/proxy/controllers/model-controller');
+
+            const freshController = new FreshController({
+                modelRouter: mockModelRouter,
+                modelDiscovery: mockModelDiscovery,
+                modelMappingManager: mockModelMappingManager,
+                adminAuth: null,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry,
+                isClusterWorker: false,
+                getClientIp: jest.fn(() => '127.0.0.1')
+            });
+
+            const bodyStr = JSON.stringify({ key: 'test', model: 'glm-4' });
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing/overrides',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await freshController.handleModelRoutingOverrides(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(413, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.error).toBe('Payload Too Large');
+
+            jest.restoreAllMocks();
+            jest.resetModules();
+        });
+
+        // Covers line 698: catch block in DELETE with error having custom statusCode
+        it('should use custom statusCode from error in DELETE overrides', async () => {
+            jest.resetModules();
+            jest.doMock('../lib/content-type-validator', () => ({
+                rejectNonJsonContentType: jest.fn().mockReturnValue(false)
+            }));
+            jest.doMock('../lib/body-parser', () => ({
+                parseJsonBody: jest.fn().mockRejectedValue(Object.assign(new Error('Unsupported Media Type'), { statusCode: 415 }))
+            }));
+
+            const { ModelController: FreshController } = require('../lib/proxy/controllers/model-controller');
+
+            const freshController = new FreshController({
+                modelRouter: mockModelRouter,
+                modelDiscovery: mockModelDiscovery,
+                modelMappingManager: mockModelMappingManager,
+                adminAuth: null,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry,
+                isClusterWorker: false,
+                getClientIp: jest.fn(() => '127.0.0.1')
+            });
+
+            const bodyStr = JSON.stringify({ key: 'test' });
+            const mockReq = Object.assign(new Readable(), {
+                method: 'DELETE',
+                url: '/model-routing/overrides',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await freshController.handleModelRoutingOverrides(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(415, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.error).toBe('Unsupported Media Type');
+
+            jest.restoreAllMocks();
+            jest.resetModules();
+        });
+    });
+
+    describe('handleModelRouting PUT - error with custom statusCode (line 307)', () => {
+        // Covers line 307: catch block with error having custom statusCode
+        it('should use custom statusCode from error in handleModelRouting PUT', async () => {
+            jest.resetModules();
+            jest.doMock('../lib/content-type-validator', () => ({
+                rejectNonJsonContentType: jest.fn().mockReturnValue(false)
+            }));
+            jest.doMock('../lib/body-parser', () => ({
+                parseJsonBody: jest.fn().mockRejectedValue(Object.assign(new Error('Request Entity Too Large'), { statusCode: 413 }))
+            }));
+
+            const { ModelController: FreshController } = require('../lib/proxy/controllers/model-controller');
+
+            const freshController = new FreshController({
+                modelRouter: mockModelRouter,
+                modelDiscovery: mockModelDiscovery,
+                modelMappingManager: mockModelMappingManager,
+                adminAuth: null,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry,
+                isClusterWorker: false,
+                getClientIp: jest.fn(() => '127.0.0.1')
+            });
+
+            const bodyStr = JSON.stringify({ enabled: true });
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await freshController.handleModelRouting(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(413, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.error).toBe('Request Entity Too Large');
+
+            jest.restoreAllMocks();
+            jest.resetModules();
+        });
+    });
+
+    describe('handleModelRoutingImportFromMappings - manager without toConfig (line 809)', () => {
+        // Covers line 809: manager is null or toConfig is not a function
+        it('should return empty rules when manager is null', async () => {
+            const noManagerController = new ModelController({
+                modelRouter: mockModelRouter,
+                modelDiscovery: mockModelDiscovery,
+                modelMappingManager: null, // null manager
+                adminAuth: null,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry,
+                isClusterWorker: false
+            });
+
+            const mockReq = {
+                method: 'GET',
+                url: '/model-routing/import-from-mappings',
+                headers: { host: 'localhost' }
+            };
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await noManagerController.handleModelRoutingImportFromMappings(mockReq, mockRes);
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.rules).toEqual([]);
+            expect(responseData.count).toBe(0);
+        });
+
+        // Covers line 809: manager exists but toConfig is not a function
+        it('should return empty rules when manager.toConfig is not a function', async () => {
+            const badManagerController = new ModelController({
+                modelRouter: mockModelRouter,
+                modelDiscovery: mockModelDiscovery,
+                modelMappingManager: { enabled: false }, // no toConfig method
+                adminAuth: null,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry,
+                isClusterWorker: false
+            });
+
+            const mockReq = {
+                method: 'GET',
+                url: '/model-routing/import-from-mappings',
+                headers: { host: 'localhost' }
+            };
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await badManagerController.handleModelRoutingImportFromMappings(mockReq, mockRes);
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.rules).toEqual([]);
+            expect(responseData.count).toBe(0);
+        });
+    });
+
+    describe('handleModelRoutingEnableSafe - partial user tiers (lines 874-888)', () => {
+        // Covers lines 877-885: false branches when user already provides some tiers
+        it('should not override user-provided tiers when addDefaultRules is true', async () => {
+            const { Readable } = require('stream');
+
+            const bodyStr = JSON.stringify({
+                addDefaultRules: true,
+                updates: {
+                    tiers: {
+                        light: { targetModel: 'my-custom-light', clientModelPolicy: 'always-route' },
+                        // medium and heavy NOT provided → should get defaults
+                        heavy: { targetModel: 'my-custom-heavy', clientModelPolicy: 'rule-match-only' }
+                    },
+                    rules: [{ match: { model: 'my-model' }, tier: 'heavy' }] // non-empty rules → no defaults added
+                }
+            });
+
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing/enable-safe',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            jest.spyOn(ModelRouter, 'validateConfig').mockReturnValue({ valid: true });
+
+            await controller.handleModelRoutingEnableSafe(mockReq, mockRes);
+
+            const mergedConfig = mockModelRouter.updateConfig.mock.calls[0][0];
+
+            // User's custom tiers should be preserved (not overridden by defaults)
+            expect(mergedConfig.tiers.light.targetModel).toBe('my-custom-light');
+            // Medium was NOT provided → gets default
+            expect(mergedConfig.tiers.medium.targetModel).toBe('glm-4.6');
+            // Heavy was provided by user → not overridden
+            expect(mergedConfig.tiers.heavy.targetModel).toBe('my-custom-heavy');
+            // User's rules should be preserved (no default rules added)
+            expect(mergedConfig.rules).toEqual([{ match: { model: 'my-model' }, tier: 'heavy' }]);
+
+            jest.restoreAllMocks();
+        });
+
+        // Covers lines 874-876: updates has no tiers at all
+        it('should create tiers object when updates has no tiers', async () => {
+            const { Readable } = require('stream');
+
+            const bodyStr = JSON.stringify({
+                addDefaultRules: true,
+                updates: {
+                    enabled: true
+                    // no tiers key at all
+                }
+            });
+
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing/enable-safe',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            jest.spyOn(ModelRouter, 'validateConfig').mockReturnValue({ valid: true });
+
+            await controller.handleModelRoutingEnableSafe(mockReq, mockRes);
+
+            const mergedConfig = mockModelRouter.updateConfig.mock.calls[0][0];
+            expect(mergedConfig.tiers).toBeDefined();
+            expect(mergedConfig.tiers.light.targetModel).toBe('glm-4.5-air');
+            expect(mergedConfig.tiers.medium.targetModel).toBe('glm-4.6');
+            expect(mergedConfig.tiers.heavy.targetModel).toBe('glm-4.7');
+
+            jest.restoreAllMocks();
+        });
+    });
+
+    describe('handleModelRoutingEnableSafe - error with custom statusCode (line 945)', () => {
+        // Covers line 945: catch block with error having custom statusCode
+        it('should use custom statusCode from error in enable-safe', async () => {
+            jest.resetModules();
+            jest.doMock('../lib/content-type-validator', () => ({
+                rejectNonJsonContentType: jest.fn().mockReturnValue(false)
+            }));
+            jest.doMock('../lib/body-parser', () => ({
+                parseJsonBody: jest.fn().mockRejectedValue(Object.assign(new Error('Payload Too Large'), { statusCode: 413 }))
+            }));
+
+            const { ModelController: FreshController } = require('../lib/proxy/controllers/model-controller');
+
+            const freshController = new FreshController({
+                modelRouter: mockModelRouter,
+                modelDiscovery: mockModelDiscovery,
+                modelMappingManager: mockModelMappingManager,
+                adminAuth: null,
+                logger: mockLogger,
+                addAuditEntry: mockAddAuditEntry,
+                isClusterWorker: false,
+                getClientIp: jest.fn(() => '127.0.0.1')
+            });
+
+            const bodyStr = JSON.stringify({ addDefaultRules: true });
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing/enable-safe',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            await freshController.handleModelRoutingEnableSafe(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(413, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.error).toBe('Payload Too Large');
+
+            jest.restoreAllMocks();
+            jest.resetModules();
+        });
+    });
+
+    describe('handleModelRoutingEnableSafe - authenticated with enabled auth (line 853)', () => {
+        // Covers line 853: adminAuth.enabled is true and authentication succeeds
+        it('should proceed when admin auth is enabled and user is authenticated', async () => {
+            const { Readable } = require('stream');
+
+            const bodyStr = JSON.stringify({
+                addDefaultRules: false,
+                updates: {
+                    enabled: true,
+                    tiers: {
+                        light: { targetModel: 'glm-4-flash', models: ['glm-4-flash'], strategy: 'balanced' },
+                        medium: { targetModel: 'glm-4', models: ['glm-4'], strategy: 'balanced' },
+                        heavy: { targetModel: 'glm-4-plus', models: ['glm-4-plus'], strategy: 'balanced' }
+                    }
+                }
+            });
+
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing/enable-safe',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            mockAdminAuth.enabled = true;
+            mockAdminAuth.authenticate.mockReturnValue({ authenticated: true });
+
+            jest.spyOn(ModelRouter, 'validateConfig').mockReturnValue({ valid: true });
+
+            await controller.handleModelRoutingEnableSafe(mockReq, mockRes);
+
+            expect(mockAdminAuth.authenticate).toHaveBeenCalledWith(mockReq);
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.success).toBe(true);
+            expect(responseData.message).toBe('Model routing enabled successfully');
+
+            mockAdminAuth.enabled = false;
+            jest.restoreAllMocks();
+        });
+    });
+
+    describe('handleModelRouting PUT - defaultModel null fallback (line 177)', () => {
+        // Covers line 177: router config has no defaultModel → null fallback
+        it('should use null defaultModel when router config has no defaultModel and rules are provided', async () => {
+            const { Readable } = require('stream');
+
+            // Set router config with null defaultModel
+            mockModelRouter.config.defaultModel = null;
+
+            const bodyStr = JSON.stringify({
+                rules: [{ match: { model: 'claude-*' }, tier: 'light' }]
+            });
+
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            // Spy on validateConfig to capture what's passed
+            let capturedKeys = null;
+            jest.spyOn(ModelRouter, 'validateConfig').mockImplementation((keys) => {
+                capturedKeys = keys;
+                return { valid: true };
+            });
+
+            await controller.handleModelRouting(mockReq, mockRes);
+
+            // Verify defaultModel was set to null from router config (line 177 fallback)
+            expect(capturedKeys).toBeDefined();
+            expect(capturedKeys.rules).toBeDefined();
+            expect(capturedKeys.defaultModel).toBeNull();
+
+            jest.restoreAllMocks();
+        });
+    });
+
+    describe('handleModelRoutingEnableSafe - all tiers provided by user (line 880)', () => {
+        // Covers line 880: false branch when user provides all tiers including medium
+        it('should not override user-provided medium tier when all tiers are specified', async () => {
+            const { Readable } = require('stream');
+
+            const bodyStr = JSON.stringify({
+                addDefaultRules: true,
+                updates: {
+                    tiers: {
+                        light: { targetModel: 'custom-light', clientModelPolicy: 'always-route' },
+                        medium: { targetModel: 'custom-medium', clientModelPolicy: 'always-route' },
+                        heavy: { targetModel: 'custom-heavy', clientModelPolicy: 'always-route' }
+                    }
+                }
+            });
+
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing/enable-safe',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            jest.spyOn(ModelRouter, 'validateConfig').mockReturnValue({ valid: true });
+
+            await controller.handleModelRoutingEnableSafe(mockReq, mockRes);
+
+            const mergedConfig = mockModelRouter.updateConfig.mock.calls[0][0];
+            // User's medium tier should be preserved (not replaced by default)
+            expect(mergedConfig.tiers.medium.targetModel).toBe('custom-medium');
+            expect(mergedConfig.tiers.light.targetModel).toBe('custom-light');
+            expect(mergedConfig.tiers.heavy.targetModel).toBe('custom-heavy');
+
+            jest.restoreAllMocks();
+        });
+    });
+
+    describe('handleModelRouting PUT - error without statusCode (line 307)', () => {
+        // Covers line 307: e.statusCode is falsy → use 400 fallback
+        it('should use 400 fallback when error has no statusCode', async () => {
+            const { Readable } = require('stream');
+
+            const bodyStr = JSON.stringify({
+                rules: [{ match: { model: 'test' }, tier: 'light' }]
+            });
+
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            // Make validateConfig throw a regular Error (no statusCode)
+            jest.spyOn(ModelRouter, 'validateConfig').mockImplementation(() => {
+                throw new Error('Internal validation error');
+            });
+
+            await controller.handleModelRouting(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.error).toBe('Internal validation error');
+
+            jest.restoreAllMocks();
+        });
+
+        // Covers line 307: e.message is falsy → use 'Invalid JSON body' fallback
+        it('should use default message when error has no message', async () => {
+            const { Readable } = require('stream');
+
+            const bodyStr = JSON.stringify({
+                rules: [{ match: { model: 'test' }, tier: 'light' }]
+            });
+
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            // Throw object with statusCode but no message
+            jest.spyOn(ModelRouter, 'validateConfig').mockImplementation(() => {
+                throw { statusCode: 413 };
+            });
+
+            await controller.handleModelRouting(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(413, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.error).toBe('Invalid JSON body');
+
+            jest.restoreAllMocks();
+        });
+    });
+
+    describe('handleModelRoutingOverrides - error fallbacks (lines 674, 698)', () => {
+        // Covers line 674: e.statusCode falsy → 400 fallback
+        it('should use 400 fallback in PUT overrides when setOverride throws without statusCode', async () => {
+            const { Readable } = require('stream');
+
+            const bodyStr = JSON.stringify({ key: 'test-key', model: 'glm-4' });
+
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing/overrides',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            // Make setOverride throw a regular Error (no statusCode)
+            mockModelRouter.setOverride.mockImplementationOnce(() => {
+                throw new Error('Database connection failed');
+            });
+
+            await controller.handleModelRoutingOverrides(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.error).toBe('Database connection failed');
+        });
+
+        // Covers line 674: e.message falsy → 'Invalid JSON body' fallback
+        it('should use default message in PUT overrides when error has no message', async () => {
+            const { Readable } = require('stream');
+
+            const bodyStr = JSON.stringify({ key: 'test-key', model: 'glm-4' });
+
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing/overrides',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            // Throw object with statusCode but no message
+            mockModelRouter.setOverride.mockImplementationOnce(() => {
+                throw { statusCode: 500 };
+            });
+
+            await controller.handleModelRoutingOverrides(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(500, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.error).toBe('Invalid JSON body');
+        });
+
+        // Covers line 698: e.statusCode falsy → 400 fallback
+        it('should use 400 fallback in DELETE overrides when clearOverride throws without statusCode', async () => {
+            const { Readable } = require('stream');
+
+            const bodyStr = JSON.stringify({ key: 'test-key' });
+
+            const mockReq = Object.assign(new Readable(), {
+                method: 'DELETE',
+                url: '/model-routing/overrides',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            // Make clearOverride throw a regular Error (no statusCode)
+            mockModelRouter.clearOverride.mockImplementationOnce(() => {
+                throw new Error('Delete failed');
+            });
+
+            await controller.handleModelRoutingOverrides(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.error).toBe('Delete failed');
+        });
+
+        // Covers line 698: e.message falsy → 'Invalid JSON body' fallback
+        it('should use default message in DELETE overrides when error has no message', async () => {
+            const { Readable } = require('stream');
+
+            const bodyStr = JSON.stringify({ key: 'test-key' });
+
+            const mockReq = Object.assign(new Readable(), {
+                method: 'DELETE',
+                url: '/model-routing/overrides',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            // Throw object with statusCode but no message
+            mockModelRouter.clearOverride.mockImplementationOnce(() => {
+                throw { statusCode: 500 };
+            });
+
+            await controller.handleModelRoutingOverrides(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(500, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.error).toBe('Invalid JSON body');
+        });
+    });
+
+    describe('handleModelRoutingEnableSafe - error fallbacks (line 945)', () => {
+        // Covers line 945: e.statusCode falsy → 400 fallback
+        it('should use 400 fallback when validateConfig throws without statusCode', async () => {
+            const { Readable } = require('stream');
+
+            const bodyStr = JSON.stringify({
+                addDefaultRules: false,
+                updates: {
+                    enabled: true,
+                    tiers: {
+                        light: { targetModel: 'glm-4-flash', models: ['glm-4-flash'], strategy: 'balanced' },
+                        medium: { targetModel: 'glm-4', models: ['glm-4'], strategy: 'balanced' },
+                        heavy: { targetModel: 'glm-4-plus', models: ['glm-4-plus'], strategy: 'balanced' }
+                    }
+                }
+            });
+
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing/enable-safe',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            // Make validateConfig throw a regular Error (no statusCode)
+            jest.spyOn(ModelRouter, 'validateConfig').mockImplementation(() => {
+                throw new Error('Tier validation crashed');
+            });
+
+            await controller.handleModelRoutingEnableSafe(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.error).toBe('Tier validation crashed');
+
+            jest.restoreAllMocks();
+        });
+
+        // Covers line 945: e.message falsy → 'Invalid request body' fallback
+        it('should use default message when error has no message', async () => {
+            const { Readable } = require('stream');
+
+            const bodyStr = JSON.stringify({
+                addDefaultRules: false,
+                updates: {
+                    enabled: true,
+                    tiers: {
+                        light: { targetModel: 'glm-4-flash', models: ['glm-4-flash'], strategy: 'balanced' },
+                        medium: { targetModel: 'glm-4', models: ['glm-4'], strategy: 'balanced' },
+                        heavy: { targetModel: 'glm-4-plus', models: ['glm-4-plus'], strategy: 'balanced' }
+                    }
+                }
+            });
+
+            const mockReq = Object.assign(new Readable(), {
+                method: 'PUT',
+                url: '/model-routing/enable-safe',
+                headers: {
+                    host: 'localhost',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(bodyStr).toString()
+                },
+                _read() { this.push(bodyStr); this.push(null); }
+            });
+
+            const mockRes = {
+                writeHead: jest.fn(),
+                end: jest.fn(),
+                headersSent: false
+            };
+
+            // Make validateConfig throw an object with statusCode but no message
+            jest.spyOn(ModelRouter, 'validateConfig').mockImplementation(() => {
+                throw { statusCode: 500 };
+            });
+
+            await controller.handleModelRoutingEnableSafe(mockReq, mockRes);
+
+            expect(mockRes.writeHead).toHaveBeenCalledWith(500, expect.objectContaining({
+                'content-type': 'application/json'
+            }));
+
+            const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
+            expect(responseData.error).toBe('Invalid request body');
+
+            jest.restoreAllMocks();
+        });
+    });
 });

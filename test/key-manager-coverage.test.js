@@ -1042,4 +1042,157 @@ describe('KeyManager - Coverage', () => {
             expect(secondCount).toBe(1); // Same count
         });
     });
+
+    // =========================================================================
+    // 27. _handleNoAvailableKeys reduce both branches (line 599)
+    // =========================================================================
+    describe('_handleNoAvailableKeys reduce ternary branches', () => {
+        // Covers line 599 branch 0: a.inFlight <= b.inFlight is true (return a)
+        test('returns key with lower inFlight first (leftmost wins tie)', () => {
+            km = createKm();
+            km.loadKeys(['key1.secret1', 'key2.secret2', 'key3.secret3']);
+
+            // All keys rate limited but with different inFlight values
+            km.keys[0].rateLimitedAt = Date.now();
+            km.keys[0].rateLimitCooldownMs = 60000;
+            km.keys[0].inFlight = 1; // Lowest
+
+            km.keys[1].rateLimitedAt = Date.now();
+            km.keys[1].rateLimitCooldownMs = 60000;
+            km.keys[1].inFlight = 3;
+
+            km.keys[2].rateLimitedAt = Date.now();
+            km.keys[2].rateLimitCooldownMs = 60000;
+            km.keys[2].inFlight = 5;
+
+            const result = km.getBestKey();
+            expect(result).not.toBeNull();
+            // Should return key with lowest inFlight (key1 with 1)
+            expect(result.inFlight).toBe(1);
+        });
+
+        // Covers line 599 branch 1: a.inFlight <= b.inFlight is false (return b)
+        test('returns key with lower inFlight when first key has higher value', () => {
+            km = createKm();
+            km.loadKeys(['key1.secret1', 'key2.secret2']);
+
+            // First key has higher inFlight
+            km.keys[0].rateLimitedAt = Date.now();
+            km.keys[0].rateLimitCooldownMs = 60000;
+            km.keys[0].inFlight = 5;
+
+            // Second key has lower inFlight
+            km.keys[1].rateLimitedAt = Date.now();
+            km.keys[1].rateLimitCooldownMs = 60000;
+            km.keys[1].inFlight = 1;
+
+            const result = km.getBestKey();
+            expect(result).not.toBeNull();
+            expect(result.inFlight).toBe(1);
+            expect(result.index).toBe(1);
+        });
+    });
+
+    // =========================================================================
+    // 28. recordSelection with competingKeys = 0 (line 1437)
+    // =========================================================================
+    describe('recordSelection competingKeys fallback', () => {
+        // Covers line 1437: `params.competingKeys || 0` fallback
+        test('defaults competingKeys to 0 when not provided', () => {
+            km = createKm();
+            km.loadKeys(['key1.secret1']);
+
+            // Record selection without competingKeys
+            km.recordSelection({
+                requestId: 'req-123',
+                keyIndex: 0,
+                keyId: 'key1',
+                reason: 'health_score_winner',
+                healthScore: 85,
+                excludedKeys: []
+                // No competingKeys provided - should default to 0
+            });
+
+            const stats = km.getSchedulerStats();
+            expect(stats.totalDecisions).toBeGreaterThanOrEqual(1);
+        });
+    });
+
+    // =========================================================================
+    // 29. getKeySnapshot with null histogram (line 1653) and null keyState (line 1666)
+    // =========================================================================
+    describe('getKeySnapshot histogram and state fallbacks', () => {
+        // Covers line 1653: histogram ? ... : null - null branch
+        test('returns null latency when getKeyHistogram returns null', () => {
+            km = createKm();
+            km.loadKeys(['key1.secret1']);
+
+            // Mock histogram aggregator to return null
+            km.histogramAggregator.getKeyHistogram = jest.fn(() => null);
+
+            const snapshot = km.getKeySnapshot(0);
+            expect(snapshot).not.toBeNull();
+            expect(snapshot.latency).toBeNull();
+        });
+
+        // Covers line 1666: keyState || 'unknown' - fallback branch
+        test('returns unknown state when scheduler getKeyState returns null', () => {
+            km = createKm();
+            km.loadKeys(['key1.secret1']);
+
+            // Mock scheduler to return null for getKeyState
+            const originalGetKeyState = km.scheduler.getKeyState;
+            km.scheduler.getKeyState = jest.fn(() => null);
+
+            const snapshot = km.getKeySnapshot(0);
+            expect(snapshot).not.toBeNull();
+            expect(snapshot.state).toBe('unknown');
+
+            km.scheduler.getKeyState = originalGetKeyState;
+        });
+    });
+
+    // =========================================================================
+    // 30. destroy with null scheduler/keys (lines 1758, 1762, 1764)
+    // =========================================================================
+    describe('destroy with missing components', () => {
+        // Covers line 1758: if (this.scheduler) else branch
+        test('handles destroy when scheduler is null', () => {
+            km = createKm();
+            km.loadKeys(['key1.secret1']);
+
+            // Set scheduler to null
+            km.scheduler = null;
+
+            // Should not throw
+            expect(() => km.destroy()).not.toThrow();
+            km = null; // Prevent afterEach from calling destroy again
+        });
+
+        // Covers line 1762: if (this.keys) else branch
+        test('handles destroy when keys is null', () => {
+            km = createKm();
+            km.loadKeys(['key1.secret1']);
+
+            // Set keys to null
+            km.keys = null;
+
+            // Should not throw
+            expect(() => km.destroy()).not.toThrow();
+            km = null;
+        });
+
+        // Covers line 1764: key without circuitBreaker.destroy
+        test('handles destroy when key circuitBreaker has no destroy method', () => {
+            km = createKm();
+            km.loadKeys(['key1.secret1']);
+
+            // Replace circuitBreaker with one that has no destroy
+            km.keys[0].circuitBreaker = { state: 'CLOSED' };
+
+            // Should not throw
+            expect(() => km.destroy()).not.toThrow();
+            km = null;
+        });
+    });
 });
