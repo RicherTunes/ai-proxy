@@ -112,8 +112,8 @@ describe('RequestHandler', () => {
             const stats = rh.getBackpressureStats();
 
             expect(stats.queue).toBeDefined();
-            expect(stats.queue.current).toBeDefined();
-            expect(stats.queue.max).toBeDefined();
+            expect(stats.queue.current).toBe(0);
+            expect(stats.queue.max).toBe(100);
         });
     });
 

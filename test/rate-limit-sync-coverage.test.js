@@ -93,7 +93,8 @@ describe('RateLimitSync – coverage tests', () => {
             const sync = new RateLimitSync({ enabled: false });
             // Should not throw - uses default empty object for deps
             expect(sync._config.enabled).toBe(false);
-            expect(sync._logger).toBeDefined(); // default logger
+            expect(typeof sync._logger.info).toBe('function');
+            expect(typeof sync._logger.warn).toBe('function');
         });
 
         // Covers line 47: both parameters omitted
@@ -101,7 +102,8 @@ describe('RateLimitSync – coverage tests', () => {
             const sync = new RateLimitSync();
             // Should use all defaults
             expect(sync._config.enabled).toBe(true);
-            expect(sync._logger).toBeDefined();
+            expect(typeof sync._logger.info).toBe('function');
+            expect(typeof sync._logger.warn).toBe('function');
         });
     });
 
@@ -114,7 +116,15 @@ describe('RateLimitSync – coverage tests', () => {
             const customLogger = { info: jest.fn(), warn: jest.fn(), debug: jest.fn(), error: jest.fn() };
             const sync = new RateLimitSync({}, { logger: customLogger, keyManager });
             sync.start();
-            expect(customLogger.info).toHaveBeenCalled();
+            expect(customLogger.info).toHaveBeenCalledWith(
+                'RateLimitSync started',
+                expect.objectContaining({
+                    tickIntervalMs: 30000,
+                    quorumSize: 3,
+                    ceilingProbeEnabled: true,
+                    cachedModels: 0
+                })
+            );
             sync.stop();
         });
 
@@ -124,10 +134,10 @@ describe('RateLimitSync – coverage tests', () => {
             // start() triggers this._logger.info() call
             sync.start();
             // The default logger methods exist and are called
-            expect(sync._logger.info).toBeDefined();
-            expect(sync._logger.warn).toBeDefined();
-            expect(sync._logger.debug).toBeDefined();
-            expect(sync._logger.error).toBeDefined();
+            expect(typeof sync._logger.info).toBe('function');
+            expect(typeof sync._logger.warn).toBe('function');
+            expect(typeof sync._logger.debug).toBe('function');
+            expect(typeof sync._logger.error).toBe('function');
             sync.stop();
         });
 
@@ -151,7 +161,7 @@ describe('RateLimitSync – coverage tests', () => {
 
             sync.start();
             // The default logger methods were called without throwing
-            expect(sync._logger.info).toBeDefined();
+            expect(typeof sync._logger.info).toBe('function');
             sync.stop();
             readSpy.mockRestore();
         });

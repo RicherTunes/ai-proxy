@@ -1310,8 +1310,8 @@ describeIfModule('model-controller', () => {
             const mockRes = { writeHead: jest.fn(), end: jest.fn(), setHeader: jest.fn() };
             await controller.handleModelMapping(mockReq, mockRes);
             const data = JSON.parse(mockRes.end.mock.calls[0][0]);
-            expect(data.config).toBeDefined();
-            expect(data.keyOverrides).toBeDefined();
+            expect(data.config).toEqual({ mapping: {} });
+            expect(data.keyOverrides).toEqual({});
         });
 
         it('should return a deprecation message', async () => {
@@ -1387,7 +1387,7 @@ describeIfModule('model-controller', () => {
             const data = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(data.deprecated).toBe(true);
             expect(data.useInstead).toBe('/model-routing');
-            expect(data.deprecationDate).toBeDefined();
+            expect(data.deprecationDate).toBe('2026-06-01');
         });
 
         it('PUT returns deprecation no-op without calling setKeyOverride', async () => {
@@ -1468,7 +1468,7 @@ describeIfModule('model-controller', () => {
             const mockRes = { writeHead: jest.fn(), end: jest.fn(), setHeader: jest.fn() };
             controller.handleModelSelection(mockReq, mockRes);
             const data = JSON.parse(mockRes.end.mock.calls[0][0]);
-            expect(data.systems['model-mapping'].deprecationDate).toBeDefined();
+            expect(data.systems['model-mapping'].deprecationDate).toBe('2026-06-01');
             expect(data.systems['model-mapping'].useInstead).toBe('/model-routing');
         });
     });
@@ -1669,7 +1669,7 @@ describeIfModule('model-controller', () => {
             expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.success).toBe(false);
-            expect(responseData.validationErrors).toBeDefined();
+            expect(responseData.validationErrors).toEqual(['Tier "broken" is missing a valid targetModel']);
         });
 
         it('should add audit entry on success', async () => {

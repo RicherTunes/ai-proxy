@@ -412,9 +412,7 @@ describe('persistence-coverage: uncovered branches', () => {
             const result = await persistence.save(stats);
 
             expect(result).toBe(true);
-            expect(mockLogger.info).toHaveBeenCalled();
-            const logMessage = mockLogger.info.mock.calls[0][0];
-            expect(logMessage).toContain('Saved persistent stats');
+            expect(mockLogger.info).toHaveBeenCalledWith(`Saved persistent stats to ${statsPath}`, {});
         });
 
         // Covers line 183: stats object merging
@@ -430,7 +428,7 @@ describe('persistence-coverage: uncovered branches', () => {
             const content = JSON.parse(fs.readFileSync(statsPath, 'utf8'));
             expect(content.schemaVersion).toBe(1);
             expect(content.customField).toBe('custom');
-            expect(content.lastUpdated).toBeDefined();
+            expect(content.lastUpdated).toMatch(/^\d{4}-\d{2}-\d{2}T/);
         });
     });
 

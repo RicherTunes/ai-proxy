@@ -302,7 +302,7 @@ describe('KeyScheduler Extended Coverage', () => {
             const score1 = fairScheduler._calculateHealthScore(key1, [key0, key1]);
 
             // key1 gets strong boost due to being < 70% of expected
-            expect(score1.fairnessBoost).toBeGreaterThan(0);
+            expect(score1.fairnessBoost).toBe(30);
         });
 
         // Line 644: Starvation boost
@@ -337,10 +337,8 @@ describe('KeyScheduler Extended Coverage', () => {
             const score = fairScheduler._calculateHealthScore(key0, [key0, key1]);
 
             // Should get starvation boost (25 points) OR underuse boost
-            expect(score.fairnessBoost).toBeGreaterThan(0);
-            // The starvation boost of 25 is only applied if not already underused
-            // Since key0 is underused (20%), it gets the underuse boost instead
-            expect(score.fairnessBoost).toBeGreaterThanOrEqual(15);
+            // key0 is underused (20%), so it gets the underuse boost (30)
+            expect(score.fairnessBoost).toBe(30);
         });
     });
 
@@ -362,8 +360,8 @@ describe('KeyScheduler Extended Coverage', () => {
             // With circuits closed and all at max concurrency,
             // the scheduler finds keys with inFlight < max (which these aren't)
             // But the circuit recovery path may still provide a key
-            // Let's verify the logic is correct
-            expect(result.key).toBeDefined();
+            // All keys excluded → fallback picks least loaded (key0 since all equal)
+            expect(result.key.index).toBe(0);
         });
 
         // Line 722: Non-rate-limited filtering edge case
@@ -473,7 +471,7 @@ describe('KeyScheduler Extended Coverage', () => {
             Math.random = originalRandom;
 
             // Should have selected a key via weighted random
-            expect(result.key).not.toBeNull();
+            expect([0, 1, 2]).toContain(result.key.index);
         });
 
         test('should use fallback when random selection exhausts', () => {
@@ -482,7 +480,7 @@ describe('KeyScheduler Extended Coverage', () => {
 
             const result = scheduler.selectKey({ keys });
 
-            expect(result.key).not.toBeNull();
+            expect([0, 1]).toContain(result.key.index);
             expect([ReasonCodes.HEALTH_SCORE_WINNER, ReasonCodes.WEIGHTED_RANDOM, ReasonCodes.FAIRNESS_BOOST])
                 .toContain(result.context.reason);
         });
@@ -514,8 +512,8 @@ describe('KeyScheduler Extended Coverage', () => {
 
             // The circuit recovery path (lines 834-850) will try to force HALF_OPEN first
             // So we may get CIRCUIT_RECOVERY instead of FORCED_FALLBACK
-            // To get FORCED_FALLBACK, all circuits must stay OPEN after recovery attempt fails
-            expect(result.key).not.toBeNull();
+            // Oldest OPEN circuit (key0) gets forced to HALF_OPEN
+            expect(result.key.index).toBe(0);
             expect([ReasonCodes.CIRCUIT_RECOVERY, ReasonCodes.FORCED_FALLBACK]).toContain(result.context.reason);
         });
 
@@ -583,7 +581,7 @@ describe('KeyScheduler Extended Coverage', () => {
             const keys = [createMockKey(0)];
             scheduler.startScoreUpdater(keys);
 
-            expect(scheduler._scoreUpdateInterval).not.toBeNull();
+            expect(typeof scheduler._scoreUpdateInterval).toBe('object');
 
             scheduler.destroy();
 
@@ -622,9 +620,9 @@ describe('KeyScheduler Extended Coverage', () => {
 
             const score = scheduler.getCachedScore(key, keys);
 
-            // Should have recalculated
-            expect(score).toBeDefined();
-            expect(score.total).toBeDefined();
+            // Should have recalculated with default scores (100 total)
+            expect(score).toEqual(expect.objectContaining({ total: 100 }));
+            expect(score.total).toBe(100);
         });
     });
 
@@ -656,7 +654,7 @@ describe('KeyScheduler Extended Coverage', () => {
             const keys = [createMockKey(0), createMockKey(1)];
             const result = fairScheduler.selectKey({ keys });
 
-            expect(result.context).toBeDefined();
+            expect(result.context).toBeInstanceOf(SelectionContext);
         });
     });
 
@@ -687,7 +685,7 @@ describe('KeyScheduler Extended Coverage', () => {
 
             const result = scheduler.selectKey({ keys });
 
-            expect(result.key).not.toBeNull();
+            expect([0, 1, 2]).toContain(result.key.index);
             expect(result.key.circuitBreaker.state).toBe(STATES.HALF_OPEN);
         });
 
@@ -718,9 +716,13 @@ describe('KeyScheduler Extended Coverage', () => {
 
             const stats = scheduler.getStats();
 
-            expect(stats.poolState).toBeDefined();
-            expect(stats.decisions).toBeDefined();
-            expect(stats.config).toBeDefined();
+            expect(stats.poolState.state).toBe(PoolState.HEALTHY);
+            expect(stats.decisions.totalDecisions).toBe(1);
+            expect(stats.config).toEqual({
+                useWeightedSelection: true,
+                fairnessMode: 'soft',
+                maxConcurrencyPerKey: 3
+            });
             expect(stats.config.useWeightedSelection).toBe(true);
         });
 
@@ -756,7 +758,10 @@ describe('KeyScheduler Extended Coverage', () => {
 
             logScheduler.quarantineKey(key, 'slow');
 
-            expect(mockLogger.warn).toHaveBeenCalled();
+            expect(mockLogger.warn).toHaveBeenCalledWith(
+                'Key key0 quarantined: slow',
+                { keyIndex: 0, duration: 60000 }
+            );
         });
 
         // Line 341: startScoreUpdater with interval
@@ -766,7 +771,7 @@ describe('KeyScheduler Extended Coverage', () => {
             const keys = [createMockKey(0)];
             scheduler.startScoreUpdater(keys);
 
-            expect(scheduler._scoreUpdateInterval).not.toBeNull();
+            expect(typeof scheduler._scoreUpdateInterval).toBe('object');
 
             // Fast-forward time
             jest.advanceTimersByTime(1000);
@@ -846,8 +851,8 @@ describe('KeyScheduler Extended Coverage', () => {
             const result = scheduler.selectKey({ keys });
 
             // The scheduler will handle this via fallback mechanisms
-            // If all are at max, it may still return a key through recovery logic
-            expect(result.key).toBeDefined();
+            // All keys excluded → fallback picks least loaded (key0 since all equal)
+            expect(result.key.index).toBe(0);
         });
 
         // Line 752: RATE_LIMIT_ROTATED with precise conditions
@@ -896,8 +901,8 @@ describe('KeyScheduler Extended Coverage', () => {
 
             Math.random = originalRandom;
 
-            // Should use fallback and return top-scored key
-            expect(result.key).not.toBeNull();
+            // Should use fallback and return top-scored key (key0, identical scores)
+            expect(result.key.index).toBe(0);
             // Reason could be HEALTH_SCORE_WINNER or FAIRNESS_BOOST depending on scoring
             expect([ReasonCodes.HEALTH_SCORE_WINNER, ReasonCodes.FAIRNESS_BOOST]).toContain(result.context.reason);
         });
@@ -927,8 +932,8 @@ describe('KeyScheduler Extended Coverage', () => {
 
             const result = scheduler.selectKey({ keys });
 
-            // Should eventually pick least loaded after circuit reset
-            expect(result.key).not.toBeNull();
+            // Oldest OPEN circuit (key0) gets forced to HALF_OPEN for recovery
+            expect(result.key.index).toBe(0);
         });
 
         test('should handle circuit recovery path correctly', () => {
@@ -967,8 +972,8 @@ describe('KeyScheduler Extended Coverage', () => {
 
             // With maxConcurrencyPerKey=2 and inFlight=2, underLimit should be empty
             // This triggers lines 714-716 which return null with EXCLUDED_AT_MAX_CONCURRENCY
-            // However, the fallback logic may still provide a key
-            expect(result).toBeDefined();
+            // However, the fallback logic picks least loaded (key0 since all equal)
+            expect(result.key.index).toBe(0);
         });
 
         // Direct test for line 752: RATE_LIMIT_ROTATED
@@ -1021,10 +1026,10 @@ describe('KeyScheduler Extended Coverage', () => {
 
             Math.random = originalRandom;
 
-            // Should return top key via fallback
-            expect(result.key).not.toBeNull();
+            // Should return top key via fallback (key0 has higher score)
+            expect(result.key.index).toBe(0);
             // The fairness system might give a boost, changing the reason
-            expect(result.context.reason).toBeDefined();
+            expect([ReasonCodes.HEALTH_SCORE_WINNER, ReasonCodes.FAIRNESS_BOOST]).toContain(result.context.reason);
         });
     });
 });
