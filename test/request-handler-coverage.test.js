@@ -772,13 +772,15 @@ describe('RequestHandler Coverage Tests', () => {
                 releaseModel: jest.fn()
             };
 
-            // Mock _makeProxyRequest to return 429s with shouldRetry=true
+            // Mock _makeProxyRequest to return 429s with shouldRetry=true.
+            // shouldExcludeKey: false so keys aren't drained (only 2 keys in km),
+            // letting the max429RetryWindowMs window check drive the give-up.
             jest.spyOn(routerRh, '_makeProxyRequest')
                 .mockResolvedValue({
                     success: false,
                     errorType: 'rate_limited',
                     shouldRetry: true,
-                    shouldExcludeKey: true,
+                    shouldExcludeKey: false,
                     retryAfterMs: 1,
                     evidence: { source: 'upstream' },
                     mappedModel: 'glm-4'
