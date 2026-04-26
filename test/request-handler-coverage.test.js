@@ -753,7 +753,8 @@ describe('RequestHandler Coverage Tests', () => {
                 }
             });
 
-            // Mock modelRouter with short failover window
+            // Mock modelRouter with a zero-ms window so the give-up fires on the very
+            // first 429 (elapsed >= 0 is always true), before any key is excluded.
             routerRh.modelRouter = {
                 selectModel: jest.fn().mockResolvedValue({
                     model: 'glm-4',
@@ -764,23 +765,20 @@ describe('RequestHandler Coverage Tests', () => {
                 config: {
                     logDecisions: false,
                     failover: {
-                        max429AttemptsPerRequest: 100, // High attempt limit
-                        max429RetryWindowMs: 5 // 5ms window - very short
+                        max429AttemptsPerRequest: 100,
+                        max429RetryWindowMs: 0 // 0ms → elapsed >= 0 always true
                     }
                 },
                 acquireModel: jest.fn(),
                 releaseModel: jest.fn()
             };
 
-            // Mock _makeProxyRequest to return 429s with shouldRetry=true.
-            // shouldExcludeKey: false so keys aren't drained (only 2 keys in km),
-            // letting the max429RetryWindowMs window check drive the give-up.
             jest.spyOn(routerRh, '_makeProxyRequest')
                 .mockResolvedValue({
                     success: false,
                     errorType: 'rate_limited',
                     shouldRetry: true,
-                    shouldExcludeKey: false,
+                    shouldExcludeKey: true,
                     retryAfterMs: 1,
                     evidence: { source: 'upstream' },
                     mappedModel: 'glm-4'
@@ -803,9 +801,6 @@ describe('RequestHandler Coverage Tests', () => {
                     'host': 'localhost:3000'
                 }
             };
-
-            // Wait to exceed the 5ms window
-            await new Promise(resolve => setTimeout(resolve, 10));
 
             const RequestTrace = require('../lib/request-trace').RequestTrace;
             const trace = new RequestTrace({
