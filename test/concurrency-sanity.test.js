@@ -655,9 +655,9 @@ describe('C4: Ceiling probe bounded growth', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe('Feature: probeOnStartup config and behavior', () => {
-  test('probeOnStartup defaults to true in config (security.modelDiscovery)', () => {
+  test('probeOnStartup defaults to false in config (security.modelDiscovery)', () => {
     const { DEFAULT_CONFIG } = require('../lib/config');
-    expect(DEFAULT_CONFIG.security.modelDiscovery.probeOnStartup).toBe(true);
+    expect(DEFAULT_CONFIG.security.modelDiscovery.probeOnStartup).toBe(false);
   });
 
   test('probeOnStartup can be overridden to false', () => {
