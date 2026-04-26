@@ -1666,8 +1666,9 @@ describe('model_at_capacity error strategy', () => {
         const km = createKeyManager();
         // Set concurrency limit of 1 for test-model
         km.setModelConcurrencyLimits({ 'test-model': 1 });
-        // Acquire the only slot
-        km.acquireModelSlot('test-model');
+        // Acquire the only slot for both keys (acquireKey() may return either)
+        km.acquireModelSlot('test-model', 0);
+        km.acquireModelSlot('test-model', 1);
 
         const { rh } = createHandler({ keyManager: km });
 
@@ -1695,8 +1696,9 @@ describe('model_at_capacity error strategy', () => {
     test('model_at_capacity is retried by the retry loop (not immediately fatal)', async () => {
         const km = createKeyManager();
         km.setModelConcurrencyLimits({ 'test-model': 1 });
-        // Occupy the slot for first 2 attempts
-        km.acquireModelSlot('test-model');
+        // Occupy the slot for both keys (acquireKey() may return either)
+        km.acquireModelSlot('test-model', 0);
+        km.acquireModelSlot('test-model', 1);
 
         const { rh } = createHandler({ keyManager: km });
 
@@ -1704,9 +1706,10 @@ describe('model_at_capacity error strategy', () => {
         const origMakeProxy = rh._makeProxyRequest.bind(rh);
         rh._makeProxyRequest = jest.fn(async (...args) => {
             attemptCount++;
-            // Release slot on 3rd attempt so it succeeds
+            // Release slot on 3rd attempt so it succeeds (key 0 and key 1 alternate)
             if (attemptCount === 3) {
-                km.releaseModelSlot('test-model');
+                km.releaseModelSlot('test-model', 0);
+                km.releaseModelSlot('test-model', 1);
             }
             return origMakeProxy(...args);
         });

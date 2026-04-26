@@ -837,6 +837,11 @@
             overflow-y: auto;
         }
 
+        .modal-description {
+            margin: 0 0 12px;
+            color: var(--text-secondary);
+        }
+
         .key-info {
             background: var(--bg-secondary);
             border-radius: 6px;

@@ -399,6 +399,7 @@
                 display: none;
             }
 
+
             .header-section--branding .connection-text {
                 max-width: 60px;
                 overflow: hidden;
@@ -1068,6 +1069,8 @@
         .overflow-menu-item:hover { background: var(--surface-overlay-hover); color: var(--text-primary); }
         .overflow-menu-item:disabled { opacity: 0.5; cursor: not-allowed; }
         .overflow-menu-divider { height: 1px; background: var(--border); margin: var(--spacing-xs) 0; }
+        .overflow-menu-item--danger { color: var(--error); }
+        .overflow-menu-item--danger:hover { background: var(--error); color: var(--text-on-accent); }
 
         /* Responsive page nav and toolbar */
         @media (max-width: 768px) {

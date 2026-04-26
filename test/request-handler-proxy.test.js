@@ -1045,7 +1045,7 @@ describe('_makeProxyRequest', () => {
         // Should be blocked by KM gate (uniform enforcement)
         expect(result.success).toBe(false);
         expect(result.errorType).toBe('model_at_capacity');
-        expect(km.isModelAtCapacity).toHaveBeenCalledWith('glm-4.7');
+        expect(km.isModelAtCapacity).toHaveBeenCalledWith('glm-4.7', expect.any(Number));
     });
 
     test('non-pool-routed requests still check isModelAtCapacity gate', async () => {
@@ -1077,7 +1077,7 @@ describe('_makeProxyRequest', () => {
         // Should be blocked by KM gate
         expect(result.success).toBe(false);
         expect(result.errorType).toBe('model_at_capacity');
-        expect(km.isModelAtCapacity).toHaveBeenCalledWith('glm-4.7');
+        expect(km.isModelAtCapacity).toHaveBeenCalledWith('glm-4.7', expect.any(Number));
     });
 
     test('model_at_capacity records error in statsAggregator', async () => {

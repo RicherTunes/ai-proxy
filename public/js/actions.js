@@ -374,6 +374,123 @@
         }).catch(function(err) { showToast('Failed to save overrides: ' + err.message, 'error'); });
     }
 
+    // ========== RESTART PROXY ==========
+    function showRestartModal() {
+        var modal = document.getElementById('restartModal');
+        var status = document.getElementById('restartStatus');
+        var footer = document.getElementById('restartModalFooter');
+        var desc = document.getElementById('restartModalDesc');
+        var confirmBtn = document.getElementById('restartConfirmBtn');
+
+        if (status) status.style.display = 'none';
+        if (footer) footer.style.display = '';
+        if (desc) desc.style.display = '';
+        if (confirmBtn) confirmBtn.disabled = false;
+        if (modal) modal.classList.add('visible');
+    }
+
+    function closeRestartModal(force) {
+        var status = document.getElementById('restartStatus');
+        if (!force && status && status.style.display !== 'none') return;
+        var modal = document.getElementById('restartModal');
+        if (modal) modal.classList.remove('visible');
+    }
+
+    function executeRestart() {
+        var confirmBtn = document.getElementById('restartConfirmBtn');
+        var status = document.getElementById('restartStatus');
+        var statusText = document.getElementById('restartStatusText');
+        var footer = document.getElementById('restartModalFooter');
+        var desc = document.getElementById('restartModalDesc');
+
+        if (confirmBtn) confirmBtn.disabled = true;
+
+        authFetch('/control/restart', { method: 'POST' }).then(function(res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+        }).then(function(data) {
+            if (footer) footer.style.display = 'none';
+            if (desc) desc.style.display = 'none';
+            if (status) status.style.display = 'block';
+            if (statusText) statusText.textContent = data.mode === 'rolling'
+                ? 'Rolling restart in progress...'
+                : 'Restarting proxy...';
+
+            if (window.DashboardSSE && window.DashboardSSE.updateConnectionStatus) {
+                window.DashboardSSE.updateConnectionStatus('error');
+            }
+            pollForRecovery(data.mode);
+        }).catch(function(err) {
+            console.error('Restart failed:', err);
+            showToast('Restart failed: ' + err.message, 'error');
+            closeRestartModal(true);
+        });
+    }
+
+    function pollForRecovery(mode) {
+        var statusText = document.getElementById('restartStatusText');
+        var startTime = Date.now();
+        var TIMEOUT_MS = 30000;
+
+        var pollTimer = setInterval(function() {
+            var elapsed = Date.now() - startTime;
+
+            if (elapsed > TIMEOUT_MS) {
+                clearInterval(pollTimer);
+                var statusEl = document.getElementById('restartStatus');
+                if (statusEl) {
+                    statusEl.innerHTML =
+                        '<div style="text-align:center">' +
+                        '<p style="color:var(--error);margin:0 0 12px">Proxy did not respond within 30 seconds.</p>' +
+                        '<button class="btn btn-primary" data-action="reload-page">Reload Dashboard</button>' +
+                        '</div>';
+                }
+                return;
+            }
+
+            var controller = new AbortController();
+            var tid = setTimeout(function() { controller.abort(); }, 3000);
+            fetch('/health', { signal: controller.signal }).then(function(res) {
+                clearTimeout(tid);
+                if (!res.ok) return;
+                return res.json();
+            }).then(function(health) {
+                if (!health) return;
+
+                if (mode === 'rolling' && elapsed > 5000) {
+                    clearInterval(pollTimer);
+                    onRestartComplete();
+                    return;
+                }
+
+                if (mode !== 'rolling' && health.uptime !== undefined && health.uptime < 10) {
+                    clearInterval(pollTimer);
+                    onRestartComplete();
+                    return;
+                }
+            }).catch(function() {
+                clearTimeout(tid);
+                // Connection failed — proxy is down (expected)
+            });
+
+            if (statusText) {
+                statusText.textContent = mode === 'rolling'
+                    ? 'Rolling restart in progress... (' + Math.round(elapsed / 1000) + 's)'
+                    : 'Waiting for proxy... (' + Math.round(elapsed / 1000) + 's)';
+            }
+        }, 1000);
+    }
+
+    function onRestartComplete() {
+        if (window.DashboardSSE) {
+            if (window.DashboardSSE.updateConnectionStatus) window.DashboardSSE.updateConnectionStatus('connected');
+            if (window.DashboardSSE.connectRequestStream) window.DashboardSSE.connectRequestStream();
+        }
+        showToast('Proxy restarted successfully', 'success');
+        closeRestartModal(true);
+        if (deps.fetchStats) deps.fetchStats();
+    }
+
     // ========== EXPORT ==========
     window.DashboardActions = {
         init: init,
@@ -398,7 +515,10 @@
         removeOverride: removeOverride,
         saveKeyOverrides: saveKeyOverrides,
         renderOverrideList: renderOverrideList,
-        toggleGlobalMapping: toggleGlobalMapping
+        toggleGlobalMapping: toggleGlobalMapping,
+        showRestartModal: showRestartModal,
+        closeRestartModal: closeRestartModal,
+        executeRestart: executeRestart
     };
 
 })(window);

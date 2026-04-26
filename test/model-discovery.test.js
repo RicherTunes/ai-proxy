@@ -11,7 +11,8 @@ describe('ModelDiscovery', () => {
     beforeEach(() => {
         modelDiscovery = new ModelDiscovery({
             cacheTTL: 100, // Short TTL for testing
-            configPath: require('path').join(os.tmpdir(), 'test-model-discovery.json')
+            configPath: require('path').join(os.tmpdir(), 'test-model-discovery.json'),
+            configDir: os.tmpdir()  // Isolate from production discovery cache
         });
     });
 
@@ -41,13 +42,13 @@ describe('ModelDiscovery', () => {
     });
 
     describe('getModel', () => {
-        test('should find GLM-5 by ID with maxConcurrency=3', async () => {
+        test('should find GLM-5 by ID with maxConcurrency=2', async () => {
             const model = await modelDiscovery.getModel('glm-5');
 
             expect(model).not.toBeNull();
             expect(model.id).toBe('glm-5');
             expect(model.tier).toBe('HEAVY');
-            expect(model.maxConcurrency).toBe(3);
+            expect(model.maxConcurrency).toBe(2);
         });
 
         test('should find model by ID', async () => {

@@ -80,7 +80,7 @@ describe('RateLimitSync – edge cases', () => {
     // =================================================================
     describe('header observation', () => {
         test('parses integer x-ratelimit-limit and updates baseline', () => {
-            keyManager = createMockKeyManager({ 'claude-sonnet': 2 });
+            keyManager = createMockKeyManager({ 'claude-sonnet': 5 });
             const sync = createSync({}, { keyManager });
 
             sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '8' });
@@ -288,7 +288,7 @@ describe('RateLimitSync – edge cases', () => {
     describe('baseline persistence', () => {
         test('saves baselines to disk via atomicWrite', async () => {
             const configDir = '/tmp/test-persist';
-            keyManager = createMockKeyManager({ 'claude-sonnet': 1 });
+            keyManager = createMockKeyManager({ 'claude-sonnet': 5 });
             const sync = createSync({}, { keyManager, configDir });
 
             sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '7' });
@@ -342,7 +342,7 @@ describe('RateLimitSync – edge cases', () => {
                 version: 1,
                 savedAt: now,
                 baselines: {
-                    'claude-sonnet': { concurrency: 15, source: 'header_observed', discoveredAt: now }
+                    'claude-sonnet': { concurrency: 9, source: 'cached', discoveredAt: now }
                 }
             });
 
@@ -356,12 +356,12 @@ describe('RateLimitSync – edge cases', () => {
 
             sync.start();
 
-            // Fresh baseline should be applied
-            expect(km.updateStaticModelLimit).toHaveBeenCalledWith('claude-sonnet', 15);
-            expect(aimd.updateStaticBaseline).toHaveBeenCalledWith('claude-sonnet', 15);
+            // Fresh baseline should be applied (9 is within ceiling: 5+5=10)
+            expect(km.updateStaticModelLimit).toHaveBeenCalledWith('claude-sonnet', 9);
+            expect(aimd.updateStaticBaseline).toHaveBeenCalledWith('claude-sonnet', 9);
             expect(modelDiscovery.updateModelMetadata).toHaveBeenCalledWith(
                 'claude-sonnet',
-                expect.objectContaining({ maxConcurrency: 15, source: 'cached' })
+                expect.objectContaining({ maxConcurrency: 9, source: 'cached' })
             );
 
             sync.stop();
@@ -369,7 +369,7 @@ describe('RateLimitSync – edge cases', () => {
         });
 
         test('does not persist when configDir is not set', async () => {
-            keyManager = createMockKeyManager({ 'claude-sonnet': 1 });
+            keyManager = createMockKeyManager({ 'claude-sonnet': 5 });
             const sync = createSync({}, { keyManager, configDir: undefined });
 
             sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '7' });
@@ -461,19 +461,19 @@ describe('RateLimitSync – edge cases', () => {
             atomicWrite.mockRejectedValueOnce(new Error('disk full'));
 
             const configDir = '/tmp/test-save-fail';
-            keyManager = createMockKeyManager({ 'claude-sonnet': 1 });
+            keyManager = createMockKeyManager({ 'claude-sonnet': 3 });
             const sync = createSync({}, { keyManager, configDir });
 
             // Should not throw even though save fails
-            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '5' });
-            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '5' });
-            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '5' });
+            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '7' });
+            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '7' });
+            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '7' });
 
             // Wait for the fire-and-forget _save()
             await new Promise(r => setTimeout(r, 50));
 
             // Update still applied in memory
-            expect(keyManager.updateStaticModelLimit).toHaveBeenCalledWith('claude-sonnet', 5);
+            expect(keyManager.updateStaticModelLimit).toHaveBeenCalledWith('claude-sonnet', 7);
 
             // Warning logged
             expect(logger.warn).toHaveBeenCalledWith(
@@ -523,7 +523,7 @@ describe('RateLimitSync – edge cases', () => {
                 version: 1,
                 savedAt: freshTimestamp,
                 baselines: {
-                    'claude-sonnet': { concurrency: 50, source: 'header_observed', discoveredAt: freshTimestamp }
+                    'claude-sonnet': { concurrency: 9, source: 'cached', discoveredAt: freshTimestamp }
                 }
             });
 
@@ -537,7 +537,7 @@ describe('RateLimitSync – edge cases', () => {
 
             sync.start();
 
-            expect(km.updateStaticModelLimit).toHaveBeenCalledWith('claude-sonnet', 50);
+            expect(km.updateStaticModelLimit).toHaveBeenCalledWith('claude-sonnet', 9);
 
             sync.stop();
             readSpy.mockRestore();
@@ -576,8 +576,8 @@ describe('RateLimitSync – edge cases', () => {
                 version: 1,
                 savedAt: now,
                 baselines: {
-                    'claude-sonnet': { concurrency: 20, source: 'header_observed', discoveredAt: now - (25 * 60 * 60 * 1000) },
-                    'claude-opus': { concurrency: 30, source: 'header_observed', discoveredAt: now - (1 * 60 * 60 * 1000) }
+                    'claude-sonnet': { concurrency: 8, source: 'cached', discoveredAt: now - (25 * 60 * 60 * 1000) },
+                    'claude-opus': { concurrency: 9, source: 'cached', discoveredAt: now - (1 * 60 * 60 * 1000) }
                 }
             });
 
@@ -592,8 +592,8 @@ describe('RateLimitSync – edge cases', () => {
             sync.start();
 
             // Sonnet is stale (25h), opus is fresh (1h)
-            expect(km.updateStaticModelLimit).not.toHaveBeenCalledWith('claude-sonnet', 20);
-            expect(km.updateStaticModelLimit).toHaveBeenCalledWith('claude-opus', 30);
+            expect(km.updateStaticModelLimit).not.toHaveBeenCalledWith('claude-sonnet', 8);
+            expect(km.updateStaticModelLimit).toHaveBeenCalledWith('claude-opus', 9);
 
             sync.stop();
             readSpy.mockRestore();
@@ -605,7 +605,7 @@ describe('RateLimitSync – edge cases', () => {
     // =================================================================
     describe('quorum requirement', () => {
         test('default quorum of 3: no update with only 2 observations', () => {
-            keyManager = createMockKeyManager({ 'claude-sonnet': 1 });
+            keyManager = createMockKeyManager({ 'claude-sonnet': 5 });
             const sync = createSync({ quorumSize: 3 }, { keyManager });
 
             sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '10' });
@@ -615,7 +615,7 @@ describe('RateLimitSync – edge cases', () => {
         });
 
         test('default quorum of 3: updates on 3rd observation', () => {
-            keyManager = createMockKeyManager({ 'claude-sonnet': 1 });
+            keyManager = createMockKeyManager({ 'claude-sonnet': 5 });
             const sync = createSync({ quorumSize: 3 }, { keyManager });
 
             sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '10' });
@@ -627,7 +627,7 @@ describe('RateLimitSync – edge cases', () => {
         });
 
         test('quorum of 5: no update with 4 observations', () => {
-            keyManager = createMockKeyManager({ 'claude-sonnet': 1 });
+            keyManager = createMockKeyManager({ 'claude-sonnet': 5 });
             const sync = createSync({ quorumSize: 5 }, { keyManager });
 
             for (let i = 0; i < 4; i++) {
@@ -638,7 +638,7 @@ describe('RateLimitSync – edge cases', () => {
         });
 
         test('quorum of 5: updates on 5th observation', () => {
-            keyManager = createMockKeyManager({ 'claude-sonnet': 1 });
+            keyManager = createMockKeyManager({ 'claude-sonnet': 5 });
             const sync = createSync({ quorumSize: 5 }, { keyManager });
 
             for (let i = 0; i < 5; i++) {
@@ -649,7 +649,7 @@ describe('RateLimitSync – edge cases', () => {
         });
 
         test('quorum of 1: updates on first observation', () => {
-            keyManager = createMockKeyManager({ 'claude-sonnet': 1 });
+            keyManager = createMockKeyManager({ 'claude-sonnet': 5 });
             const sync = createSync({ quorumSize: 1 }, { keyManager });
 
             sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '10' });
@@ -658,7 +658,7 @@ describe('RateLimitSync – edge cases', () => {
         });
 
         test('quorum broken by inconsistent value resets progress', () => {
-            keyManager = createMockKeyManager({ 'claude-sonnet': 1 });
+            keyManager = createMockKeyManager({ 'claude-sonnet': 5 });
             const sync = createSync({ quorumSize: 3 }, { keyManager });
 
             sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '10' });
@@ -692,48 +692,48 @@ describe('RateLimitSync – edge cases', () => {
     describe('multiple models', () => {
         test('each model has independent observation buffers', () => {
             keyManager = createMockKeyManager({
-                'claude-sonnet': 1,
-                'claude-opus': 1,
-                'claude-haiku': 1
+                'claude-sonnet': 5,
+                'claude-opus': 5,
+                'claude-haiku': 5
             });
             const sync = createSync({}, { keyManager });
 
-            // Only sonnet reaches quorum
-            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '10' });
-            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '10' });
-            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '10' });
+            // Only sonnet reaches quorum (header values within static+5 ceiling)
+            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '8' });
+            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '8' });
+            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '8' });
 
-            sync.recordHeaders('claude-opus', { 'x-ratelimit-limit': '20' });
-            sync.recordHeaders('claude-opus', { 'x-ratelimit-limit': '20' });
+            sync.recordHeaders('claude-opus', { 'x-ratelimit-limit': '9' });
+            sync.recordHeaders('claude-opus', { 'x-ratelimit-limit': '9' });
             // opus has only 2 observations
 
-            sync.recordHeaders('claude-haiku', { 'x-ratelimit-limit': '30' });
+            sync.recordHeaders('claude-haiku', { 'x-ratelimit-limit': '10' });
             // haiku has only 1 observation
 
             expect(keyManager.updateStaticModelLimit).toHaveBeenCalledTimes(1);
-            expect(keyManager.updateStaticModelLimit).toHaveBeenCalledWith('claude-sonnet', 10);
+            expect(keyManager.updateStaticModelLimit).toHaveBeenCalledWith('claude-sonnet', 8);
         });
 
         test('each model has independent baselines', () => {
             keyManager = createMockKeyManager({
-                'claude-sonnet': 1,
-                'claude-opus': 1
+                'claude-sonnet': 5,
+                'claude-opus': 5
             });
             const sync = createSync({}, { keyManager });
 
-            // Sonnet gets limit 10
-            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '10' });
-            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '10' });
-            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '10' });
+            // Sonnet gets limit 8 (within static+5 ceiling)
+            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '8' });
+            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '8' });
+            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '8' });
 
-            // Opus gets limit 20
-            sync.recordHeaders('claude-opus', { 'x-ratelimit-limit': '20' });
-            sync.recordHeaders('claude-opus', { 'x-ratelimit-limit': '20' });
-            sync.recordHeaders('claude-opus', { 'x-ratelimit-limit': '20' });
+            // Opus gets limit 9 (within static+5 ceiling)
+            sync.recordHeaders('claude-opus', { 'x-ratelimit-limit': '9' });
+            sync.recordHeaders('claude-opus', { 'x-ratelimit-limit': '9' });
+            sync.recordHeaders('claude-opus', { 'x-ratelimit-limit': '9' });
 
             const snap = sync.getSnapshot();
-            expect(snap.baselines['claude-sonnet'].concurrency).toBe(10);
-            expect(snap.baselines['claude-opus'].concurrency).toBe(20);
+            expect(snap.baselines['claude-sonnet'].concurrency).toBe(8);
+            expect(snap.baselines['claude-opus'].concurrency).toBe(9);
         });
 
         test('ceiling probe targets only idle models, not active ones', () => {
@@ -851,14 +851,14 @@ describe('RateLimitSync – edge cases', () => {
         });
 
         test('works with no modelDiscovery (optional chaining)', () => {
-            keyManager = createMockKeyManager({ 'claude-sonnet': 1 });
+            keyManager = createMockKeyManager({ 'claude-sonnet': 3 });
             const sync = createSync({}, { keyManager, modelDiscovery: null });
 
-            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '5' });
-            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '5' });
-            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '5' });
+            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '7' });
+            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '7' });
+            sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '7' });
 
-            expect(keyManager.updateStaticModelLimit).toHaveBeenCalledWith('claude-sonnet', 5);
+            expect(keyManager.updateStaticModelLimit).toHaveBeenCalledWith('claude-sonnet', 7);
         });
 
         test('persistAndStop handles save failure gracefully', async () => {
@@ -917,7 +917,7 @@ describe('RateLimitSync – edge cases', () => {
 
         test('persistAndStop() saves then stops timer', async () => {
             const configDir = '/tmp/test-persist-stop';
-            keyManager = createMockKeyManager({ 'claude-sonnet': 1 });
+            keyManager = createMockKeyManager({ 'claude-sonnet': 5 });
             const sync = createSync({}, { keyManager, configDir });
 
             // Establish a baseline

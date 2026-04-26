@@ -385,7 +385,7 @@ describe('RateLimitSync – coverage tests', () => {
                 version: 1,
                 savedAt: now,
                 baselines: {
-                    'capture-model': { concurrency: 20, source: 'header_observed', discoveredAt: now }
+                    'capture-model': { concurrency: 14, source: 'header_observed', discoveredAt: now }
                 }
             });
 
@@ -399,7 +399,7 @@ describe('RateLimitSync – coverage tests', () => {
 
             sync.start();
 
-            // Should have captured the original static (10) before applying cached (20)
+            // Should have captured the original static (10) before applying cached (14)
             expect(sync._originalStaticLimits.get('capture-model')).toBe(10);
 
             sync.stop();
@@ -627,7 +627,7 @@ describe('RateLimitSync – coverage tests', () => {
     describe('ModelDiscovery integration', () => {
         // Covers line 284-288: modelDiscovery?.updateModelMetadata?.() call
         test('updates ModelDiscovery metadata when applying discovered limit', () => {
-            keyManager = createMockKeyManager({ 'discovery-model': 2 });
+            keyManager = createMockKeyManager({ 'discovery-model': 3 });
             const sync = createSync({}, { keyManager });
 
             sync.recordHeaders('discovery-model', { 'x-ratelimit-limit': '8' });
@@ -638,7 +638,7 @@ describe('RateLimitSync – coverage tests', () => {
                 'discovery-model',
                 expect.objectContaining({
                     maxConcurrency: 8,
-                    source: 'live'
+                    source: 'header_observed'
                 })
             );
         });
@@ -650,7 +650,7 @@ describe('RateLimitSync – coverage tests', () => {
                 version: 1,
                 savedAt: now,
                 baselines: {
-                    'cached-discovery': { concurrency: 15, source: 'header_observed', discoveredAt: now }
+                    'cached-discovery': { concurrency: 8, source: 'cached', discoveredAt: now }
                 }
             });
 
@@ -667,7 +667,7 @@ describe('RateLimitSync – coverage tests', () => {
             expect(modelDiscovery.updateModelMetadata).toHaveBeenCalledWith(
                 'cached-discovery',
                 expect.objectContaining({
-                    maxConcurrency: 15,
+                    maxConcurrency: 8,
                     source: 'cached'
                 })
             );
@@ -907,9 +907,9 @@ describe('RateLimitSync – coverage tests', () => {
                 version: 1,
                 savedAt: now,
                 baselines: {
-                    'fresh-1': { concurrency: 20, source: 'cached', discoveredAt: now - 1000 },
-                    'stale-1': { concurrency: 30, source: 'cached', discoveredAt: now - (25 * 60 * 60 * 1000) },
-                    'fresh-2': { concurrency: 40, source: 'cached', discoveredAt: now - 5000 }
+                    'fresh-1': { concurrency: 8, source: 'cached', discoveredAt: now - 1000 },
+                    'stale-1': { concurrency: 9, source: 'cached', discoveredAt: now - (25 * 60 * 60 * 1000) },
+                    'fresh-2': { concurrency: 10, source: 'cached', discoveredAt: now - 5000 }
                 }
             });
 
@@ -927,10 +927,10 @@ describe('RateLimitSync – coverage tests', () => {
 
             sync.start();
 
-            // Only fresh baselines should be applied
-            expect(km.updateStaticModelLimit).toHaveBeenCalledWith('fresh-1', 20);
-            expect(km.updateStaticModelLimit).not.toHaveBeenCalledWith('stale-1', 30);
-            expect(km.updateStaticModelLimit).toHaveBeenCalledWith('fresh-2', 40);
+            // Only fresh baselines should be applied (within per-model ceiling: 5+5=10)
+            expect(km.updateStaticModelLimit).toHaveBeenCalledWith('fresh-1', 8);
+            expect(km.updateStaticModelLimit).not.toHaveBeenCalledWith('stale-1', 9);
+            expect(km.updateStaticModelLimit).toHaveBeenCalledWith('fresh-2', 10);
 
             sync.stop();
             readSpy.mockRestore();

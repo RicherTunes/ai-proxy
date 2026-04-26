@@ -1090,6 +1090,7 @@
                 case 'close-modal':
                     if (element.dataset.modal === 'shortcuts') closeShortcutsModal(event);
                     if (element.dataset.modal === 'key-override') closeKeyOverrideModal(event);
+                    if (element.dataset.modal === 'restart') closeRestartModal();
                     break;
                 case 'close-key-override-modal':
                     closeKeyOverrideModal();
@@ -1129,6 +1130,15 @@
                     break;
                 case 'control-resume':
                     controlAction('resume');
+                    break;
+                case 'control-restart':
+                    showRestartModal();
+                    break;
+                case 'close-restart-modal':
+                    closeRestartModal();
+                    break;
+                case 'confirm-restart':
+                    executeRestart();
                     break;
                 case 'reload-keys':
                     reloadKeys();
@@ -4946,6 +4956,128 @@
             } catch (err) {
                 console.error('Control action failed:', err);
             }
+        }
+
+        // ── Restart Proxy ──────────────────────────────────────
+        function showRestartModal() {
+            const modal = document.getElementById('restartModal');
+            const status = document.getElementById('restartStatus');
+            const footer = document.getElementById('restartModalFooter');
+            const desc = document.getElementById('restartModalDesc');
+            const confirmBtn = document.getElementById('restartConfirmBtn');
+
+            // Reset to initial state
+            if (status) status.style.display = 'none';
+            if (footer) footer.style.display = '';
+            if (desc) desc.style.display = '';
+            if (confirmBtn) { confirmBtn.disabled = false; }
+
+            if (modal) modal.classList.add('visible');
+        }
+
+        function closeRestartModal(force) {
+            // Block close while restart is in progress (unless forced)
+            const status = document.getElementById('restartStatus');
+            if (!force && status && status.style.display !== 'none') return;
+
+            const modal = document.getElementById('restartModal');
+            if (modal) modal.classList.remove('visible');
+        }
+
+        async function executeRestart() {
+            const confirmBtn = document.getElementById('restartConfirmBtn');
+            const status = document.getElementById('restartStatus');
+            const statusText = document.getElementById('restartStatusText');
+            const footer = document.getElementById('restartModalFooter');
+            const desc = document.getElementById('restartModalDesc');
+
+            if (confirmBtn) confirmBtn.disabled = true;
+
+            try {
+                const res = await adminFetch('/control/restart', { method: 'POST' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+
+                // Switch to "restarting" state
+                if (footer) footer.style.display = 'none';
+                if (desc) desc.style.display = 'none';
+                if (status) status.style.display = 'block';
+                if (statusText) statusText.textContent = data.mode === 'rolling'
+                    ? 'Rolling restart in progress...'
+                    : 'Restarting proxy...';
+
+                updateConnectionStatus('error');
+                pollForRecovery(data.mode);
+            } catch (err) {
+                console.error('Restart failed:', err);
+                showToast('Restart failed: ' + err.message, 'error');
+                closeRestartModal(true);
+            }
+        }
+
+        function pollForRecovery(mode) {
+            const statusText = document.getElementById('restartStatusText');
+            const startTime = Date.now();
+            const TIMEOUT_MS = 30000;
+
+            const pollTimer = setInterval(async () => {
+                const elapsed = Date.now() - startTime;
+
+                if (elapsed > TIMEOUT_MS) {
+                    clearInterval(pollTimer);
+                    // Show timeout with manual reload button
+                    const status = document.getElementById('restartStatus');
+                    if (status) {
+                        status.innerHTML =
+                            '<div style="text-align:center">' +
+                            '<p style="color:var(--error);margin-bottom:12px">Proxy did not respond within 30 seconds.</p>' +
+                            '<button class="btn btn-primary" onclick="location.reload()">Reload Dashboard</button>' +
+                            '</div>';
+                    }
+                    return;
+                }
+
+                try {
+                    const controller = new AbortController();
+                    const tid = setTimeout(() => controller.abort(), 3000);
+                    const res = await fetch('/health', { signal: controller.signal });
+                    clearTimeout(tid);
+
+                    if (res.ok) {
+                        const health = await res.json();
+
+                        // Rolling: proxy stays up throughout — wait a few seconds then done
+                        if (mode === 'rolling' && elapsed > 5000) {
+                            clearInterval(pollTimer);
+                            onRestartComplete();
+                            return;
+                        }
+
+                        // Full: fresh uptime means it restarted
+                        if (mode !== 'rolling' && health.uptime !== undefined && health.uptime < 10) {
+                            clearInterval(pollTimer);
+                            onRestartComplete();
+                            return;
+                        }
+                    }
+                } catch (_) {
+                    // Connection failed — proxy is down (expected)
+                }
+
+                if (statusText) {
+                    statusText.textContent = mode === 'rolling'
+                        ? 'Rolling restart in progress... (' + Math.round(elapsed / 1000) + 's)'
+                        : 'Waiting for proxy... (' + Math.round(elapsed / 1000) + 's)';
+                }
+            }, 1000);
+        }
+
+        function onRestartComplete() {
+            updateConnectionStatus('connected');
+            showToast('Proxy restarted successfully', 'success');
+            closeRestartModal(true);
+            connectRequestStream();
+            fetchStats();
         }
 
         // Reload keys

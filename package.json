@@ -112,6 +112,13 @@
       "plugins",
       "test/stress"
     ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/plugins"
+    ],
+    "roots": [
+      "<rootDir>/lib",
+      "<rootDir>/test"
+    ],
     "verbose": true,
     "testTimeout": 30000
   }

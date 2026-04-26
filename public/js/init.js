@@ -1633,6 +1633,15 @@
             case 'control-resume':
                 if (DD && DD.controlAction) DD.controlAction('resume');
                 break;
+            case 'control-restart':
+                if (window.DashboardActions && window.DashboardActions.showRestartModal) window.DashboardActions.showRestartModal();
+                break;
+            case 'close-restart-modal':
+                if (window.DashboardActions && window.DashboardActions.closeRestartModal) window.DashboardActions.closeRestartModal();
+                break;
+            case 'confirm-restart':
+                if (window.DashboardActions && window.DashboardActions.executeRestart) window.DashboardActions.executeRestart();
+                break;
 
             // ---- Key management ----
             case 'reload-keys':
@@ -1724,6 +1733,7 @@
             case 'close-modal':
                 if (element.dataset.modal === 'shortcuts') closeShortcutsModal(event);
                 if (element.dataset.modal === 'key-override' && DD && DD.closeKeyOverrideModal) DD.closeKeyOverrideModal(event);
+                if (element.dataset.modal === 'restart' && window.DashboardActions && window.DashboardActions.closeRestartModal) window.DashboardActions.closeRestartModal();
                 break;
             case 'close-toast':
                 if (event.target.parentElement) event.target.parentElement.remove();

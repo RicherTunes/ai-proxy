@@ -97,7 +97,7 @@ describe('RateLimitSync', () => {
     // 2. Quorum triggers update
     // ---------------------------------------------------------------
     test('triggers update when quorum of 3 consistent values reached', () => {
-        keyManager = createMockKeyManager({ 'claude-sonnet': 1 });
+        keyManager = createMockKeyManager({ 'claude-sonnet': 3 });
         const sync = createSync({}, { keyManager });
 
         sync.recordHeaders('claude-sonnet', { 'x-ratelimit-limit': '5' });
@@ -139,7 +139,7 @@ describe('RateLimitSync', () => {
     // 5. Immediate update — no tick wait
     // ---------------------------------------------------------------
     test('handles immediate update on first quorum (no tick wait)', () => {
-        keyManager = createMockKeyManager({ 'claude-sonnet': 1 });
+        keyManager = createMockKeyManager({ 'claude-sonnet': 3 });
         const sync = createSync({}, { keyManager });
 
         // Three consistent observations should trigger immediately,
@@ -230,7 +230,7 @@ describe('RateLimitSync', () => {
     // 9. Propagates to KeyManager, AIMD, and ModelDiscovery
     // ---------------------------------------------------------------
     test('propagates to KeyManager, AIMD, and ModelDiscovery', () => {
-        keyManager = createMockKeyManager({ 'claude-opus': 2 });
+        keyManager = createMockKeyManager({ 'claude-opus': 5 });
         const sync = createSync({}, { keyManager });
 
         sync.recordHeaders('claude-opus', { 'x-ratelimit-limit': '8' });
@@ -246,7 +246,7 @@ describe('RateLimitSync', () => {
         // ModelDiscovery
         expect(modelDiscovery.updateModelMetadata).toHaveBeenCalledWith(
             'claude-opus',
-            expect.objectContaining({ maxConcurrency: 8, source: 'live' })
+            expect.objectContaining({ maxConcurrency: 8, source: 'header_observed' })
         );
     });
 
@@ -255,7 +255,7 @@ describe('RateLimitSync', () => {
     // ---------------------------------------------------------------
     test('persistence round-trip (save/load)', async () => {
         const configDir = '/tmp/test-rls';
-        keyManager = createMockKeyManager({ 'claude-sonnet': 1 });
+        keyManager = createMockKeyManager({ 'claude-sonnet': 3 });
         const sync = createSync({}, { keyManager, configDir });
 
         // Trigger a baseline update via quorum
@@ -377,23 +377,23 @@ describe('RateLimitSync', () => {
     // ---------------------------------------------------------------
     test('multiple models tracked concurrently', () => {
         keyManager = createMockKeyManager({
-            'claude-sonnet': 1,
-            'claude-opus': 2,
-            'claude-haiku': 3
+            'claude-sonnet': 3,
+            'claude-opus': 5,
+            'claude-haiku': 6
         });
         const sync = createSync({}, { keyManager });
 
-        // Record headers for 3 different models
-        for (const [model, limit] of [['claude-sonnet', '10'], ['claude-opus', '20'], ['claude-haiku', '30']]) {
+        // Record headers for 3 different models (values within per-model ceiling: static+5)
+        for (const [model, limit] of [['claude-sonnet', '5'], ['claude-opus', '8'], ['claude-haiku', '10']]) {
             sync.recordHeaders(model, { 'x-ratelimit-limit': limit });
             sync.recordHeaders(model, { 'x-ratelimit-limit': limit });
             sync.recordHeaders(model, { 'x-ratelimit-limit': limit });
         }
 
         // All three should have been updated independently
-        expect(keyManager.updateStaticModelLimit).toHaveBeenCalledWith('claude-sonnet', 10);
-        expect(keyManager.updateStaticModelLimit).toHaveBeenCalledWith('claude-opus', 20);
-        expect(keyManager.updateStaticModelLimit).toHaveBeenCalledWith('claude-haiku', 30);
+        expect(keyManager.updateStaticModelLimit).toHaveBeenCalledWith('claude-sonnet', 5);
+        expect(keyManager.updateStaticModelLimit).toHaveBeenCalledWith('claude-opus', 8);
+        expect(keyManager.updateStaticModelLimit).toHaveBeenCalledWith('claude-haiku', 10);
 
         const snap = sync.getSnapshot();
         expect(Object.keys(snap.models)).toHaveLength(3);
