@@ -371,14 +371,13 @@ describe('Error recovery', () => {
         // Wait a tick for the watcher callback to fire
         await new Promise(r => setTimeout(r, 300));
 
-        // Re-create keys file so shutdown doesn't fail
+        // Re-create keys file so shutdown doesn't fail, then explicitly reload
+        // (don't rely on watcher timing — delete+recreate inode behavior varies on CI)
         fs.writeFileSync(keysPath, JSON.stringify({
             keys: ['test-key.secret'],
             baseUrl: 'https://api.anthropic.com'
         }));
-
-        // Wait for the watcher to detect the re-created keys file and reload
-        await new Promise(r => setTimeout(r, 300));
+        server._reloadKeys();
 
         // Server should still respond
         const res = await request(port, '/health');
