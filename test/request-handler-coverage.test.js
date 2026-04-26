@@ -1145,7 +1145,10 @@ describe('RequestHandler Coverage Tests', () => {
             const mockRes = {
                 headersSent: false,
                 writeHead: jest.fn(),
-                end: jest.fn()
+                end: jest.fn(),
+                on: jest.fn(),
+                once: jest.fn(),
+                removeListener: jest.fn()
             };
 
             const mockReq = {
