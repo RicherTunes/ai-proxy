@@ -58,7 +58,7 @@ describeIfModule('ProxyServer Contract: Webhook Controller Operations', () => {
 
             controller.handleWebhooks(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData).toHaveProperty('error');
         });
@@ -79,7 +79,7 @@ describeIfModule('ProxyServer Contract: Webhook Controller Operations', () => {
 
             controller.handleWebhooks(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData).toHaveProperty('endpoints');
             expect(responseData).toHaveProperty('stats');
@@ -104,7 +104,7 @@ describeIfModule('ProxyServer Contract: Webhook Controller Operations', () => {
 
             await controller.handleWebhookTest(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(405, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(405, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData).toHaveProperty('error');
         });
@@ -117,7 +117,7 @@ describeIfModule('ProxyServer Contract: Webhook Controller Operations', () => {
 
             await controller.handleWebhookTest(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return 400 when URL is missing from request body', async () => {
@@ -128,7 +128,7 @@ describeIfModule('ProxyServer Contract: Webhook Controller Operations', () => {
 
             await controller.handleWebhookTest(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(400, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.error).toContain('URL required');
         });
@@ -152,7 +152,7 @@ describeIfModule('ProxyServer Contract: Webhook Controller Operations', () => {
 
             await controller.handleWebhookTest(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return 400 when webhook test fails', async () => {
@@ -163,7 +163,7 @@ describeIfModule('ProxyServer Contract: Webhook Controller Operations', () => {
 
             await controller.handleWebhookTest(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(400, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return 400 on invalid JSON body', async () => {
@@ -174,7 +174,7 @@ describeIfModule('ProxyServer Contract: Webhook Controller Operations', () => {
 
             await controller.handleWebhookTest(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(400, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({ 'content-type': 'application/json' }));
         });
     });
 

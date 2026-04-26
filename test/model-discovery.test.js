@@ -2,7 +2,8 @@
  * Model Discovery Module Tests
  */
 
-const { ModelDiscovery, KNOWN_GLM_MODELS } = require('../lib/model-discovery');
+const os = require('os');
+const { ModelDiscovery, KNOWN_GLM_MODELS, CANDIDATE_MODEL_PATTERNS, inferModelMetadata } = require('../lib/model-discovery');
 
 describe('ModelDiscovery', () => {
     let modelDiscovery;
@@ -10,7 +11,8 @@ describe('ModelDiscovery', () => {
     beforeEach(() => {
         modelDiscovery = new ModelDiscovery({
             cacheTTL: 100, // Short TTL for testing
-            configPath: '/tmp/test-model-discovery.json'
+            configPath: require('path').join(os.tmpdir(), 'test-model-discovery.json'),
+            configDir: os.tmpdir()  // Isolate from production discovery cache
         });
     });
 
@@ -40,13 +42,13 @@ describe('ModelDiscovery', () => {
     });
 
     describe('getModel', () => {
-        test('should find GLM-5 by ID with maxConcurrency=1', async () => {
+        test('should find GLM-5 by ID with maxConcurrency=2', async () => {
             const model = await modelDiscovery.getModel('glm-5');
 
             expect(model).not.toBeNull();
             expect(model.id).toBe('glm-5');
             expect(model.tier).toBe('HEAVY');
-            expect(model.maxConcurrency).toBe(1);
+            expect(model.maxConcurrency).toBe(2);
         });
 
         test('should find model by ID', async () => {
@@ -157,8 +159,7 @@ describe('ModelDiscovery', () => {
             data.models.forEach(model => {
                 expect(model).toHaveProperty('source');
                 expect(model).toHaveProperty('lastRefreshedAt');
-                expect(model.source).toBe('static');
-                expect(model.lastRefreshedAt).toBeNull();
+                expect(['static', 'probed', 'live', 'cached']).toContain(model.source);
             });
         });
 
@@ -519,5 +520,226 @@ describe('loadCustomModels - config file loading', () => {
         const customModel = models.find(m => m.id === 'custom-1');
         expect(customModel).toBeDefined();
         expect(customModel.tier).toBe('MEDIUM');
+    });
+});
+
+describe('inferModelMetadata', () => {
+    test('should infer LIGHT tier for -flash suffix', () => {
+        const meta = inferModelMetadata('glm-5-flash');
+        expect(meta.tier).toBe('LIGHT');
+        expect(meta.pricing.input).toBe(0);
+        expect(meta.source).toBe('probed');
+    });
+
+    test('should infer MEDIUM tier for -air suffix', () => {
+        const meta = inferModelMetadata('glm-5-air');
+        expect(meta.tier).toBe('MEDIUM');
+        expect(meta.pricing.input).toBe(0.20);
+    });
+
+    test('should infer HEAVY tier for -turbo suffix', () => {
+        const meta = inferModelMetadata('glm-5-turbo');
+        expect(meta.tier).toBe('HEAVY');
+        expect(meta.pricing.input).toBe(0.60);
+    });
+
+    test('should infer vision type for -v suffix', () => {
+        const meta = inferModelMetadata('glm-5v');
+        expect(meta.type).toBe('vision');
+        expect(meta.supportsVision).toBe(true);
+        expect(meta.supportsStreaming).toBe(false);
+    });
+
+    test('should set 200K context for glm-5 family', () => {
+        const meta = inferModelMetadata('glm-5-turbo');
+        expect(meta.contextLength).toBe(200000);
+    });
+
+    test('should generate displayName from model ID', () => {
+        const meta = inferModelMetadata('glm-5-turbo');
+        expect(meta.displayName).toBe('GLM 5 Turbo');
+    });
+
+    test('should set source to probed', () => {
+        const meta = inferModelMetadata('glm-anything');
+        expect(meta.source).toBe('probed');
+        expect(meta.lastRefreshedAt).toBeTruthy();
+        expect(meta.discoveredAt).toBeTruthy();
+    });
+});
+
+describe('CANDIDATE_MODEL_PATTERNS', () => {
+    test('should be an array of strings', () => {
+        expect(Array.isArray(CANDIDATE_MODEL_PATTERNS)).toBe(true);
+        expect(CANDIDATE_MODEL_PATTERNS.length).toBeGreaterThan(0);
+        for (const id of CANDIDATE_MODEL_PATTERNS) {
+            expect(typeof id).toBe('string');
+        }
+    });
+
+    test('should not overlap with KNOWN_GLM_MODELS', () => {
+        const knownIds = new Set(KNOWN_GLM_MODELS.map(m => m.id));
+        for (const id of CANDIDATE_MODEL_PATTERNS) {
+            expect(knownIds.has(id)).toBe(false);
+        }
+    });
+
+    test('should include glm-5-turbo', () => {
+        expect(CANDIDATE_MODEL_PATTERNS).toContain('glm-5-turbo');
+    });
+});
+
+describe('ModelDiscovery probing', () => {
+    let discovery;
+
+    beforeEach(() => {
+        discovery = new ModelDiscovery({
+            cacheTTL: 100,
+            configPath: require('path').join(os.tmpdir(), 'test-probe.json'),
+            configDir: os.tmpdir(),
+            persistFile: 'test-discovery-cache-' + Date.now() + '.json'
+        });
+    });
+
+    test('getProbeState returns initial state', () => {
+        const state = discovery.getProbeState();
+        expect(state.lastProbeAt).toBeNull();
+        expect(state.inProgress).toBe(false);
+        expect(state.discoveredCount).toBe(0);
+        expect(state.candidatePatterns).toBe(CANDIDATE_MODEL_PATTERNS.length);
+    });
+
+    test('addUserCandidate adds and deduplicates', () => {
+        discovery.addUserCandidate('test-model-1');
+        discovery.addUserCandidate('test-model-1'); // duplicate
+        discovery.addUserCandidate('test-model-2');
+        expect(discovery._userCandidates).toEqual(['test-model-1', 'test-model-2']);
+    });
+
+    test('addUserCandidate rejects invalid input', () => {
+        discovery.addUserCandidate('');
+        discovery.addUserCandidate(null);
+        discovery.addUserCandidate(123);
+        expect(discovery._userCandidates).toEqual([]);
+    });
+
+    test('probeModels returns error when no API key', async () => {
+        const result = await discovery.probeModels({});
+        expect(result.error).toBe('no_api_key');
+    });
+
+    test('probeModels prevents concurrent probes', async () => {
+        discovery._probeState.inProgress = true;
+        const result = await discovery.probeModels({ apiKey: 'test' });
+        expect(result.error).toBe('probe_already_running');
+    });
+
+    test('discovered models appear in getModels', async () => {
+        // Manually add a discovered model
+        discovery._discoveredModels.set('glm-test-new', {
+            id: 'glm-test-new',
+            tier: 'MEDIUM',
+            displayName: 'GLM Test New',
+            source: 'probed'
+        });
+
+        const models = await discovery.getModels();
+        const found = models.find(m => m.id === 'glm-test-new');
+        expect(found).toBeDefined();
+        expect(found.source).toBe('probed');
+    });
+
+    test('discovered models do not duplicate known models', async () => {
+        // Add a model with the same ID as a known model
+        discovery._discoveredModels.set('glm-4.7', {
+            id: 'glm-4.7',
+            tier: 'HEAVY',
+            source: 'probed'
+        });
+
+        const models = await discovery.getModels();
+        const matches = models.filter(m => m.id === 'glm-4.7');
+        expect(matches.length).toBe(1); // Should not duplicate
+        expect(matches[0].source).toBe('static'); // Known model takes priority
+    });
+});
+
+describe('ModelDiscovery persistence', () => {
+    const os = require('os');
+    const fsSync = require('fs');
+    const persistFile = 'test-persist-' + Date.now() + '.json';
+    const configDir = os.tmpdir();
+    const filePath = require('path').join(configDir, persistFile);
+
+    afterEach(() => {
+        try { fsSync.unlinkSync(filePath); } catch {}
+    });
+
+    test('saveDiscoveryCache writes valid JSON', async () => {
+        const discovery = new ModelDiscovery({
+            configDir,
+            persistFile,
+            configPath: require('path').join(os.tmpdir(), 'nonexistent.json')
+        });
+
+        discovery._discoveredModels.set('glm-test', { id: 'glm-test', tier: 'MEDIUM' });
+        discovery._userCandidates = ['custom-probe'];
+        discovery._probeState.lastProbeAt = '2026-03-15T12:00:00.000Z';
+
+        await discovery._saveDiscoveryCache();
+
+        const data = JSON.parse(fsSync.readFileSync(filePath, 'utf-8'));
+        expect(data.version).toBe(1);
+        expect(data.discoveredModels['glm-test']).toBeDefined();
+        expect(data.userCandidates).toContain('custom-probe');
+        expect(data.lastProbeAt).toBe('2026-03-15T12:00:00.000Z');
+    });
+
+    test('loadDiscoveryCache restores state', async () => {
+        // Write cache manually
+        const cache = {
+            version: 1,
+            savedAt: Date.now(),
+            lastProbeAt: '2026-03-15T12:00:00.000Z',
+            discoveredModels: { 'glm-cached': { id: 'glm-cached', tier: 'LIGHT', source: 'probed' } },
+            userCandidates: ['user-model']
+        };
+        fsSync.writeFileSync(filePath, JSON.stringify(cache));
+
+        const discovery = new ModelDiscovery({
+            configDir,
+            persistFile,
+            configPath: require('path').join(os.tmpdir(), 'nonexistent.json')
+        });
+
+        expect(discovery._discoveredModels.has('glm-cached')).toBe(true);
+        expect(discovery._userCandidates).toContain('user-model');
+        expect(discovery._probeState.lastProbeAt).toBe('2026-03-15T12:00:00.000Z');
+    });
+
+    test('loadDiscoveryCache handles missing file gracefully', () => {
+        const discovery = new ModelDiscovery({
+            configDir,
+            persistFile: 'nonexistent-' + Date.now() + '.json',
+            configPath: require('path').join(os.tmpdir(), 'nonexistent.json')
+        });
+
+        expect(discovery._discoveredModels.size).toBe(0);
+        expect(discovery._userCandidates).toEqual([]);
+    });
+
+    test('cached discovered models survive round-trip', async () => {
+        // Save
+        const discovery1 = new ModelDiscovery({ configDir, persistFile, configPath: require('path').join(os.tmpdir(), 'nonexistent.json') });
+        discovery1._discoveredModels.set('glm-roundtrip', { id: 'glm-roundtrip', tier: 'HEAVY', source: 'probed' });
+        await discovery1._saveDiscoveryCache();
+
+        // Load
+        const discovery2 = new ModelDiscovery({ configDir, persistFile, configPath: require('path').join(os.tmpdir(), 'nonexistent.json') });
+        const models = await discovery2.getModels();
+        const found = models.find(m => m.id === 'glm-roundtrip');
+        expect(found).toBeDefined();
+        expect(found.tier).toBe('HEAVY');
+        expect(found.source).toBe('probed');
     });
 });

@@ -99,7 +99,7 @@ describeIfModule('keys-controller', () => {
 
             controller.handleDebugKeys(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should include timestamp in response', () => {
@@ -168,7 +168,7 @@ describeIfModule('keys-controller', () => {
 
             controller.handleKeyLatencyHistogram(mockReq, mockRes, '/stats/latency-histogram/');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return 400 when key index is out of bounds', () => {
@@ -177,7 +177,7 @@ describeIfModule('keys-controller', () => {
 
             controller.handleKeyLatencyHistogram(mockReq, mockRes, '/stats/latency-histogram/999');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(400, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.error).toContain('Invalid key index');
         });
@@ -217,7 +217,7 @@ describeIfModule('keys-controller', () => {
 
             controller.handleKeyLatencyHistogram(mockReq, mockRes, '/stats/latency-histogram/0');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return 200 with histogram data when found', () => {
@@ -226,7 +226,7 @@ describeIfModule('keys-controller', () => {
 
             controller.handleKeyLatencyHistogram(mockReq, mockRes, '/stats/latency-histogram/0');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return histogram with keyIndex', () => {

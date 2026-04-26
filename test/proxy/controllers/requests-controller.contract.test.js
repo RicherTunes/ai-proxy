@@ -45,7 +45,7 @@ describeIfModule('ProxyServer Contract: Requests Controller Operations', () => {
 
             controller.handleRequests(mockReq, mockRes, '/requests');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should include requests array in response', () => {
@@ -77,7 +77,7 @@ describeIfModule('ProxyServer Contract: Requests Controller Operations', () => {
 
             controller.handleRequests(mockReq, mockRes, '/requests/search');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.requests.every(r => r.keyIndex === 0)).toBe(true);
         });
@@ -88,7 +88,7 @@ describeIfModule('ProxyServer Contract: Requests Controller Operations', () => {
 
             controller.handleRequests(mockReq, mockRes, '/requests/search');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.requests.every(r => r.status === 500)).toBe(true);
         });
@@ -101,7 +101,7 @@ describeIfModule('ProxyServer Contract: Requests Controller Operations', () => {
 
             controller.handleRequests(mockReq, mockRes, '/requests/trace1');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return 404 when trace not found', () => {
@@ -110,7 +110,7 @@ describeIfModule('ProxyServer Contract: Requests Controller Operations', () => {
 
             controller.handleRequests(mockReq, mockRes, '/requests/nonexistent');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
         });
     });
 

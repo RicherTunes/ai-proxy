@@ -11,6 +11,10 @@
             --error: #ef4444;
             --danger: var(--error);
             --border: #334155;
+            --bg-tertiary: #1a2236;
+            --bg-input: #1e293b;
+            --text-tertiary: #64748b;
+            --text-on-dark: #1a1a2e;
             --glow-cyan: 0 0 10px rgba(6, 182, 212, 0.3);
             --glow-green: 0 0 10px rgba(34, 197, 94, 0.3);
             --glow-red: 0 0 10px rgba(239, 68, 68, 0.3);
@@ -51,10 +55,48 @@
             --radius-full: 9999px;
 
             /* Health score colors */
+            --color-good: #22d3ee;
+            --text-on-accent: #ffffff;
             --score-excellent-bg: rgba(34, 197, 94, 0.15);
             --score-good-bg: rgba(34, 211, 238, 0.15);
             --score-fair-bg: rgba(245, 158, 11, 0.15);
             --score-poor-bg: rgba(239, 68, 68, 0.15);
+
+            /* Semantic chip colors */
+            --chip-source: #c4b5fc;
+            --chip-target: #67e8f9;
+            --chip-override: #fcd34d;
+            --token-color-in: #93c5fd;
+            --token-color-out: #f9a8d4;
+
+            /* Interactive state variants */
+            --accent-hover: #0891b2;
+            --success-hover: #16a34a;
+            --warning-hover: #d97706;
+            --error-hover: #dc2626;
+            --text-on-bright: #000000;
+
+            /* Status chip palette */
+            --color-info: #3b82f6;
+            --color-muted: #6b7280;
+            --color-violet: #8b5cf6;
+            --color-indigo: #818cf8;
+            --color-emerald: #10b981;
+            --color-lime: #4ade80;
+            --color-orange: #f97316;
+            --chip-src-default: #a5b4fc;
+            --chip-failover: #fca5a5;
+            --chip-dst-pool: #86efac;
+            --provider-metered: #fbbf24;
+            --provider-premium: #f87171;
+
+            /* Medal / rank gradients */
+            --medal-gold-start: #ffd700;
+            --medal-gold-end: #ffb800;
+            --medal-silver-start: #c0c0c0;
+            --medal-silver-end: #a8a8a8;
+            --medal-bronze-start: #cd7f32;
+            --medal-bronze-end: #b8722d;
 
             /* Motion */
             --dur: 180ms;
@@ -99,8 +141,12 @@
             --bg-primary: #f0f2f5;
             --bg-secondary: #ffffff;
             --bg-card: #ffffff;
+            --bg-tertiary: #f8fafc;
+            --bg-input: #ffffff;
             --text-primary: #1e293b;
             --text-secondary: #64748b;
+            --text-tertiary: #94a3b8;
+            --text-on-dark: #1e293b;
             --accent: #0891b2;
             --accent-secondary: #7c3aed;
             --success: #16a34a;
@@ -113,16 +159,116 @@
             --glow-red: none;
 
             /* Health score colors - light theme */
+            --color-good: #0891b2;
+            --text-on-accent: #ffffff;
             --score-excellent-bg: rgba(22, 163, 74, 0.15);
             --score-good-bg: rgba(6, 182, 212, 0.15);
             --score-fair-bg: rgba(217, 119, 6, 0.15);
             --score-poor-bg: rgba(220, 38, 38, 0.15);
+
+            --chip-source: #7c3aed;
+            --chip-target: #0891b2;
+            --chip-override: #d97706;
+            --token-color-in: #2563eb;
+            --token-color-out: #db2777;
+
+            /* Interactive state variants - light theme */
+            --accent-hover: #0e7490;
+            --success-hover: #15803d;
+            --warning-hover: #b45309;
+            --error-hover: #b91c1c;
+            --text-on-bright: #000000;
+
+            /* Status chip palette - light theme */
+            --color-info: #2563eb;
+            --color-muted: #4b5563;
+            --color-violet: #7c3aed;
+            --color-indigo: #6366f1;
+            --color-emerald: #059669;
+            --color-lime: #16a34a;
+            --color-orange: #ea580c;
+            --chip-src-default: #6366f1;
+            --chip-failover: #ef4444;
+            --chip-dst-pool: #16a34a;
+            --provider-metered: #d97706;
+            --provider-premium: #dc2626;
+
+            /* Medal / rank gradients - same in both themes */
+            --medal-gold-start: #ffd700;
+            --medal-gold-end: #ffb800;
+            --medal-silver-start: #c0c0c0;
+            --medal-silver-end: #a8a8a8;
+            --medal-bronze-start: #cd7f32;
+            --medal-bronze-end: #b8722d;
 
             /* Surface overlays - light theme */
             --surface-overlay: rgba(0, 0, 0, 0.03);
             --surface-overlay-hover: rgba(0, 0, 0, 0.06);
             --surface-overlay-active: rgba(0, 0, 0, 0.09);
             --border-subtle: rgba(0, 0, 0, 0.08);
+        }
+
+        /* Auto-detect OS dark/light preference when no explicit theme is set */
+        @media (prefers-color-scheme: light) {
+            :root:not([data-theme]) {
+                --bg-primary: #f0f2f5;
+                --bg-secondary: #ffffff;
+                --bg-card: #ffffff;
+                --bg-tertiary: #f8fafc;
+                --bg-input: #ffffff;
+                --text-primary: #1e293b;
+                --text-secondary: #64748b;
+                --text-tertiary: #94a3b8;
+                --text-on-dark: #1e293b;
+                --accent: #0891b2;
+                --accent-secondary: #7c3aed;
+                --success: #16a34a;
+                --warning: #d97706;
+                --error: #dc2626;
+                --danger: var(--error);
+                --border: #e2e8f0;
+                --glow-cyan: none;
+                --glow-green: none;
+                --glow-red: none;
+                --color-good: #0891b2;
+                --text-on-accent: #ffffff;
+                --score-excellent-bg: rgba(22, 163, 74, 0.15);
+                --score-good-bg: rgba(6, 182, 212, 0.15);
+                --score-fair-bg: rgba(217, 119, 6, 0.15);
+                --score-poor-bg: rgba(220, 38, 38, 0.15);
+                --chip-source: #7c3aed;
+                --chip-target: #0891b2;
+                --chip-override: #d97706;
+                --token-color-in: #2563eb;
+                --token-color-out: #db2777;
+                --accent-hover: #0e7490;
+                --success-hover: #15803d;
+                --warning-hover: #b45309;
+                --error-hover: #b91c1c;
+                --text-on-bright: #000000;
+                --color-info: #2563eb;
+                --color-muted: #4b5563;
+                --color-violet: #7c3aed;
+                --color-indigo: #6366f1;
+                --color-emerald: #059669;
+                --color-lime: #16a34a;
+                --color-orange: #ea580c;
+                --chip-src-default: #6366f1;
+                --chip-failover: #ef4444;
+                --chip-dst-pool: #16a34a;
+                --provider-metered: #d97706;
+                --provider-premium: #dc2626;
+                --medal-gold-start: #ffd700;
+                --medal-gold-end: #ffb800;
+                --medal-silver-start: #c0c0c0;
+                --medal-silver-end: #a8a8a8;
+                --medal-bronze-start: #cd7f32;
+                --medal-bronze-end: #b8722d;
+                --surface-overlay: rgba(0, 0, 0, 0.03);
+                --surface-overlay-hover: rgba(0, 0, 0, 0.06);
+                --surface-overlay-active: rgba(0, 0, 0, 0.09);
+                --border-subtle: rgba(0, 0, 0, 0.08);
+            }
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -149,96 +295,4 @@
             padding: var(--padding-spacious);
         }
 
-        /* Per-Model Breakdown table */
-        .model-breakdown-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-        }
-        .model-breakdown-table th {
-            text-align: left;
-            padding: 4px 8px;
-            color: var(--text-secondary);
-            border-bottom: 1px solid var(--border);
-            font-weight: 500;
-        }
-        .model-breakdown-table td {
-            padding: 4px 8px;
-            border-bottom: 1px solid rgba(51, 65, 85, 0.3);
-            color: var(--text-primary);
-        }
-        .model-breakdown-table tr:hover td {
-            background: rgba(6, 182, 212, 0.05);
-        }
-        .model-breakdown-table .model-name {
-            font-family: monospace;
-            font-weight: 600;
-            color: var(--accent);
-        }
-
-        /* Routing disabled CTA */
-        .routing-disabled-cta {
-            display: none;
-            text-align: center;
-            padding: 32px 16px;
-            border: 1px dashed var(--border);
-            border-radius: var(--radius-lg);
-            margin: 12px 0;
-        }
-        .routing-disabled-cta .routing-disabled-icon {
-            margin-bottom: 12px;
-            opacity: 0.4;
-        }
-        .routing-disabled-cta .routing-disabled-hero-icon { color: var(--accent); }
-        .routing-disabled-cta .routing-disabled-title {
-            font-size: var(--font-md);
-            color: var(--text-primary);
-            margin-bottom: 8px;
-        }
-        .routing-disabled-cta .routing-disabled-desc {
-            font-size: var(--font-sm);
-            color: var(--text-secondary);
-            max-width: 400px;
-            margin: 0 auto 16px;
-            line-height: 1.5;
-        }
-        .routing-disabled-cta .routing-disabled-hint {
-            font-size: var(--font-xs);
-            color: var(--text-secondary);
-            margin-top: 12px;
-            opacity: 0.7;
-        }
-        .routing-disabled-cta .routing-disabled-hint code {
-            font-family: var(--font-mono);
-            background: var(--surface-overlay);
-            padding: 1px 4px;
-            border-radius: var(--radius-sm);
-        }
-        .routing-toggle-btn {
-            font-size: 11px;
-            padding: 2px 10px;
-            margin-left: 8px;
-            cursor: pointer;
-        }
-
-        /* Welcome banner */
-        .welcome-banner {
-            margin-bottom: 12px;
-        }
-        .welcome-content {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-left: 3px solid var(--accent);
-            border-radius: var(--radius-md);
-            font-size: var(--font-sm);
-            line-height: 1.5;
-        }
-        .welcome-content .welcome-icon {
-            color: var(--accent);
-            flex-shrink: 0;
-        }
 

@@ -342,7 +342,8 @@ describe('data-action handler completeness', () => {
         'set-time-range', 'toggle-theme', 'set-density',
         'export-data', 'share-url',
         'show-shortcuts-modal', 'show-login', 'logout',
-        'control-pause', 'control-resume',
+        'control-pause', 'control-resume', 'control-restart',
+        'close-restart-modal', 'confirm-restart',
         'reload-keys', 'select-key', 'close-key-details',
         'force-circuit', 'force-circuit-state',
         'open-key-override-modal', 'close-key-override-modal',
@@ -372,7 +373,7 @@ describe('data-action handler completeness', () => {
         'noop', 'kpi-navigate', 'enable-routing', 'toggle-routing', 'scroll-to-account-usage',
         'toggle-global-mapping', 'toggle-aimd-mode',
         // Nested sub-cases
-        'sort-models', 'select-tenant',
+        'sort-models', 'refresh-models', 'select-tenant',
         // Handled in context-menu.js (separate event listener)
         'context-copy-id', 'context-filter-by-key',
         'context-view-similar', 'context-investigate'

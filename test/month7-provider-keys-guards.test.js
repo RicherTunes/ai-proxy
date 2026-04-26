@@ -459,6 +459,51 @@ describe('GUARD-15: Duplicate key collision across providers', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════
+// GUARD-15b: Strict key uniqueness mode
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('GUARD-15b: Strict key uniqueness mode', () => {
+    let km;
+
+    afterEach(() => {
+        if (km) {
+            km.destroy?.();
+            km = null;
+        }
+    });
+
+    test('strictKeyUniqueness: true throws on duplicate key across providers', () => {
+        km = new KeyManager({ maxConcurrencyPerKey: 5, strictKeyUniqueness: true });
+        expect(() => {
+            km.loadKeys({ 'z.ai': ['shared.secret'], 'anthropic': ['shared.secret'] });
+        }).toThrow(/Duplicate key/);
+    });
+
+    test('strictKeyUniqueness: true throws on duplicate within same provider', () => {
+        km = new KeyManager({ maxConcurrencyPerKey: 5, strictKeyUniqueness: true });
+        expect(() => {
+            km.loadKeys({ 'z.ai': ['zkey.s1', 'zkey.s1'] });
+        }).toThrow(/Duplicate key/);
+    });
+
+    test('strictKeyUniqueness: false (default) does NOT throw on duplicates', () => {
+        km = new KeyManager({ maxConcurrencyPerKey: 5 });
+        expect(() => {
+            km.loadKeys({ 'z.ai': ['shared.secret'], 'anthropic': ['shared.secret'] });
+        }).not.toThrow();
+        expect(km.keys).toHaveLength(1);
+    });
+
+    test('strictKeyUniqueness: true allows unique keys across providers', () => {
+        km = new KeyManager({ maxConcurrencyPerKey: 5, strictKeyUniqueness: true });
+        expect(() => {
+            km.loadKeys({ 'z.ai': ['zkey.s1'], 'anthropic': ['antkey.s2'] });
+        }).not.toThrow();
+        expect(km.keys).toHaveLength(2);
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
 // GUARD-16: Error semantics — no_keys_configured vs all_keys_busy
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -488,5 +533,104 @@ describe('GUARD-16: Error semantics for provider key availability', () => {
         expect(km.getKeysForProvider('anthropic')).toEqual([2]);
         expect(km.getKeysForProvider('openai')).toEqual([]);
         km.destroy?.();
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// GUARD-17: Queue preserves provider filter after dequeue
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('GUARD-17: Queue preserves provider filter', () => {
+    test('acquireKey called with same providerFilter after dequeue (documented invariant)', () => {
+        const km = new KeyManager({ maxConcurrencyPerKey: 1 });
+        km.loadKeys({ 'z.ai': ['zkey.s1'], 'anthropic': ['antkey.s2'] });
+
+        // Acquire z.ai key — should get zkey
+        const key1 = km.acquireKey([], 'z.ai');
+        expect(key1).not.toBeNull();
+        expect(key1.provider).toBe('z.ai');
+
+        // z.ai key is now in-flight (concurrency=1), so second acquire for z.ai should return null
+        const key2 = km.acquireKey([], 'z.ai');
+        expect(key2).toBeNull();
+
+        // But anthropic key should still be acquirable — filter is preserved per call
+        const key3 = km.acquireKey([], 'anthropic');
+        expect(key3).not.toBeNull();
+        expect(key3.provider).toBe('anthropic');
+
+        // Release z.ai key — now it should be acquirable again
+        km.recordSuccess(key1, 100);
+        const key4 = km.acquireKey([], 'z.ai');
+        expect(key4).not.toBeNull();
+        expect(key4.provider).toBe('z.ai');
+
+        km.recordSuccess(key3, 100);
+        km.recordSuccess(key4, 100);
+        km.destroy?.();
+    });
+
+    test('acquireKey with provider filter never returns key from wrong provider', () => {
+        const km = new KeyManager({ maxConcurrencyPerKey: 5 });
+        km.loadKeys({ 'z.ai': ['z1.s1', 'z2.s2'], 'anthropic': ['ant1.s3'] });
+
+        // Acquire 10 keys for z.ai — should never get anthropic key
+        for (let i = 0; i < 10; i++) {
+            const key = km.acquireKey([], 'z.ai');
+            if (key) {
+                expect(key.provider).toBe('z.ai');
+                km.recordSuccess(key, 50);
+            }
+        }
+
+        // Acquire 10 keys for anthropic — should never get z.ai key
+        for (let i = 0; i < 10; i++) {
+            const key = km.acquireKey([], 'anthropic');
+            if (key) {
+                expect(key.provider).toBe('anthropic');
+                km.recordSuccess(key, 50);
+            }
+        }
+
+        km.destroy?.();
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// GUARD-18: extraHeaders denylist covers hop-by-hop and security headers
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('GUARD-18: extraHeaders denylist completeness', () => {
+    test('RESERVED_HEADERS constant covers all required categories', () => {
+        const fs = require('fs');
+        const source = fs.readFileSync(
+            require('path').join(__dirname, '..', 'lib', 'request-handler.js'),
+            'utf8'
+        );
+
+        const match = source.match(/const RESERVED_HEADERS = new Set\(\[([\s\S]*?)\]\)/);
+        expect(match).not.toBeNull();
+
+        const headerBlock = match[1];
+        const required = [
+            'host', 'connection', 'content-length', 'transfer-encoding',
+            'x-api-key', 'authorization', 'x-request-id',
+            'keep-alive', 'proxy-authenticate', 'proxy-authorization',
+            'proxy-connection', 'te', 'trailer', 'upgrade',
+            'x-admin-token', 'cookie'
+        ];
+        for (const h of required) {
+            expect(headerBlock).toContain(`'${h}'`);
+        }
+    });
+
+    test('case-insensitive matching and normalized output keys', () => {
+        const fs = require('fs');
+        const source = fs.readFileSync(
+            require('path').join(__dirname, '..', 'lib', 'request-handler.js'),
+            'utf8'
+        );
+        expect(source).toContain('RESERVED_HEADERS.has(k.toLowerCase())');
+        expect(source).toContain('extraHeaders[k.toLowerCase()]');
     });
 });

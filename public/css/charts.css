@@ -72,7 +72,7 @@
 
         .prediction-badge.warning {
             background: rgba(249, 115, 22, 0.2);
-            color: #f97316;
+            color: var(--color-orange);
         }
 
         .prediction-badge.critical {
@@ -125,6 +125,19 @@
             font-size: 1.25rem;
             font-weight: 600;
             color: var(--success);
+        }
+
+        /* Cost panel responsive */
+        @media (max-width: 480px) {
+            .cost-panel {
+                padding: var(--spacing-sm);
+            }
+            .cost-stat {
+                padding: var(--spacing-sm);
+            }
+            .cost-stat .value {
+                font-size: 1rem;
+            }
         }
 
         .budget-progress {
@@ -205,12 +218,6 @@
             margin-bottom: 8px;
         }
 
-        .comparison-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: var(--spacing-md);
-        }
-
         /* Key Comparison Cards */
         .comparison-grid {
             display: grid;
@@ -277,7 +284,7 @@
         }
 
         .key-progress-fill.excellent { background: var(--success); }
-        .key-progress-fill.good { background: #22d3ee; }
+        .key-progress-fill.good { background: var(--color-good); }
         .key-progress-fill.fair { background: var(--warning); }
         .key-progress-fill.poor { background: var(--error); }
 
@@ -295,62 +302,19 @@
         }
 
         .key-rank.rank-1 {
-            background: linear-gradient(135deg, #ffd700, #ffb800);
-            color: #1a1a2e;
+            background: linear-gradient(135deg, var(--medal-gold-start), var(--medal-gold-end));
+            color: var(--text-on-dark);
         }
 
         .key-rank.rank-2 {
-            background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
-            color: #1a1a2e;
+            background: linear-gradient(135deg, var(--medal-silver-start), var(--medal-silver-end));
+            color: var(--text-on-dark);
         }
 
         .key-rank.rank-3 {
-            background: linear-gradient(135deg, #cd7f32, #b8722d);
-            color: white;
+            background: linear-gradient(135deg, var(--medal-bronze-start), var(--medal-bronze-end));
+            color: var(--text-on-accent);
         }
-
-        /* Legacy comparison-key styles (kept for compatibility) */
-        .comparison-key {
-            background: var(--bg-secondary);
-            border-radius: 6px;
-            padding: var(--spacing-md);
-        }
-
-        .comparison-key.best {
-            border: 1px solid var(--success);
-        }
-
-        .comparison-key .key-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .comparison-key .score {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        .comparison-bar {
-            height: 8px;
-            background: var(--bg-primary);
-            border-radius: 4px;
-            margin: var(--spacing-xs) 0;
-            overflow: hidden;
-        }
-
-        .comparison-bar-fill {
-            height: 100%;
-            border-radius: 4px;
-            transition: width calc(var(--dur) * 1.67) var(--ease);
-        }
-
-        .comparison-bar-fill.performance { background: var(--accent); }
-        .comparison-bar-fill.reliability { background: var(--success); }
-        .comparison-bar-fill.stability { background: var(--accent-secondary); }
-        .comparison-bar-fill.ratelimit { background: var(--warning); }
-
 
         /* ========== PHASE 2: HEATMAP & TABS ========== */
 
@@ -390,7 +354,7 @@
 
         .heatmap-cell.good {
             background: var(--score-good-bg);
-            color: #22d3ee;
+            color: var(--color-good);
             border-color: rgba(34, 211, 238, 0.3);
         }
 
@@ -463,7 +427,7 @@
             top: -3px;
             right: -3px;
             background: var(--accent);
-            color: white;
+            color: var(--text-on-accent);
             font-size: 0.5rem;
             padding: 1px 3px;
             border-radius: var(--radius-full);

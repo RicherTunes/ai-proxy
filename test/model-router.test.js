@@ -3709,6 +3709,38 @@ describe('_estimateRequestTokens', () => {
         });
         expect(result).toBeGreaterThan(0);
     });
+
+    test('includes thinking.budget_tokens in estimation', () => {
+        const withoutThinking = router._estimateRequestTokens({
+            messages: [{ role: 'user', content: 'hi' }],
+            max_tokens: 100
+        });
+        const withThinking = router._estimateRequestTokens({
+            messages: [{ role: 'user', content: 'hi' }],
+            thinking: { budget_tokens: 16000 },
+            max_tokens: 100
+        });
+        // Should be exactly 16000 tokens more
+        expect(withThinking - withoutThinking).toBe(16000);
+    });
+
+    test('handles missing thinking object gracefully', () => {
+        const result = router._estimateRequestTokens({
+            messages: [{ role: 'user', content: 'hi' }],
+            max_tokens: 100
+        });
+        expect(result).toBeGreaterThan(0);
+    });
+
+    test('handles non-numeric budget_tokens gracefully', () => {
+        const result = router._estimateRequestTokens({
+            messages: [{ role: 'user', content: 'hi' }],
+            thinking: { budget_tokens: 'invalid' },
+            max_tokens: 100
+        });
+        // Should still work, just ignoring the invalid budget_tokens
+        expect(result).toBeGreaterThan(0);
+    });
 });
 
 // ==================================================================

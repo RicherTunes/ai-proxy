@@ -298,14 +298,6 @@
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
 
-    // HTML escape function
-    function escapeHtml(str) {
-        if (str === null || str === undefined) return '';
-        const div = document.createElement('div');
-        div.textContent = String(str);
-        return div.innerHTML;
-    }
-
     // State utility functions (from dashboard-utils.js)
     function renderEmptyState(message, options) {
         options = options || {};

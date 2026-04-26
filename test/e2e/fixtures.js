@@ -216,7 +216,8 @@ exports.test = test.extend({
       adminAuth: { enabled: false },
       enableHotReload: false,
       security: { rateLimit: { enabled: false } },
-      usageMonitor: { enabled: false }
+      usageMonitor: { enabled: false },
+      shutdownTimeout: 5000  // Short timeout for tests — avoids exceeding Playwright test timeout
     });
 
     const proxyServer = new ProxyServer({ config });

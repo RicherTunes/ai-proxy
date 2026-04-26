@@ -51,6 +51,17 @@ beforeAll(() => {
 // HELPERS
 // ============================================================================
 
+// Import mock-object factories from the shared helper.
+// createKeyManager/createHandler stay local because jest.isolateModules
+// gives us different KeyManager / RequestHandler references.
+const {
+    createMockReq,
+    createMockRes,
+    createMockProxyReq,
+    createMockProxyRes,
+    setupHttpsMock: _setupHttpsMock
+} = require('./helpers/create-handler');
+
 function createKeyManager(keys = ['key1.secret1', 'key2.secret2']) {
     const km = new KeyManager({
         maxConcurrencyPerKey: 5,
@@ -79,59 +90,8 @@ function createHandler(overrides = {}) {
     return { rh, km };
 }
 
-function createMockReq(overrides = {}) {
-    return {
-        method: 'POST',
-        url: '/v1/messages',
-        headers: {
-            'content-type': 'application/json',
-            'host': 'localhost:3000',
-            ...overrides.headers
-        },
-        ...overrides
-    };
-}
-
-function createMockRes() {
-    return {
-        headersSent: false,
-        writeHead: jest.fn(),
-        end: jest.fn(),
-        on: jest.fn(),
-        once: jest.fn(),
-        removeListener: jest.fn(),
-        pipe: jest.fn()
-    };
-}
-
-function createMockProxyReq() {
-    const proxyReq = new EventEmitter();
-    proxyReq.write = jest.fn();
-    proxyReq.end = jest.fn();
-    proxyReq.destroy = jest.fn();
-    proxyReq.reusedSocket = false;
-    proxyReq.socket = { localPort: 12345, remotePort: 443 };
-    return proxyReq;
-}
-
-function createMockProxyRes(statusCode = 200, headers = {}) {
-    const proxyRes = new EventEmitter();
-    proxyRes.statusCode = statusCode;
-    proxyRes.headers = headers;
-    proxyRes.resume = jest.fn();
-    proxyRes.pipe = jest.fn((dest) => {
-        setImmediate(() => proxyRes.emit('end'));
-    });
-    return proxyRes;
-}
-
 function setupHttpsMock(proxyReq, proxyRes) {
-    https.request.mockImplementation((options, callback) => {
-        if (proxyRes) {
-            process.nextTick(() => callback(proxyRes));
-        }
-        return proxyReq;
-    });
+    _setupHttpsMock(https, proxyReq, proxyRes);
 }
 
 function createTrace() {
@@ -150,6 +110,10 @@ function createTraceAttempt() {
     };
 }
 
+async function flushAsyncWork() {
+    await new Promise(resolve => setImmediate(resolve));
+}
+
 // ============================================================================
 // Line 210: createTimeout rejection path
 // ============================================================================
@@ -161,6 +125,9 @@ describe('handleRequest timeout/error catch block (lines 684-688)', () => {
         const setup = createHandler();
         rh = setup.rh;
         km = setup.km;
+        jest.spyOn(rh, '_resolveHealthyIP').mockResolvedValue(null);
+        jest.spyOn(rh, '_acquireUpstreamSlot').mockResolvedValue();
+        jest.spyOn(rh, '_releaseUpstreamSlot').mockImplementation(() => {});
     });
 
     afterEach(() => {
@@ -1301,10 +1268,16 @@ describe('_makeProxyRequest response data buffer and tokenUsage (lines 1610-1620
     test('records token usage from response when parseTokenUsage returns data (line 1620)', async () => {
         const proxyReq = createMockProxyReq();
         const proxyRes = new EventEmitter();
+        const tokenData = 'data: {"type":"message_delta","usage":{"input_tokens":100,"output_tokens":50}}\n\n';
         proxyRes.statusCode = 200;
         proxyRes.headers = { 'content-type': 'text/event-stream' };
         proxyRes.resume = jest.fn();
-        proxyRes.pipe = jest.fn();
+        proxyRes.pipe = jest.fn(() => {
+            setImmediate(() => {
+                proxyRes.emit('data', Buffer.from(tokenData));
+                proxyRes.emit('end');
+            });
+        });
 
         https.request.mockImplementation((options, callback) => {
             process.nextTick(() => callback(proxyRes));
@@ -1329,12 +1302,6 @@ describe('_makeProxyRequest response data buffer and tokenUsage (lines 1610-1620
             false, null, false, createTraceAttempt()
         );
 
-        // Simulate data chunks including token usage
-        await new Promise(resolve => setTimeout(resolve, 10));
-        const tokenData = 'data: {"type":"message_delta","usage":{"input_tokens":100,"output_tokens":50}}\n\n';
-        proxyRes.emit('data', Buffer.from(tokenData));
-        proxyRes.emit('end');
-
         const result = await resultPromise;
 
         // Line 1620: recordTokenUsage called with parsed usage
@@ -1347,10 +1314,17 @@ describe('_makeProxyRequest response data buffer and tokenUsage (lines 1610-1620
     test('trims response buffer when exceeding 64KB (line 1611)', async () => {
         const proxyReq = createMockProxyReq();
         const proxyRes = new EventEmitter();
+        const bigChunk = Buffer.alloc(40 * 1024, 'x'); // 40KB
         proxyRes.statusCode = 200;
         proxyRes.headers = {};
         proxyRes.resume = jest.fn();
-        proxyRes.pipe = jest.fn();
+        proxyRes.pipe = jest.fn(() => {
+            setImmediate(() => {
+                proxyRes.emit('data', bigChunk);
+                proxyRes.emit('data', bigChunk); // Total 80KB > 64KB limit
+                proxyRes.emit('end');
+            });
+        });
 
         https.request.mockImplementation((options, callback) => {
             process.nextTick(() => callback(proxyRes));
@@ -1374,13 +1348,6 @@ describe('_makeProxyRequest response data buffer and tokenUsage (lines 1610-1620
             false, null, false, createTraceAttempt()
         );
 
-        await new Promise(resolve => setTimeout(resolve, 10));
-        // Send multiple chunks totaling > 64KB
-        const bigChunk = Buffer.alloc(40 * 1024, 'x'); // 40KB
-        proxyRes.emit('data', bigChunk);
-        proxyRes.emit('data', bigChunk); // Total 80KB > 64KB limit
-        proxyRes.emit('end');
-
         const result = await resultPromise;
 
         // Line 1611 path executed (trimming). Test completes without error.
@@ -1399,6 +1366,9 @@ describe('_makeProxyRequest proxyRes error on streaming (lines 1672-1674)', () =
         const setup = createHandler();
         rh = setup.rh;
         km = setup.km;
+        jest.spyOn(rh, '_resolveHealthyIP').mockResolvedValue(null);
+        jest.spyOn(rh, '_acquireUpstreamSlot').mockResolvedValue();
+        jest.spyOn(rh, '_releaseUpstreamSlot').mockImplementation(() => {});
     });
 
     afterEach(() => {
@@ -1436,7 +1406,7 @@ describe('_makeProxyRequest proxyRes error on streaming (lines 1672-1674)', () =
         );
 
         // Wait for response callback to fire
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await flushAsyncWork();
         // Fire error on proxyRes (after streaming started)
         proxyRes.emit('error', new Error('Connection reset'));
 
@@ -1458,6 +1428,9 @@ describe('_makeProxyRequest shouldRecreateAgent (line 1742)', () => {
         const setup = createHandler();
         rh = setup.rh;
         km = setup.km;
+        jest.spyOn(rh, '_resolveHealthyIP').mockResolvedValue(null);
+        jest.spyOn(rh, '_acquireUpstreamSlot').mockResolvedValue();
+        jest.spyOn(rh, '_releaseUpstreamSlot').mockImplementation(() => {});
     });
 
     afterEach(() => {
@@ -1477,6 +1450,12 @@ describe('_makeProxyRequest shouldRecreateAgent (line 1742)', () => {
         });
 
         km.recordSocketHangup = jest.fn().mockReturnValue({});
+        rh.statsAggregator = {
+            recordKeyUsage: jest.fn(),
+            recordError: jest.fn(),
+            recordAdaptiveTimeout: jest.fn(),
+            recordHangupCause: jest.fn()
+        };
 
         // Force shouldRecreateAgent to return true
         jest.spyOn(rh.connectionMonitor, 'shouldRecreateAgent').mockReturnValue(true);
@@ -1687,8 +1666,9 @@ describe('model_at_capacity error strategy', () => {
         const km = createKeyManager();
         // Set concurrency limit of 1 for test-model
         km.setModelConcurrencyLimits({ 'test-model': 1 });
-        // Acquire the only slot
-        km.acquireModelSlot('test-model');
+        // Acquire the only slot for both keys (acquireKey() may return either)
+        km.acquireModelSlot('test-model', 0);
+        km.acquireModelSlot('test-model', 1);
 
         const { rh } = createHandler({ keyManager: km });
 
@@ -1716,8 +1696,9 @@ describe('model_at_capacity error strategy', () => {
     test('model_at_capacity is retried by the retry loop (not immediately fatal)', async () => {
         const km = createKeyManager();
         km.setModelConcurrencyLimits({ 'test-model': 1 });
-        // Occupy the slot for first 2 attempts
-        km.acquireModelSlot('test-model');
+        // Occupy the slot for both keys (acquireKey() may return either)
+        km.acquireModelSlot('test-model', 0);
+        km.acquireModelSlot('test-model', 1);
 
         const { rh } = createHandler({ keyManager: km });
 
@@ -1725,9 +1706,10 @@ describe('model_at_capacity error strategy', () => {
         const origMakeProxy = rh._makeProxyRequest.bind(rh);
         rh._makeProxyRequest = jest.fn(async (...args) => {
             attemptCount++;
-            // Release slot on 3rd attempt so it succeeds
+            // Release slot on 3rd attempt so it succeeds (key 0 and key 1 alternate)
             if (attemptCount === 3) {
-                km.releaseModelSlot('test-model');
+                km.releaseModelSlot('test-model', 0);
+                km.releaseModelSlot('test-model', 1);
             }
             return origMakeProxy(...args);
         });

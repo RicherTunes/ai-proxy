@@ -1,9 +1,8 @@
 /**
  * Live Flow Visualization - Unit Tests
  *
- * TDD Phase: RED - Write failing tests for live-flow.js functions
  * Tests: renderFallbackChains, renderPoolStatus, renderRoutingCooldowns,
- * renderRoutingOverrides, LiveFlowViz class methods
+ * renderRoutingOverrides, RunwayViz class (per-request flow visualization)
  */
 
 'use strict';
@@ -279,7 +278,7 @@ describe('live-flow.js', () => {
             expect(container.innerHTML).toContain('3s');
         });
 
-        test('applies high utilization bar class when >= 80%', () => {
+        test('renders slot dots for small pools (<=20 slots)', () => {
             loadLiveFlow();
             window.DashboardLiveFlow.renderPoolStatus({
                 pools: {
@@ -290,35 +289,39 @@ describe('live-flow.js', () => {
             });
 
             const container = document.getElementById('modelPoolsViz');
-            expect(container.innerHTML).toContain('pool-bar-high');
+            expect(container.innerHTML).toContain('pool-slot-dots');
+            // 8 active + 2 inactive = 10 dots
+            const activeDots = (container.innerHTML.match(/pool-dot active/g) || []).length;
+            expect(activeDots).toBe(8);
         });
 
-        test('applies medium utilization bar class when >= 50%', () => {
+        test('renders bar for large pools (>20 slots)', () => {
             loadLiveFlow();
             window.DashboardLiveFlow.renderPoolStatus({
                 pools: {
                     medium: [
-                        { model: 'glm-4', inFlight: 5, maxConcurrency: 10, cooldownMs: 0 }
+                        { model: 'glm-4', inFlight: 15, maxConcurrency: 25, cooldownMs: 0 }
                     ]
                 }
             });
 
             const container = document.getElementById('modelPoolsViz');
-            expect(container.innerHTML).toContain('pool-bar-medium');
+            expect(container.innerHTML).toContain('pool-bar-track');
+            expect(container.innerHTML).toContain('pool-bar-fill');
         });
 
-        test('applies low utilization bar class when < 50%', () => {
+        test('renders cooled dots when model has cooldown', () => {
             loadLiveFlow();
             window.DashboardLiveFlow.renderPoolStatus({
                 pools: {
                     light: [
-                        { model: 'glm-4-air', inFlight: 2, maxConcurrency: 10, cooldownMs: 0 }
+                        { model: 'glm-4-air', inFlight: 2, maxConcurrency: 10, cooldownMs: 5000 }
                     ]
                 }
             });
 
             const container = document.getElementById('modelPoolsViz');
-            expect(container.innerHTML).toContain('pool-bar-low');
+            expect(container.innerHTML).toContain('pool-dot cooled');
         });
     });
 
@@ -436,17 +439,31 @@ describe('live-flow.js', () => {
         });
     });
 
-    describe('LiveFlowViz class - Behavior tests', () => {
+    describe('RunwayViz class - Core behavior', () => {
         let vizInstance;
+
+        const RUNWAY_DOM = `
+            <div class="runway-viz" id="runwayViz">
+                <section class="runway-section runway-inflight">
+                    <h5 class="runway-section-label">IN-FLIGHT</h5>
+                    <div class="runway-rows" id="runwayInflightRows"></div>
+                    <div class="runway-overflow" id="runwayOverflow" style="display:none">
+                        +<span id="runwayOverflowCount">0</span> more in-flight
+                    </div>
+                </section>
+                <section class="runway-section runway-completed">
+                    <h5 class="runway-section-label">JUST COMPLETED</h5>
+                    <div class="runway-rows" id="runwayCompletedRows"></div>
+                </section>
+                <div class="runway-empty" id="runwayEmpty"></div>
+                <div class="runway-footer" id="runwayFooter"></div>
+            </div>
+            <span id="liveFlowStatus"></span>
+        `;
 
         beforeEach(() => {
             jest.useFakeTimers();
-            setupDOM(`
-                <div id="liveFlowCanvas"></div>
-                <div id="liveFlowEmpty"></div>
-                <div id="liveFlowStatus"></div>
-                <div id="liveFlowLegend"></div>
-            `);
+            setupDOM(RUNWAY_DOM);
             mockStore.STATE.modelsData = {};
             loadLiveFlow();
         });
@@ -456,105 +473,400 @@ describe('live-flow.js', () => {
                 vizInstance.destroy();
             }
             jest.useRealTimers();
-            // Clean up state mutation
             mockStore.STATE.modelsData = {};
         });
 
         test('constructor creates instance with disabled state', () => {
-            vizInstance = new window.DashboardLiveFlow.LiveFlowViz('#liveFlowCanvas');
-
+            vizInstance = new window.DashboardLiveFlow.RunwayViz();
             expect(vizInstance).toBeDefined();
             expect(vizInstance.enabled).toBe(false);
+            expect(vizInstance.inFlight.size).toBe(0);
+            expect(vizInstance.completed.length).toBe(0);
         });
 
         test('setEnabled(true) enables visualization', () => {
-            vizInstance = new window.DashboardLiveFlow.LiveFlowViz('#liveFlowCanvas');
+            vizInstance = new window.DashboardLiveFlow.RunwayViz();
             vizInstance.setEnabled(true);
-
             expect(vizInstance.enabled).toBe(true);
         });
 
         test('setEnabled(false) disables visualization', () => {
-            vizInstance = new window.DashboardLiveFlow.LiveFlowViz('#liveFlowCanvas');
+            vizInstance = new window.DashboardLiveFlow.RunwayViz();
             vizInstance.setEnabled(true);
             vizInstance.setEnabled(false);
-
             expect(vizInstance.enabled).toBe(false);
         });
 
         test('destroy cleans up timers and listeners', () => {
-            vizInstance = new window.DashboardLiveFlow.LiveFlowViz('#liveFlowCanvas');
+            vizInstance = new window.DashboardLiveFlow.RunwayViz();
             vizInstance.setEnabled(true);
-
             const initialTimerCount = jest.getTimerCount();
             vizInstance.destroy();
             const finalTimerCount = jest.getTimerCount();
-
-            // Should clear timers
             expect(finalTimerCount).toBeLessThanOrEqual(initialTimerCount);
         });
 
         test('destroy is safe to call multiple times', () => {
-            vizInstance = new window.DashboardLiveFlow.LiveFlowViz('#liveFlowCanvas');
-
+            vizInstance = new window.DashboardLiveFlow.RunwayViz();
             expect(() => {
                 vizInstance.destroy();
-                vizInstance.destroy(); // Should not throw
+                vizInstance.destroy();
             }).not.toThrow();
         });
 
         test('_setStatus updates status element text', () => {
-            vizInstance = new window.DashboardLiveFlow.LiveFlowViz('#liveFlowCanvas');
-            vizInstance._setStatus('Test Status');
-
+            vizInstance = new window.DashboardLiveFlow.RunwayViz();
+            vizInstance._setStatus('connected');
             const statusEl = document.getElementById('liveFlowStatus');
-            expect(statusEl.textContent).toBe('Test Status');
-        });
-
-        test('_setStatus clears status when passed null', () => {
-            vizInstance = new window.DashboardLiveFlow.LiveFlowViz('#liveFlowCanvas');
-            vizInstance._setStatus('Initial');
-            vizInstance._setStatus(null);
-
-            const statusEl = document.getElementById('liveFlowStatus');
-            expect(statusEl.textContent).toBe('');
+            expect(statusEl.textContent).toBe('Live');
         });
 
         test('_onVisibilityChange pauses when hidden', () => {
-            vizInstance = new window.DashboardLiveFlow.LiveFlowViz('#liveFlowCanvas');
+            vizInstance = new window.DashboardLiveFlow.RunwayViz();
             vizInstance.setEnabled(true);
-            const initialEnabled = vizInstance.enabled;
-
-            // Simulate visibility hidden
             vizInstance._onVisibilityChange();
-
-            // Behavior: when hidden, should update internal state
-            // The exact behavior depends on implementation
             expect(vizInstance).toBeDefined();
         });
 
-        test('updateFlowDiagram handles empty data gracefully', () => {
-            // Skip instance cleanup for this test since updateFlowDiagram creates its own
+        test('updateFlowDiagram creates instance and handles arguments', () => {
             vizInstance = null;
             expect(() => {
-                window.DashboardLiveFlow.updateFlowDiagram({ nodes: [], links: [] });
+                window.DashboardLiveFlow.updateFlowDiagram(true);
+            }).not.toThrow();
+            expect(window._liveFlowViz).toBeDefined();
+            // Clean up
+            window._liveFlowViz.destroy();
+        });
+
+        test('updateFlowDiagram handles false gracefully', () => {
+            vizInstance = null;
+            expect(() => {
+                window.DashboardLiveFlow.updateFlowDiagram(false);
             }).not.toThrow();
         });
 
-        test('updateFlowDiagram handles null data gracefully', () => {
-            // Skip instance cleanup for this test since updateFlowDiagram creates its own
-            vizInstance = null;
-            expect(() => {
-                window.DashboardLiveFlow.updateFlowDiagram(null);
-            }).not.toThrow();
+        test('LiveFlowViz alias points to RunwayViz', () => {
+            expect(window.DashboardLiveFlow.LiveFlowViz).toBe(window.DashboardLiveFlow.RunwayViz);
+        });
+    });
+
+    describe('RunwayViz - Request lifecycle', () => {
+        let vizInstance;
+
+        const RUNWAY_DOM = `
+            <div class="runway-viz" id="runwayViz">
+                <div class="runway-stream" id="runwayStream">
+                    <div class="runway-rows" id="runwayRows"></div>
+                </div>
+                <div class="runway-jump" id="runwayJump" style="display:none">
+                    <button class="runway-jump-btn" id="runwayJumpBtn">Latest</button>
+                </div>
+                <div class="runway-empty" id="runwayEmpty"></div>
+                <div class="runway-footer" id="runwayFooter"></div>
+            </div>
+            <span id="liveFlowStatus"></span>
+        `;
+
+        function makeSSEEvent(data) {
+            return { data: JSON.stringify(data) };
+        }
+
+        beforeEach(() => {
+            jest.useFakeTimers();
+            setupDOM(RUNWAY_DOM);
+            mockStore.STATE.modelsData = {};
+            loadLiveFlow();
+            vizInstance = new window.DashboardLiveFlow.RunwayViz();
         });
 
-        test('_onPoolStatus updates internal pool state', () => {
-            vizInstance = new window.DashboardLiveFlow.LiveFlowViz('#liveFlowCanvas');
+        afterEach(() => {
+            if (vizInstance) vizInstance.destroy();
+            jest.useRealTimers();
+            mockStore.STATE.modelsData = {};
+        });
 
-            expect(() => {
-                vizInstance._onPoolStatus({ pools: {} });
-            }).not.toThrow();
+        test('request-start creates in-flight row', () => {
+            vizInstance._handleRequestStart(makeSSEEvent({
+                requestId: 'req-test-a21f',
+                originalModel: 'claude-sonnet-4',
+                mappedModel: 'glm-5',
+                tier: 'heavy',
+                timestamp: Date.now()
+            }));
+
+            expect(vizInstance.inFlight.size).toBe(1);
+            expect(vizInstance.inFlight.has('req-test-a21f')).toBe(true);
+
+            const row = vizInstance.inFlight.get('req-test-a21f');
+            expect(row.status).toBe('processing');
+            expect(row.mappedModel).toBe('glm-5');
+            expect(row.shortId).toBe('a21f');
+
+            // DOM should have a runway row
+            const rows = document.querySelectorAll('#runwayRows .runway-row');
+            expect(rows.length).toBe(1);
+            expect(rows[0].getAttribute('data-status')).toBe('processing');
+        });
+
+        test('request-retry updates in-flight row with retry info', () => {
+            // First: start
+            vizInstance._handleRequestStart(makeSSEEvent({
+                requestId: 'req-retry-test',
+                mappedModel: 'glm-4.7',
+                tier: 'medium',
+                timestamp: Date.now()
+            }));
+
+            // Then: retry
+            vizInstance._handleRequestRetry(makeSSEEvent({
+                requestId: 'req-retry-test',
+                attempt: 1,
+                mappedModel: 'glm-4.6',
+                previousModel: 'glm-4.7',
+                errorType: 'rate_limited',
+                timestamp: Date.now()
+            }));
+
+            const row = vizInstance.inFlight.get('req-retry-test');
+            expect(row.retries.length).toBe(1);
+            expect(row.retries[0].model).toBe('glm-4.7');
+            expect(row.retries[0].errorType).toBe('rate_limited');
+            expect(row.mappedModel).toBe('glm-4.6');
+
+            // DOM should show retry badge
+            const rowEl = document.querySelector('#runwayRows .runway-row');
+            expect(rowEl.innerHTML).toContain('runway-badge');
+            expect(rowEl.innerHTML).toContain('429');
+            expect(rowEl.innerHTML).toContain('runway-retry');
+        });
+
+        test('request-complete moves row from in-flight to completed after recv phase', () => {
+            vizInstance._handleRequestStart(makeSSEEvent({
+                requestId: 'req-complete-test',
+                mappedModel: 'glm-5',
+                tier: 'heavy',
+                timestamp: Date.now() - 2000
+            }));
+
+            expect(vizInstance.inFlight.size).toBe(1);
+
+            vizInstance._handleRequestComplete(makeSSEEvent({
+                requestId: 'req-complete-test',
+                mappedModel: 'glm-5',
+                latency: 2000,
+                inputTokens: 1200,
+                outputTokens: 890,
+                timestamp: Date.now()
+            }));
+
+            // During recv phase, row is still in-flight with phase='recv'
+            expect(vizInstance.inFlight.has('req-complete-test')).toBe(true);
+            const row = vizInstance.inFlight.get('req-complete-test');
+            expect(row.phase).toBe('recv');
+            expect(row.latencyMs).toBe(2000);
+
+            // Advance past recv hold delay (300-400ms)
+            jest.advanceTimersByTime(500);
+
+            expect(vizInstance.inFlight.size).toBe(0);
+            expect(vizInstance.completed.length).toBe(1);
+            expect(vizInstance.completed[0].status).toBe('completed');
+
+            // Completed section should render
+            const completedRows = document.querySelectorAll('#runwayRows .runway-row.completed');
+            expect(completedRows.length).toBe(1);
+            expect(completedRows[0].classList.contains('completed')).toBe(true);
+        });
+
+        test('orphan request-complete synthesizes completed row', () => {
+            vizInstance._handleRequestComplete(makeSSEEvent({
+                requestId: 'req-orphan-test',
+                mappedModel: 'glm-4',
+                latency: 1500,
+                timestamp: Date.now()
+            }));
+
+            // Should appear in completed even without request-start
+            expect(vizInstance.inFlight.size).toBe(0);
+            expect(vizInstance.completed.length).toBe(1);
+            expect(vizInstance.completed[0].requestId).toBe('req-orphan-test');
+        });
+
+        test('completed rows expire after timeout', () => {
+            vizInstance._handleRequestComplete(makeSSEEvent({
+                requestId: 'req-expire-test',
+                mappedModel: 'glm-4',
+                latency: 1000,
+                timestamp: Date.now()
+            }));
+
+            expect(vizInstance.completed.length).toBe(1);
+
+            // Advance past expiry (30s)
+            jest.advanceTimersByTime(31000);
+
+            expect(vizInstance.completed.length).toBe(0);
+        });
+
+        test('completed rows capped at max 15', () => {
+            for (let i = 0; i < 18; i++) {
+                vizInstance._handleRequestComplete(makeSSEEvent({
+                    requestId: 'req-cap-' + i,
+                    mappedModel: 'glm-4',
+                    latency: 1000,
+                    timestamp: Date.now() + i
+                }));
+            }
+
+            expect(vizInstance.completed.length).toBe(15);
+            // Most recent should be first (FIFO unshift)
+            expect(vizInstance.completed[0].requestId).toBe('req-cap-17');
+        });
+
+        test('error request-complete sets error status after recv phase', () => {
+            vizInstance._handleRequestStart(makeSSEEvent({
+                requestId: 'req-error-test',
+                mappedModel: 'glm-5',
+                tier: 'heavy',
+                timestamp: Date.now()
+            }));
+
+            vizInstance._handleRequestComplete(makeSSEEvent({
+                requestId: 'req-error-test',
+                mappedModel: 'glm-5',
+                error: 'timeout',
+                latency: 10000,
+                timestamp: Date.now()
+            }));
+
+            // Advance past recv hold delay
+            jest.advanceTimersByTime(500);
+
+            expect(vizInstance.completed[0].status).toBe('error');
+            const completedRow = document.querySelector('#runwayRows .runway-row.completed');
+            expect(completedRow.classList.contains('error-row')).toBe(true);
+        });
+
+        test('orphan request-retry is ignored', () => {
+            vizInstance._handleRequestRetry(makeSSEEvent({
+                requestId: 'req-unknown',
+                attempt: 1,
+                mappedModel: 'glm-4',
+                errorType: 'rate_limited',
+                timestamp: Date.now()
+            }));
+
+            expect(vizInstance.inFlight.size).toBe(0);
+        });
+    });
+
+    describe('RunwayViz - Overflow and priority', () => {
+        let vizInstance;
+
+        const RUNWAY_DOM = `
+            <div class="runway-viz" id="runwayViz">
+                <div class="runway-stream" id="runwayStream">
+                    <div class="runway-rows" id="runwayRows"></div>
+                </div>
+                <div class="runway-jump" id="runwayJump" style="display:none">
+                    <button class="runway-jump-btn" id="runwayJumpBtn">Latest</button>
+                </div>
+                <div class="runway-empty" id="runwayEmpty"></div>
+                <div class="runway-footer" id="runwayFooter"></div>
+            </div>
+            <span id="liveFlowStatus"></span>
+        `;
+
+        function makeSSEEvent(data) {
+            return { data: JSON.stringify(data) };
+        }
+
+        beforeEach(() => {
+            jest.useFakeTimers();
+            setupDOM(RUNWAY_DOM);
+            mockStore.STATE.modelsData = {};
+            loadLiveFlow();
+            vizInstance = new window.DashboardLiveFlow.RunwayViz();
+        });
+
+        afterEach(() => {
+            if (vizInstance) vizInstance.destroy();
+            jest.useRealTimers();
+            mockStore.STATE.modelsData = {};
+        });
+
+        test('scrollable stream shows all rows up to max', () => {
+            for (let i = 0; i < 10; i++) {
+                vizInstance._handleRequestStart(makeSSEEvent({
+                    requestId: 'req-scroll-' + i,
+                    mappedModel: 'glm-4',
+                    tier: 'medium',
+                    timestamp: Date.now() + i
+                }));
+            }
+
+            expect(vizInstance.inFlight.size).toBe(10);
+            // All 10 rows should be rendered (scrollable container, no overflow cutoff)
+            const rows = document.querySelectorAll('#runwayRows .runway-row');
+            expect(rows.length).toBe(10);
+        });
+
+        test('priority sort: errors appear first', () => {
+            // Add normal request (old = high elapsed time)
+            vizInstance._handleRequestStart(makeSSEEvent({
+                requestId: 'req-normal',
+                mappedModel: 'glm-4',
+                tier: 'medium',
+                timestamp: Date.now() - 5000
+            }));
+
+            // Add error request (newer but errored)
+            vizInstance._handleRequestStart(makeSSEEvent({
+                requestId: 'req-error',
+                mappedModel: 'glm-5',
+                tier: 'heavy',
+                timestamp: Date.now()
+            }));
+            // Mark as error status
+            vizInstance.inFlight.get('req-error').status = 'error';
+            vizInstance._renderStream();
+
+            const rows = document.querySelectorAll('#runwayRows .runway-row');
+            expect(rows.length).toBe(2);
+            // Error row should be first despite being newer
+            expect(rows[0].getAttribute('data-request-id')).toBe('req-error');
+        });
+
+        test('SSE reconnect clears in-flight', () => {
+            vizInstance._handleRequestStart(makeSSEEvent({
+                requestId: 'req-stale',
+                mappedModel: 'glm-4',
+                tier: 'medium',
+                timestamp: Date.now()
+            }));
+
+            expect(vizInstance.inFlight.size).toBe(1);
+
+            vizInstance.handleSSEReconnect();
+
+            expect(vizInstance.inFlight.size).toBe(0);
+        });
+
+        test('empty state shown when no requests', () => {
+            const container = document.getElementById('runwayViz');
+            expect(container.classList.contains('empty')).toBe(true);
+        });
+
+        test('empty state hidden when requests exist', () => {
+            vizInstance._handleRequestStart(makeSSEEvent({
+                requestId: 'req-notempty',
+                mappedModel: 'glm-4',
+                tier: 'medium',
+                timestamp: Date.now()
+            }));
+
+            const container = document.getElementById('runwayViz');
+            expect(container.classList.contains('empty')).toBe(false);
         });
     });
 

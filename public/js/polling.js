@@ -211,10 +211,11 @@
     }
 
     // ========== VISIBILITY CHANGE ==========
-    document.addEventListener('visibilitychange', function() {
+    var _onVisibilityChange = function() {
         if (document.hidden) { pausePolling(); }
         else if (!serverPaused) { resumePolling(); }
-    });
+    };
+    document.addEventListener('visibilitychange', _onVisibilityChange);
 
     // ========== TAB/TIME RANGE HANDLERS ==========
     function onTabChanged(tabName) {

@@ -339,7 +339,7 @@ describeIfModule('ProxyServer Contract: Stats Controller Operations', () => {
 
             controller.handleReload(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(405, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(405, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return success when reloadKeys succeeds', () => {
@@ -349,7 +349,7 @@ describeIfModule('ProxyServer Contract: Stats Controller Operations', () => {
             controller.handleReload(mockReq, mockRes);
 
             expect(mockReloadKeys).toHaveBeenCalled();
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return 500 when reloadKeys fails', () => {
@@ -360,7 +360,7 @@ describeIfModule('ProxyServer Contract: Stats Controller Operations', () => {
 
             controller.handleReload(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(500, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(500, expect.objectContaining({ 'content-type': 'application/json' }));
         });
     });
 

@@ -17,6 +17,7 @@
     var formatTimestamp = DS.formatTimestamp;
     var renderEmptyState = DS.renderEmptyState;
     var TIME_RANGES = DS.TIME_RANGES;
+    var authFetch = DS.authFetch;
     var showToast = window.showToast;
 
     // Module-level state
@@ -27,6 +28,7 @@
     async function withLoading(btn, fn, options) {
         options = options || {};
         var busyText = options.busyText || 'Saving...';
+        var noRestore = options.noRestore || false;
         var originalText = btn.textContent;
         var originalDisabled = btn.disabled;
 
@@ -47,7 +49,9 @@
         } finally {
             if (btn.textContent === busyText) {
                 btn.textContent = originalText;
-                btn.disabled = originalDisabled;
+                if (!noRestore) {
+                    btn.disabled = originalDisabled;
+                }
                 btn.removeAttribute('aria-busy');
             }
             if (window.__DASHBOARD_DEBUG__) window.__DASHBOARD_DEBUG__.loading.inFlight--;
@@ -78,11 +82,12 @@
         this.sortables = {};
         this._saveDebounceTimer = null;
         this._destroyed = false;
+        this._renderingInProgress = false; // Guard to suppress change events during render
 
         var self = this;
         this._onSave = function() { self.save(); };
         this._onReset = function() { self.reset(); };
-        this._onStrategyChange = function() { self._computePendingChanges(); };
+        this._onStrategyChange = function() { if (!self._renderingInProgress) self._computePendingChanges(); };
 
         if (this.saveBtn) this.saveBtn.addEventListener('click', this._onSave);
         if (this.resetBtn) this.resetBtn.addEventListener('click', this._onReset);
@@ -135,6 +140,7 @@
 
     TierBuilder.prototype.render = function(routingData, modelsData, availableModels) {
         if (!this.container) return;
+        this._renderingInProgress = true;
         this.serverState = this._extractTierState(routingData);
         this._destroySortables();
         this._renderUpgradeInfo(routingData);
@@ -171,6 +177,7 @@
         this._initSortable();
         this._updatePositions();
         this._detectSharedModels();
+        this._renderingInProgress = false;
         this._computePendingChanges();
         this.updateShadowBadges(routingData?.config);
     };
@@ -212,11 +219,12 @@
             this.container.insertBefore(panel, this.container.firstChild);
         }
 
-        toggle.addEventListener('click', function() {
+        var handleToggleClick = function() {
             var isExpanded = content.classList.contains('expanded');
             content.classList.toggle('expanded');
             toggle.classList.toggle('expanded');
-        });
+        };
+        toggle.addEventListener('click', handleToggleClick);
     };
 
     TierBuilder.prototype._extractTierState = function(routingData) {
@@ -341,11 +349,12 @@
             removeBtn.className = 'model-card-remove';
             removeBtn.textContent = '\u00d7';
             removeBtn.title = 'Remove from tier';
-            removeBtn.addEventListener('click', function(e) {
+            var handleRemoveClick = function(e) {
                 e.stopPropagation();
                 card.remove();
                 self._onDragEnd();
-            });
+            };
+            removeBtn.addEventListener('click', handleRemoveClick);
             card.appendChild(removeBtn);
         }
 
@@ -411,11 +420,12 @@
                         removeBtn.className = 'model-card-remove';
                         removeBtn.textContent = '\u00d7';
                         removeBtn.title = 'Remove from tier';
-                        removeBtn.addEventListener('click', function(e) {
+                        var handleCloneRemoveClick = function(e) {
                             e.stopPropagation();
                             clone.remove();
                             self._onDragEnd();
-                        });
+                        };
+                        removeBtn.addEventListener('click', handleCloneRemoveClick);
                         clone.appendChild(removeBtn);
                     }
                 }
@@ -440,11 +450,12 @@
                         removeBtn.className = 'model-card-remove';
                         removeBtn.textContent = '\u00d7';
                         removeBtn.title = 'Remove from tier';
-                        removeBtn.addEventListener('click', function(e) {
+                        var handleLaneRemoveClick = function(e) {
                             e.stopPropagation();
                             card.remove();
                             self._onDragEnd();
-                        });
+                        };
+                        removeBtn.addEventListener('click', handleLaneRemoveClick);
                         card.appendChild(removeBtn);
                     }
                     self._onDragEnd();
@@ -567,7 +578,7 @@
         });
 
         var saveAction = async function() {
-            var res = await fetch('/model-routing', {
+            var res = await authFetch('/model-routing', {
                 method: 'PUT',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -581,9 +592,19 @@
                 }
                 await fetchModelRouting();
                 // Verify save round-trip (roadmap 2.4)
-                var submitted = JSON.stringify(payload.tiers || {});
-                var returned = JSON.stringify((modelRoutingData && modelRoutingData.config && modelRoutingData.config.tiers) || {});
-                if (submitted !== returned) {
+                // Compare semantically: server may reorder properties or add
+                // fields (clientModelPolicy, label) that the tier-builder
+                // doesn't submit.  Only compare models[] and strategy.
+                var savedTiers = (modelRoutingData && modelRoutingData.config && modelRoutingData.config.tiers) || {};
+                var mismatch = false;
+                Object.keys(payload.tiers || {}).forEach(function(tierName) {
+                    var sub = payload.tiers[tierName];
+                    var ret = savedTiers[tierName];
+                    if (!ret) { mismatch = true; return; }
+                    if (JSON.stringify(sub.models) !== JSON.stringify(ret.models)) { mismatch = true; }
+                    if ((sub.strategy || 'balanced') !== (ret.strategy || 'balanced')) { mismatch = true; }
+                });
+                if (mismatch) {
                     if (typeof window.showToast === 'function') {
                         window.showToast('Warning: saved config differs from submitted — check for server-side normalization', 'warning');
                     }
@@ -601,10 +622,13 @@
         };
 
         if (this.saveBtn) {
-            await withLoading(this.saveBtn, saveAction, { busyText: 'Saving...' });
+            await withLoading(this.saveBtn, saveAction, { busyText: 'Saving...', noRestore: true });
         } else {
             await saveAction();
         }
+        // After save, re-compute pending changes to set correct button state
+        // (withLoading would restore original disabled=false, which is wrong after a successful save)
+        this._computePendingChanges();
     };
 
     TierBuilder.prototype.reset = function() {
@@ -891,6 +915,7 @@
             this.container.removeEventListener('mouseleave', this._onMouseLeave, true);
             this.container.removeEventListener('focusin', this._onFocusIn);
             this.container.removeEventListener('focusout', this._onFocusOut);
+            this.container.removeEventListener('keydown', this._onKeyDown);
         }
         // Remove tooltip DOM element
         if (this._tooltip && this._tooltip.parentNode) {
@@ -1143,7 +1168,7 @@
         var key = keyEl.value.trim();
         var model = modelEl.value.trim();
         if (!key || !model) { showToast('Key and model are required', 'error'); return; }
-        fetch('/model-routing/overrides', {
+        authFetch('/model-routing/overrides', {
             method: 'PUT',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ key: key, model: model })
@@ -1168,7 +1193,7 @@
     }
 
     function removeRoutingOverride(key) {
-        fetch('/model-routing/overrides', {
+        authFetch('/model-routing/overrides', {
             method: 'DELETE',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ key: key })
@@ -1203,7 +1228,7 @@
         var tiers = {};
         tiers[tierName] = { targetModel: targetModel, fallbackModels: fallbackModels, strategy: strategy, clientModelPolicy: policy };
         var saveAction = function() {
-            return fetch('/model-routing', {
+            return authFetch('/model-routing', {
                 method: 'PUT',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({ tiers: tiers })
@@ -1243,7 +1268,7 @@
         if (hasVision) match.hasVision = true;
         var currentRules = (modelRoutingData && modelRoutingData.config && modelRoutingData.config.rules) ? modelRoutingData.config.rules : [];
         var newRules = currentRules.concat([{ match: match, tier: tier }]);
-        fetch('/model-routing', {
+        authFetch('/model-routing', {
             method: 'PUT',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ rules: newRules })
@@ -1263,7 +1288,7 @@
     function removeRoutingRule(index) {
         var currentRules = (modelRoutingData && modelRoutingData.config && modelRoutingData.config.rules) ? modelRoutingData.config.rules : [];
         var newRules = currentRules.filter(function(_, i) { return i !== index; });
-        fetch('/model-routing', {
+        authFetch('/model-routing', {
             method: 'PUT',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ rules: newRules })
@@ -1294,7 +1319,7 @@
         if (maxTokens) url += '&max_tokens=' + encodeURIComponent(maxTokens);
         if (tools) url += '&tools=true';
         if (vision) url += '&vision=true';
-        fetch(url).then(function(res) { return res.json(); }).then(function(data) {
+        authFetch(url).then(function(res) { return res.json(); }).then(function(data) {
             var resultEl = document.getElementById('routingTestResult');
             if (resultEl) {
                 resultEl.classList.add('visible');
@@ -1320,7 +1345,7 @@
         if (maxTokensStr) body.maxTokens = parseInt(maxTokensStr);
         var btn = document.getElementById('explainBtn');
         if (btn) btn.disabled = true;
-        fetch('/model-routing/explain', {
+        authFetch('/model-routing/explain', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
@@ -1390,7 +1415,7 @@
     }
 
     function resetModelRouting() {
-        fetch('/model-routing/reset', { method: 'POST' }).then(function(res) {
+        authFetch('/model-routing/reset', { method: 'POST' }).then(function(res) {
             if (res.ok) {
                 return res.json().then(function(result) {
                     if (result.warning === 'runtime_only_change') showToast('Model routing reset (runtime only)', 'warning');
@@ -1419,7 +1444,7 @@
     }
 
     function exportRoutingJson() {
-        fetch('/model-routing/export').then(function(r) { return r.blob(); }).then(function(blob) {
+        authFetch('/model-routing/export').then(function(r) { return r.blob(); }).then(function(blob) {
             var url = URL.createObjectURL(blob);
             var a = document.createElement('a');
             a.href = url;
@@ -1460,6 +1485,269 @@
         }).join('');
     }
 
+    // ========== MODEL REFRESH ==========
+
+    /**
+     * Refresh models by probing z.ai for new/updated model availability.
+     * Called from the "Refresh" button in models bank or System tab.
+     * Guards the tier builder to prevent concurrent drag/drop during refresh.
+     */
+    var _refreshInProgress = false;
+
+    function refreshModels() {
+        if (_refreshInProgress) {
+            showToast('Model refresh already in progress', 'warning');
+            return Promise.resolve();
+        }
+
+        var btn = document.getElementById('modelsRefreshBtn');
+        var sysBtn = document.getElementById('systemRefreshModelsBtn');
+        var statusEl = document.getElementById('modelsRefreshText');
+        var bankEl = document.querySelector('.models-bank');
+
+        var activeBtn = btn || sysBtn;
+        if (!activeBtn) return Promise.resolve();
+
+        _refreshInProgress = true;
+
+        // Lock the models bank UI during refresh
+        if (bankEl) bankEl.classList.add('is-refreshing');
+        // Disable tier builder drag during refresh
+        if (window._tierBuilder && window._tierBuilder.sortables) {
+            Object.values(window._tierBuilder.sortables).forEach(function(s) {
+                if (s && s.option) s.option('disabled', true);
+            });
+        }
+
+        return withLoading(activeBtn, function() {
+            if (statusEl) statusEl.textContent = 'Probing z.ai for models...';
+            if (sysBtn && sysBtn !== activeBtn) sysBtn.disabled = true;
+            if (btn && btn !== activeBtn) btn.disabled = true;
+
+            return authFetch('/models/refresh', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ probeKnown: true, probeCandidates: true })
+            }).then(function(res) {
+                if (!res.ok) {
+                    return res.json().catch(function() { return {}; }).then(function(err) {
+                        throw new Error(err.error || err.msg || 'HTTP ' + res.status);
+                    });
+                }
+                return res.json();
+            }).then(function(result) {
+                if (statusEl) statusEl.textContent = 'Updating model list...';
+
+                // Re-fetch models to update STATE
+                var modelPromise = window.DashboardData && window.DashboardData.fetchModels
+                    ? window.DashboardData.fetchModels()
+                    : Promise.resolve();
+
+                return modelPromise.then(function() {
+                    // Re-render tier builder with fresh data
+                    return fetchModelRouting();
+                }).then(function() {
+                    var discovered = result.results && result.results.discovered || [];
+                    var verified = result.results && result.results.verified || [];
+                    var errors = result.results && result.results.errors || [];
+                    var duration = result.duration ? (result.duration / 1000).toFixed(1) + 's' : '';
+
+                    if (discovered.length > 0) {
+                        showToast('Found ' + discovered.length + ' new model(s): ' + discovered.join(', '), 'success');
+                    } else if (errors.length > 0) {
+                        showToast('Probed ' + verified.length + ' models (' + errors.length + ' errors) in ' + duration, 'warning');
+                    } else {
+                        showToast('All ' + verified.length + ' models verified in ' + duration, 'success');
+                    }
+
+                    // Update status
+                    if (statusEl) {
+                        statusEl.textContent = 'Last probed: ' + new Date().toLocaleTimeString() +
+                            ' \u2014 ' + (result.modelCount ? result.modelCount.after : '?') + ' models' +
+                            (discovered.length > 0 ? ' (+' + discovered.length + ' new)' : '');
+                    }
+
+                    // Update system tab panel
+                    renderDiscoveryState(result);
+                });
+            }).catch(function(err) {
+                showToast('Model refresh failed: ' + err.message, 'error');
+                if (statusEl) {
+                    statusEl.textContent = 'Failed: ' + err.message;
+                }
+            }).then(function() {
+                // Unlock UI
+                _refreshInProgress = false;
+                if (bankEl) bankEl.classList.remove('is-refreshing');
+                if (sysBtn && sysBtn !== activeBtn) sysBtn.disabled = false;
+                if (btn && btn !== activeBtn) btn.disabled = false;
+                // Re-enable drag
+                if (window._tierBuilder && window._tierBuilder.sortables) {
+                    Object.values(window._tierBuilder.sortables).forEach(function(s) {
+                        if (s && s.option) s.option('disabled', false);
+                    });
+                }
+            });
+        }, { busyText: 'Probing...' });
+    }
+
+    /**
+     * Probe a single custom model ID.
+     */
+    function probeCustomModel() {
+        var input = document.getElementById('customModelInput');
+        var btn = document.getElementById('customModelProbeBtn');
+        if (!input || !btn) return Promise.resolve();
+
+        var modelId = input.value.trim().toLowerCase();
+        if (!modelId) {
+            showToast('Enter a model ID to probe', 'warning');
+            return Promise.resolve();
+        }
+
+        return withLoading(btn, function() {
+            return authFetch('/models/refresh', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    probeKnown: false,
+                    probeCandidates: false,
+                    userCandidates: [modelId]
+                })
+            }).then(function(res) {
+                if (!res.ok) {
+                    return res.json().catch(function() { return {}; }).then(function(err) {
+                        throw new Error(err.error || 'HTTP ' + res.status);
+                    });
+                }
+                return res.json();
+            }).then(function(result) {
+                var discovered = result.results && result.results.discovered || [];
+                var invalid = result.results && result.results.invalid || [];
+
+                if (discovered.indexOf(modelId) !== -1) {
+                    showToast(modelId + ': Available! Added to model list.', 'success');
+                    input.value = '';
+                    // Re-fetch models
+                    if (window.DashboardData && window.DashboardData.fetchModels) {
+                        window.DashboardData.fetchModels().then(function() { fetchModelRouting(); });
+                    }
+                } else if (invalid.indexOf(modelId) !== -1) {
+                    showToast(modelId + ': Not found (unknown model)', 'warning');
+                } else {
+                    var verified = result.results && result.results.verified || [];
+                    if (verified.indexOf(modelId) !== -1) {
+                        showToast(modelId + ': Already known', 'info');
+                    } else {
+                        showToast(modelId + ': Unavailable or error', 'warning');
+                    }
+                }
+
+                renderDiscoveryState(result);
+            }).catch(function(err) {
+                showToast('Probe failed: ' + err.message, 'error');
+            });
+        }, { busyText: 'Probing...' });
+    }
+
+    /**
+     * Render discovery state in the System tab panel.
+     */
+    function renderDiscoveryState(probeResult) {
+        var statusEl = document.getElementById('discoveryStatusValue');
+        var lastProbeEl = document.getElementById('discoveryLastProbe');
+        var knownEl = document.getElementById('discoveryKnownCount');
+        var foundEl = document.getElementById('discoveryFoundCount');
+        var tbody = document.getElementById('discoveryResultsBody');
+
+        if (statusEl) statusEl.textContent = 'Idle';
+        if (lastProbeEl && probeResult && probeResult.lastProbeAt) {
+            var d = new Date(probeResult.lastProbeAt);
+            lastProbeEl.textContent = d.toLocaleTimeString();
+        }
+        if (knownEl && probeResult && probeResult.modelCount) {
+            knownEl.textContent = probeResult.modelCount.before;
+        }
+        if (foundEl && probeResult && probeResult.results) {
+            foundEl.textContent = (probeResult.results.discovered || []).length;
+        }
+
+        if (!tbody || !probeResult || !probeResult.results) return;
+
+        var rows = [];
+        var results = probeResult.results;
+
+        function addRows(ids, status, badgeClass) {
+            for (var i = 0; i < ids.length; i++) {
+                rows.push('<tr><td style="font-family: JetBrains Mono, monospace; font-size: 0.7rem;">' +
+                    escapeHtml(ids[i]) + '</td><td><span class="discovery-badge ' + badgeClass + '">' +
+                    escapeHtml(status) + '</span></td><td>-</td><td>' +
+                    new Date().toLocaleTimeString() + '</td></tr>');
+            }
+        }
+
+        addRows(results.discovered || [], 'Discovered', 'discovered');
+        addRows(results.verified || [], 'Verified', 'verified');
+        addRows(results.unavailable || [], 'API Only', 'api-only');
+        addRows(results.invalid || [], 'Invalid', 'invalid');
+
+        tbody.innerHTML = rows.length > 0 ? rows.join('')
+            : '<tr><td colspan="4" class="text-muted">No results. Click "Refresh All Models" to probe.</td></tr>';
+    }
+
+    /**
+     * Fetch and render discovery state from backend (for initial page load).
+     */
+    function fetchDiscoveryState() {
+        authFetch('/models/refresh').then(function(res) {
+            if (!res.ok) return;
+            return res.json();
+        }).then(function(state) {
+            if (!state) return;
+            var statusEl = document.getElementById('discoveryStatusValue');
+            var lastProbeEl = document.getElementById('discoveryLastProbe');
+            var foundEl = document.getElementById('discoveryFoundCount');
+
+            if (statusEl) statusEl.textContent = state.inProgress ? 'Probing...' : 'Idle';
+            if (lastProbeEl && state.lastProbeAt) {
+                lastProbeEl.textContent = new Date(state.lastProbeAt).toLocaleTimeString();
+            }
+            if (foundEl) foundEl.textContent = state.discoveredCount || 0;
+
+            // Render last results if available
+            if (state.lastResult) {
+                var tbody = document.getElementById('discoveryResultsBody');
+                if (tbody) {
+                    renderDiscoveryState({ results: state.lastResult, lastProbeAt: state.lastProbeAt });
+                }
+            }
+        }).catch(function() { /* silent */ });
+    }
+
+    // Wire event listeners for model refresh buttons
+    var handleDOMContentLoaded = function() {
+        var refreshBtn = document.getElementById('modelsRefreshBtn');
+        if (refreshBtn) refreshBtn.addEventListener('click', refreshModels);
+
+        var sysRefreshBtn = document.getElementById('systemRefreshModelsBtn');
+        if (sysRefreshBtn) sysRefreshBtn.addEventListener('click', refreshModels);
+
+        var probeBtn = document.getElementById('customModelProbeBtn');
+        if (probeBtn) probeBtn.addEventListener('click', probeCustomModel);
+
+        var probeInput = document.getElementById('customModelInput');
+        if (probeInput) {
+            var handleProbeKeydown = function(e) {
+                if (e.key === 'Enter') probeCustomModel();
+            };
+            probeInput.addEventListener('keydown', handleProbeKeydown);
+        }
+
+        // Fetch discovery state for system tab
+        fetchDiscoveryState();
+    };
+    document.addEventListener('DOMContentLoaded', handleDOMContentLoaded);
+
     // ========== EXPORT ==========
     window.DashboardTierBuilder = {
         TierBuilder: TierBuilder,
@@ -1484,7 +1772,10 @@
         copyRoutingJson: copyRoutingJson,
         exportRoutingJson: exportRoutingJson,
         renderModelUsage: renderModelUsage,
-        sortBank: function(sortBy) { if (window._tierBuilder) window._tierBuilder.sortBank(sortBy); }
+        sortBank: function(sortBy) { if (window._tierBuilder) window._tierBuilder.sortBank(sortBy); },
+        refreshModels: refreshModels,
+        probeCustomModel: probeCustomModel,
+        fetchDiscoveryState: fetchDiscoveryState
     };
 
     // Expose for debug and backward compat

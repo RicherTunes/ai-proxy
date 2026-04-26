@@ -2169,7 +2169,7 @@ describe('Null Defaults', () => {
         }));
     });
 
-    test('recent429 is null when no recent 429s', async () => {
+    test('recent429 is 0 when no recent 429s', async () => {
         const config = {
             version: '2.0',
             enabled: true,
@@ -2188,9 +2188,9 @@ describe('Null Defaults', () => {
 
         const snapshot = await router.getModelPoolSnapshot();
 
-        // Without recording any cooldowns, recent429 should be null
+        // Without recording any cooldowns, recent429 should be 0 (wired to sliding window)
         const entry = snapshot.pools.heavy[0];
-        expect(entry.recent429).toBeNull();
+        expect(entry.recent429).toBe(0);
     });
 
     test('latencyP95 defaults to null', async () => {
@@ -2234,10 +2234,11 @@ describe('Null Defaults', () => {
         const snapshot = await router.getModelPoolSnapshot();
 
         const entry = snapshot.pools.heavy[0];
-        expect(entry.errorRate).toBeNull();
+        // errorRate is now wired: 0 when no errors recorded
+        expect(entry.errorRate).toBe(0);
     });
 
-    test('all telemetry fields are null by default', async () => {
+    test('all telemetry fields have correct defaults', async () => {
         const config = {
             version: '2.0',
             enabled: true,
@@ -2256,12 +2257,13 @@ describe('Null Defaults', () => {
         const snapshot = await router.getModelPoolSnapshot();
 
         const entry = snapshot.pools.medium[0];
-        expect(entry.recent429).toBeNull();
+        // recent429 and errorRate are now wired: 0 when no data
+        expect(entry.recent429).toBe(0);
         expect(entry.latencyP95).toBeNull();
-        expect(entry.errorRate).toBeNull();
+        expect(entry.errorRate).toBe(0);
     });
 
-    test('null defaults apply to all tiers', async () => {
+    test('defaults apply to all tiers', async () => {
         const config = {
             version: '2.0',
             enabled: true,
@@ -2287,18 +2289,19 @@ describe('Null Defaults', () => {
 
         const snapshot = await router.getModelPoolSnapshot();
 
-        // Check all tiers have null telemetry
-        expect(snapshot.pools.light[0].recent429).toBeNull();
+        // Check all tiers have correct telemetry defaults
+        // recent429 and errorRate are now wired: 0 when no data; latencyP95 remains null
+        expect(snapshot.pools.light[0].recent429).toBe(0);
         expect(snapshot.pools.light[0].latencyP95).toBeNull();
-        expect(snapshot.pools.light[0].errorRate).toBeNull();
+        expect(snapshot.pools.light[0].errorRate).toBe(0);
 
-        expect(snapshot.pools.medium[0].recent429).toBeNull();
+        expect(snapshot.pools.medium[0].recent429).toBe(0);
         expect(snapshot.pools.medium[0].latencyP95).toBeNull();
-        expect(snapshot.pools.medium[0].errorRate).toBeNull();
+        expect(snapshot.pools.medium[0].errorRate).toBe(0);
 
-        expect(snapshot.pools.heavy[0].recent429).toBeNull();
+        expect(snapshot.pools.heavy[0].recent429).toBe(0);
         expect(snapshot.pools.heavy[0].latencyP95).toBeNull();
-        expect(snapshot.pools.heavy[0].errorRate).toBeNull();
+        expect(snapshot.pools.heavy[0].errorRate).toBe(0);
     });
 });
 

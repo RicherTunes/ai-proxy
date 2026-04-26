@@ -115,9 +115,9 @@ describe('KeyManager - Extended Coverage', () => {
             const result = km.compareKeys([0, 1]);
 
             expect(result.keys).toHaveLength(2);
-            expect(result.bestKey).toBeDefined();
-            expect(result.comparedAt).toBeDefined();
-            expect(result.insights).toBeDefined();
+            expect(result.bestKey).toBe(0);
+            expect(result.comparedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+            expect(result.insights).toBeInstanceOf(Array);
 
             // Each key should have normalized scores
             for (const k of result.keys) {
@@ -239,7 +239,7 @@ describe('KeyManager - Extended Coverage', () => {
             const result = km.forceCircuitState(0, 'OPEN');
             expect(result.index).toBe(0);
             expect(result.newState).toBe('OPEN');
-            expect(result.keyPrefix).toBeDefined();
+            expect(result.keyPrefix).toBe('key1');
             expect(km.keys[0].circuitBreaker.state).toBe(STATES.OPEN);
         });
 
@@ -837,7 +837,7 @@ describe('KeyManager - Extended Coverage', () => {
             });
             km.loadKeys(['key1.secret1']);
 
-            expect(km._slowKeyCheckInterval).toBeDefined();
+            expect(typeof km._slowKeyCheckInterval).toBe('object');
             expect(km._slowKeyCheckInterval).not.toBeNull();
         });
 

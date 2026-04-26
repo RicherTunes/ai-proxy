@@ -269,7 +269,7 @@ describe('AdminAuth Extended Coverage', () => {
             const middleware = auth.middleware();
             middleware(req, res, next);
 
-            expect(next).toHaveBeenCalled();
+            expect(next).toHaveBeenCalledTimes(1);
             expect(res.writeHead).not.toHaveBeenCalled();
             expect(res.end).not.toHaveBeenCalled();
         });
@@ -297,7 +297,7 @@ describe('AdminAuth Extended Coverage', () => {
             const middleware = auth.middleware();
             middleware(req, res, next);
 
-            expect(next).toHaveBeenCalled();
+            expect(next).toHaveBeenCalledTimes(1);
             expect(res.writeHead).not.toHaveBeenCalled();
         });
     });
@@ -603,13 +603,12 @@ describe('AdminAuth Extended Coverage', () => {
         });
     });
 
-    describe('Query parameter token extraction', () => {
-        test('should extract token from query parameter', () => {
+    describe('Session cookie authentication', () => {
+        test('should not authenticate query parameter tokens for admin routes', () => {
             const token = generateToken();
             auth = new AdminAuth({
                 enabled: true,
-                tokens: [token],
-                queryParam: 'admin_token'
+                tokens: [token]
             });
 
             const req = {
@@ -620,30 +619,62 @@ describe('AdminAuth Extended Coverage', () => {
 
             const result = auth.authenticate(req);
 
-            expect(result.authenticated).toBe(true);
+            expect(result.authenticated).toBe(false);
+            expect(result.error).toBe('missing_token');
         });
 
-        test('should prefer header over query parameter', () => {
-            const headerToken = generateToken();
-            const queryToken = generateToken();
-
+        test('should create and authenticate a session cookie', () => {
+            const token = generateToken();
             auth = new AdminAuth({
                 enabled: true,
-                tokens: [headerToken], // Only header token is valid
-                headerName: 'x-admin-token',
-                queryParam: 'admin_token'
+                tokens: [token]
             });
 
+            const loginReq = {
+                url: '/auth/login',
+                headers: { 'x-admin-token': token },
+                socket: { remoteAddress: '127.0.0.1' }
+            };
+            const loginResult = auth.createSessionFromRequest(loginReq);
+            const cookieHeader = String(loginResult.sessionCookie).split(';')[0];
+
             const req = {
-                url: `/control/pause?admin_token=${queryToken}`,
-                headers: { 'x-admin-token': headerToken },
+                url: '/requests',
+                headers: { cookie: cookieHeader },
                 socket: { remoteAddress: '127.0.0.1' }
             };
 
             const result = auth.authenticate(req);
 
-            // Should authenticate using header token
+            expect(loginResult.authenticated).toBe(true);
             expect(result.authenticated).toBe(true);
+            expect(result.via).toBe('session');
+        });
+
+        test('peekAuthentication should detect cookie-backed sessions', () => {
+            const token = generateToken();
+            auth = new AdminAuth({
+                enabled: true,
+                tokens: [token]
+            });
+            const loginReq = {
+                url: '/auth/login',
+                headers: { 'x-admin-token': token },
+                socket: { remoteAddress: '127.0.0.1' }
+            };
+            const loginResult = auth.createSessionFromRequest(loginReq);
+            const cookieHeader = String(loginResult.sessionCookie).split(';')[0];
+
+            const req = {
+                url: '/auth-status',
+                headers: { cookie: cookieHeader },
+                socket: { remoteAddress: '127.0.0.1' }
+            };
+
+            const result = auth.peekAuthentication(req);
+
+            expect(result.authenticated).toBe(true);
+            expect(result.via).toBe('session');
         });
     });
 });

@@ -73,10 +73,10 @@ describe('pricing-loader module', () => {
             const { getDefaultPricing } = require('../lib/pricing-loader');
             const pricing = getDefaultPricing();
 
-            expect(pricing.version).toBeDefined();
-            expect(pricing.lastVerifiedAt).toBeDefined();
-            expect(pricing.sourceUrl).toBeDefined();
-            expect(pricing.models).toBeDefined();
+            expect(pricing.version).toBe('1.0.0');
+            expect(pricing.lastVerifiedAt).toBe('2026-02-21');
+            expect(pricing.sourceUrl).toBe('https://docs.z.ai/guides/overview/pricing');
+            expect(pricing.models).toEqual(expect.objectContaining({}));
             expect(typeof pricing.models).toBe('object');
         });
 
@@ -93,17 +93,17 @@ describe('pricing-loader module', () => {
             const { getDefaultPricing } = require('../lib/pricing-loader');
             const pricing = getDefaultPricing();
 
-            expect(pricing.models['claude-opus-4-6']).toBeDefined();
-            expect(pricing.models['claude-sonnet-4-5']).toBeDefined();
-            expect(pricing.models['claude-haiku-4-5']).toBeDefined();
+            expect(pricing.models['claude-opus-4-6']).toEqual({ inputTokenPer1M: 15.00, outputTokenPer1M: 75.00 });
+            expect(pricing.models['claude-sonnet-4-5']).toEqual({ inputTokenPer1M: 3.00, outputTokenPer1M: 15.00 });
+            expect(pricing.models['claude-haiku-4-5']).toEqual({ inputTokenPer1M: 0.80, outputTokenPer1M: 4.00 });
         });
 
         test('should include GLM vision models', () => {
             const { getDefaultPricing } = require('../lib/pricing-loader');
             const pricing = getDefaultPricing();
 
-            expect(pricing.models['glm-4.6v']).toBeDefined();
-            expect(pricing.models['glm-4.5v']).toBeDefined();
+            expect(pricing.models['glm-4.6v']).toEqual({ inputTokenPer1M: 0.30, outputTokenPer1M: 0.90 });
+            expect(pricing.models['glm-4.5v']).toEqual({ inputTokenPer1M: 0.60, outputTokenPer1M: 1.80 });
         });
 
         test('should include free tier models with zero pricing', () => {
@@ -350,7 +350,7 @@ describe('pricing-loader module', () => {
             const result = loadPricing(configPath);
 
             expect(result.configPath).toBe(configPath);
-            expect(result.hash).toBeDefined();
+            expect(result.hash).toMatch(/^[a-f0-9]{64}$/); // SHA256 hex digest
         });
     });
 

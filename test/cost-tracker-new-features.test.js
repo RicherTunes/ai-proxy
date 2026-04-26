@@ -44,7 +44,7 @@ describe('CostTracker New Features', () => {
                 }
             });
 
-            expect(ct.modelRates['claude-opus']).toBeDefined();
+            expect(ct.modelRates['claude-opus']).toEqual({ inputTokenPer1M: 15.00, outputTokenPer1M: 75.00 });
             expect(ct.modelRates['claude-opus'].inputTokenPer1M).toBe(15.00);
             expect(ct.modelRates['claude-haiku'].inputTokenPer1M).toBe(0.25);
         });
@@ -117,8 +117,8 @@ describe('CostTracker New Features', () => {
             });
 
             const stats = ct.getStats();
-            expect(stats.modelRates).toBeDefined();
-            expect(stats.modelRates['claude-opus']).toBeDefined();
+            expect(stats.modelRates).toBeInstanceOf(Object);
+            expect(stats.modelRates['claude-opus']).toEqual({ inputTokenPer1M: 15.00, outputTokenPer1M: 75.00 });
         });
 
         test('should maintain backward compatibility with single rate mode', () => {
@@ -131,9 +131,9 @@ describe('CostTracker New Features', () => {
         });
 
         test('should use DEFAULT_MODEL_RATES from module exports', () => {
-            expect(DEFAULT_MODEL_RATES).toBeDefined();
-            expect(DEFAULT_MODEL_RATES['claude-opus-4']).toBeDefined();
-            expect(DEFAULT_MODEL_RATES['claude-haiku-4']).toBeDefined();
+            expect(DEFAULT_MODEL_RATES).toBeInstanceOf(Object);
+            expect(DEFAULT_MODEL_RATES['claude-opus-4']).toEqual({ inputTokenPer1M: 15.00, outputTokenPer1M: 75.00 });
+            expect(DEFAULT_MODEL_RATES['claude-haiku-4']).toEqual({ inputTokenPer1M: 0.80, outputTokenPer1M: 4.00 });
         });
     });
 
@@ -200,12 +200,20 @@ describe('CostTracker New Features', () => {
             expect(result.processed).toBe(2);
 
             const tenant1Costs = ct.getTenantCosts('tenant-1');
-            expect(tenant1Costs).not.toBeNull();
-            expect(tenant1Costs.totalCost).toBeGreaterThan(0);
+            expect(tenant1Costs).toEqual(expect.objectContaining({
+                totalCost: expect.any(Number),
+                requestCount: 1,
+                inputTokens: 1000,
+                outputTokens: 500
+            }));
 
             const tenant2Costs = ct.getTenantCosts('tenant-2');
-            expect(tenant2Costs).not.toBeNull();
-            expect(tenant2Costs.totalCost).toBeGreaterThan(0);
+            expect(tenant2Costs).toEqual(expect.objectContaining({
+                totalCost: expect.any(Number),
+                requestCount: 1,
+                inputTokens: 2000,
+                outputTokens: 1000
+            }));
         });
 
         test('should check budget alerts once after batch', () => {
@@ -417,7 +425,12 @@ describe('CostTracker New Features', () => {
             const ct = new CostTracker();
 
             const result = ct.recordUsage('  key1  ', 1000, 500, 'model');
-            expect(result).toBeDefined();
+            expect(result).toEqual(expect.objectContaining({
+                cost: expect.any(Number),
+                totalTokens: 1500,
+                inputTokens: 1000,
+                outputTokens: 500
+            }));
 
             // Should have used sanitized key
             expect(ct.byKeyId.has('key1')).toBe(true);
@@ -429,7 +442,12 @@ describe('CostTracker New Features', () => {
 
             const longKey = 'a'.repeat(300);
             const result = ct.recordUsage(longKey, 1000, 500, 'model');
-            expect(result).toBeDefined();
+            expect(result).toEqual(expect.objectContaining({
+                cost: expect.any(Number),
+                totalTokens: 1500,
+                inputTokens: 1000,
+                outputTokens: 500
+            }));
 
             // Should have truncated key
             expect(ct.byKeyId.size).toBe(1);
@@ -442,7 +460,12 @@ describe('CostTracker New Features', () => {
 
             const longTenant = 't'.repeat(300);
             const result = ct.recordUsage('key1', 1000, 500, 'model', longTenant);
-            expect(result).toBeDefined();
+            expect(result).toEqual(expect.objectContaining({
+                cost: expect.any(Number),
+                totalTokens: 1500,
+                inputTokens: 1000,
+                outputTokens: 500
+            }));
 
             // Should have truncated tenant
             const tenantCosts = ct.getAllTenantCosts();
@@ -454,7 +477,12 @@ describe('CostTracker New Features', () => {
             const ct = new CostTracker();
 
             const result = ct.recordUsage('key1', 1000, 500, 'model', null);
-            expect(result).toBeDefined();
+            expect(result).toEqual(expect.objectContaining({
+                cost: expect.any(Number),
+                totalTokens: 1500,
+                inputTokens: 1000,
+                outputTokens: 500
+            }));
 
             // Should not create tenant entry
             expect(ct.costsByTenant.size).toBe(0);
@@ -587,8 +615,11 @@ describe('CostTracker New Features', () => {
             ct.recordUsage('key1', 1000, 500, 'model');
 
             const report = ct.getFullReport();
-            expect(report.metrics).toBeDefined();
-            expect(report.metrics.recordCount).toBe(1);
+            expect(report.metrics).toEqual(expect.objectContaining({
+                recordCount: 1,
+                saveCount: 0,
+                batchOperations: 0
+            }));
         });
 
         test('should log warning for slow saves', async () => {
@@ -659,8 +690,16 @@ describe('CostTracker New Features', () => {
             expect(stats.rates.inputTokenPer1M).toBe(6.00);
 
             const report = ct.getFullReport();
-            expect(report.periods).toBeDefined();
-            expect(report.projection).toBeDefined();
+            expect(report.periods).toEqual(expect.objectContaining({
+                today: expect.any(Object),
+                thisWeek: expect.any(Object),
+                thisMonth: expect.any(Object),
+                allTime: expect.any(Object)
+            }));
+            expect(report.projection).toEqual(expect.objectContaining({
+                daily: expect.any(Object),
+                monthly: expect.any(Object)
+            }));
         });
 
         test('should work with existing test patterns', () => {
@@ -672,7 +711,12 @@ describe('CostTracker New Features', () => {
 
             const result = ct.recordUsage('key1', 27778, 27778, 'model');
 
-            expect(result).toBeDefined();
+            expect(result).toEqual(expect.objectContaining({
+                cost: expect.any(Number),
+                totalTokens: 55556,
+                inputTokens: 27778,
+                outputTokens: 27778
+            }));
             expect(result.cost).toBeGreaterThan(0);
             expect(alerts.length).toBeGreaterThan(0);
         });
@@ -681,10 +725,20 @@ describe('CostTracker New Features', () => {
             const ct = new CostTracker();
 
             const result1 = ct.recordUsage('key1', 1000, 500, null);
-            expect(result1).toBeDefined();
+            expect(result1).toEqual(expect.objectContaining({
+                cost: expect.any(Number),
+                totalTokens: 1500,
+                inputTokens: 1000,
+                outputTokens: 500
+            }));
 
             const result2 = ct.recordUsage('key2', 1000, 500, undefined);
-            expect(result2).toBeDefined();
+            expect(result2).toEqual(expect.objectContaining({
+                cost: expect.any(Number),
+                totalTokens: 1500,
+                inputTokens: 1000,
+                outputTokens: 500
+            }));
 
             const result3 = ct.calculateCost(1000, 500, null);
             expect(result3).toBeGreaterThan(0);

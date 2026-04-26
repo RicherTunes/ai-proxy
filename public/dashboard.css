@@ -231,7 +231,7 @@
             display: none;
             padding: var(--spacing-xs) var(--spacing-sm);
             background: var(--warning);
-            color: #1a1a2e;
+            color: var(--text-on-dark);
             font-size: var(--font-xs);
             font-weight: 600;
             border-radius: var(--radius-md);
@@ -425,7 +425,7 @@
         }
         /* Arrow swap handled by JS (▲/▼), no CSS rotation needed */
         .request-count-badge {
-            background: var(--accent); color: #fff; border-radius: 10px;
+            background: var(--accent); color: var(--text-on-accent); border-radius: 10px;
             padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px); font-size: var(--font-xs); min-width: 18px; text-align: center;
             font-variant-numeric: tabular-nums; font-weight: 600;
         }
@@ -437,7 +437,7 @@
         }
         .dock-tab.active.active {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         /* Accessibility */
@@ -549,7 +549,7 @@
         /* Button Variants */
         .btn-primary {
             background: var(--accent);
-            color: white;
+            color: var(--text-on-accent);
         }
 
         .btn-primary:hover {
@@ -574,7 +574,7 @@
 
         .btn-success {
             background: var(--success);
-            color: #1a1a2e;
+            color: var(--text-on-dark);
         }
 
         .btn-success:hover {
@@ -584,7 +584,7 @@
 
         .btn-warning {
             background: var(--warning);
-            color: #1a1a2e;
+            color: var(--text-on-dark);
         }
 
         .btn-warning:hover {
@@ -594,7 +594,7 @@
 
         .btn-danger {
             background: var(--error);
-            color: white;
+            color: var(--text-on-accent);
         }
 
         .btn-danger:hover {
@@ -897,7 +897,7 @@
 
         .density-btn.active {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         /* Keys Section */
@@ -1002,7 +1002,7 @@
             top: -4px;
             right: -4px;
             background: var(--accent);
-            color: white;
+            color: var(--text-on-accent);
             font-size: 0.5rem;
             padding: 1px 3px;
             border-radius: var(--radius-full);
@@ -1057,7 +1057,7 @@
         .key-chip .slow-badge {
             font-size: 0.5rem;
             background: var(--warning);
-            color: #1a1a2e;
+            color: var(--text-on-dark);
             padding: var(--spacing-xs, 4px);
             border-radius: 3px;
             margin-left: 4px;
@@ -1307,10 +1307,10 @@
             line-height: 1.5;
         }
 
-        .log-level.INFO { background: #3b82f6; color: white; }
-        .log-level.WARN { background: var(--warning); color: #1a1a2e; }
-        .log-level.ERROR { background: var(--error); color: white; }
-        .log-level.DEBUG { background: #6b7280; color: white; }
+        .log-level.INFO { background: #3b82f6; color: var(--text-on-accent); }
+        .log-level.WARN { background: var(--warning); color: var(--text-on-dark); }
+        .log-level.ERROR { background: var(--error); color: var(--text-on-accent); }
+        .log-level.DEBUG { background: #6b7280; color: var(--text-on-accent); }
 
         .log-message {
             color: var(--text-primary);
@@ -1348,12 +1348,12 @@
 
         .time-range-btn.active {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         [data-theme="light"] .time-range-btn.active {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         /* Connection Status Indicator */
@@ -1506,7 +1506,7 @@
             justify-content: center;
             font-size: 0.75rem;
             font-weight: bold;
-            color: white;
+            color: var(--text-on-accent);
         }
 
         .toast.success .toast-icon { background: var(--success); }
@@ -1634,7 +1634,7 @@
 
         .fullscreen-btn:hover {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         .chart-container.fullscreen {
@@ -2029,12 +2029,12 @@
 
         .btn-icon:hover {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         .btn-icon.active {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         .stream-footer {
@@ -2144,7 +2144,7 @@
 
         .copy-btn:hover {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
             border-color: var(--accent);
         }
 
@@ -2195,7 +2195,7 @@
         }
 
         .retry-step-marker.success { background: var(--success); color: #000; }
-        .retry-step-marker.error { background: var(--error); color: #fff; }
+        .retry-step-marker.error { background: var(--error); color: var(--text-on-accent); }
         .retry-step-marker.pending { background: var(--warning); color: #000; }
 
         .retry-step-content {
@@ -2272,7 +2272,7 @@
         .export-btn:hover {
             background: var(--accent);
             border-color: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         /* Responsive */
@@ -2403,7 +2403,7 @@
         .budget-fill-text {
             font-size: 0.7rem;
             font-weight: 600;
-            color: white;
+            color: var(--text-on-accent);
             white-space: nowrap;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
@@ -2526,7 +2526,7 @@
         .comparison-bar-fill .bar-text {
             font-size: 0.6rem;
             font-weight: 600;
-            color: white;
+            color: var(--text-on-accent);
             white-space: nowrap;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
             padding-right: 4px;
@@ -2731,7 +2731,7 @@
             top: -3px;
             right: -3px;
             background: var(--accent);
-            color: white;
+            color: var(--text-on-accent);
             font-size: 0.5rem;
             padding: 1px 3px;
             border-radius: var(--radius-full);
@@ -2892,7 +2892,7 @@
             align-items: center;
             justify-content: center;
             font-size: var(--font-xs);
-            color: white;
+            color: var(--text-on-accent);
             min-width: 2px;
         }
         .trace-timeline-bar.queue { background: var(--warning); }
@@ -3089,7 +3089,7 @@
             border: none;
             border-radius: 4px;
             background: var(--accent);
-            color: white;
+            color: var(--text-on-accent);
             cursor: pointer;
             font-size: var(--font-sm);
             font-weight: 500;
@@ -3183,7 +3183,7 @@
         .quick-action-btn:hover {
             background: var(--accent);
             border-color: var(--accent);
-            color: white;
+            color: var(--text-on-accent);
         }
 
         /* Visual alert borders on components */
@@ -3374,7 +3374,7 @@
             align-items: center;
             padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
             background: var(--accent);
-            color: white;
+            color: var(--text-on-accent);
             border-radius: 10px;
             font-size: var(--font-xs);
             font-weight: 600;
@@ -3828,7 +3828,7 @@
         .pool-bar-text {
             font-size: 0.6rem;
             font-weight: 600;
-            color: white;
+            color: var(--text-on-accent);
             white-space: nowrap;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
@@ -4201,7 +4201,7 @@
         }
         .model-card-remove:hover {
             background: var(--error, #ef4444);
-            color: white;
+            color: var(--text-on-accent);
         }
 
         /* Model Card - Concurrency Bar */
@@ -5185,7 +5185,7 @@
 
         .overflow-menu-trigger:hover {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         .overflow-menu-dropdown {
@@ -5294,7 +5294,7 @@
         }
         .routing-status-pill.active {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
             font-weight: 600;
         }
 

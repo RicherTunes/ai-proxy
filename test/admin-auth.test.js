@@ -356,6 +356,61 @@ describe('Admin Auth Integration', () => {
             expect(data.tokensRequired).toBe(true);
             expect(data.authenticated).toBe(false);
         });
+
+        test('POST /auth/login should create a session cookie for a valid token', async () => {
+            const response = await request('/auth/login', {
+                method: 'POST',
+                headers: {
+                    'x-admin-token': global.__TEST_ADMIN_TOKEN__
+                }
+            });
+
+            expect(response.status).toBe(200);
+            expect(response.headers['set-cookie']).toBeDefined();
+            expect(String(response.headers['set-cookie'][0] || response.headers['set-cookie'])).toContain('glm_admin_session=');
+        });
+
+        test('GET /auth-status should authenticate via session cookie', async () => {
+            const login = await request('/auth/login', {
+                method: 'POST',
+                headers: {
+                    'x-admin-token': global.__TEST_ADMIN_TOKEN__
+                }
+            });
+            const cookieHeader = String(login.headers['set-cookie'][0] || login.headers['set-cookie']).split(';')[0];
+
+            const response = await request('/auth-status', {
+                headers: {
+                    cookie: cookieHeader
+                }
+            });
+
+            expect(response.status).toBe(200);
+
+            const data = await response.json();
+            expect(data.authenticated).toBe(true);
+        });
+
+        test('POST /auth/logout should clear the session cookie', async () => {
+            const login = await request('/auth/login', {
+                method: 'POST',
+                headers: {
+                    'x-admin-token': global.__TEST_ADMIN_TOKEN__
+                }
+            });
+            const cookieHeader = String(login.headers['set-cookie'][0] || login.headers['set-cookie']).split(';')[0];
+
+            const response = await request('/auth/logout', {
+                method: 'POST',
+                headers: {
+                    cookie: cookieHeader
+                }
+            });
+
+            expect(response.status).toBe(200);
+            expect(response.headers['set-cookie']).toBeDefined();
+            expect(String(response.headers['set-cookie'][0] || response.headers['set-cookie'])).toContain('Max-Age=0');
+        });
     });
 
     describe('Token Not Leaked to Upstream', () => {

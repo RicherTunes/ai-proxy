@@ -22,6 +22,9 @@
     var safeParseJson = DS.safeParseJson;
     var capitalize = DS.capitalize;
     var fetchJSON = DS.fetchJSON;
+    var authFetch = DS.authFetch;
+    var getAuthHeaders = DS.getAuthHeaders;
+    var clearAdminToken = DS.clearAdminToken;
     var showToast = window.showToast;
     var _getId = window.RequestIds.getRequestId;
     var errorBoundary = window.DashboardErrorBoundary?.errorBoundary;
@@ -163,10 +166,26 @@
         if (!VALID_RANGES.includes(range)) range = '1h';
         STATE.settings.timeRange = range;
 
+        // Sync tab buttons (desktop)
         document.querySelectorAll('.time-range-btn').forEach(function(btn) {
             btn.classList.toggle('active', btn.dataset.range === range);
         });
 
+        // Sync dropdown label + items (mobile) — single source of truth
+        var dropdownLabel = document.getElementById('timeRangeDropdownLabel');
+        if (dropdownLabel) dropdownLabel.textContent = range;
+        document.querySelectorAll('.time-range-dropdown-item').forEach(function(item) {
+            var isActive = item.dataset.range === range;
+            item.classList.toggle('active', isActive);
+            item.setAttribute('aria-selected', String(isActive));
+        });
+
+        // Sync routing-specific time selector if present
+        document.querySelectorAll('#routingTimeSelector .time-range-btn').forEach(function(btn) {
+            btn.classList.toggle('active', btn.dataset.range === range);
+        });
+
+        // Sync chart time labels
         var label = TIME_RANGES[range].label;
         var el1 = document.getElementById('chartTimeLabel');
         var el2 = document.getElementById('chartTimeLabel2');
@@ -183,7 +202,6 @@
 
         if (timeRangeChangeTimeout) clearTimeout(timeRangeChangeTimeout);
         timeRangeChangeTimeout = setTimeout(function() {
-            // Delegate to data.js which owns the fetch intervals and controllers
             if (window.DashboardData && window.DashboardData.onTimeRangeChanged) {
                 window.DashboardData.onTimeRangeChanged(range);
             }
@@ -365,6 +383,15 @@
         var compactSetting = localStorage.getItem(LIVE_PANEL_COMPACT_KEY);
         setCompactMode(compactSetting === null ? true : compactSetting === 'true');
         setDrawerExpanded(localStorage.getItem('drawer-expanded') === 'true', false);
+
+        // Restore drawer collapse state
+        try {
+            var drawerCollapsed = localStorage.getItem('glm_drawer_collapsed');
+            var drawer = document.querySelector('.bottom-drawer');
+            if (drawer && drawerCollapsed === '1') {
+                drawer.classList.add('collapsed');
+            }
+        } catch(_e) {}
     }
 
     // ========== URL HASH ROUTING ==========
@@ -466,7 +493,7 @@
     }
 
     // Listen for hash changes (back/forward button)
-    window.addEventListener('hashchange', function() {
+    var _onHashChange = function() {
         if (isNavigatingFromCode) return; // Prevent loop
 
         var hash = window.location.hash.slice(1);
@@ -485,7 +512,8 @@
             }
             isNavigatingFromCode = false;
         }
-    });
+    };
+    window.addEventListener('hashchange', _onHashChange);
 
     // ========== BREADCRUMB NAVIGATION ==========
     var PAGE_LABELS = {
@@ -528,8 +556,8 @@
             // Don't show sub-page for default 'table' tab
             if (subPage === 'table' || subPage === 'live') subPage = null;
         } else if (page === 'routing') {
-            var activeTab = document.querySelector('.routing-tab-btn.active');
-            if (activeTab) subPage = activeTab.dataset.routingTab;
+            var activeRoutingTab = document.querySelector('.routing-tab-btn.active');
+            if (activeRoutingTab) subPage = activeRoutingTab.dataset.routingTab;
             // Don't show sub-page for default tab
             if (subPage === 'tiers' || subPage === 'flow') subPage = null;
         }
@@ -585,6 +613,11 @@
     STATE.activePage = 'overview';
 
     function switchPage(pageName) {
+        // Save current page scroll position
+        var currentPage = STATE.settings?.currentPage || 'overview';
+        if (!window._pageScrollPositions) window._pageScrollPositions = {};
+        window._pageScrollPositions[currentPage] = window.scrollY;
+
         STATE.activePage = pageName;
         document.querySelectorAll('.page-nav-btn').forEach(function(btn) {
             var isActive = btn.dataset.page === pageName;
@@ -617,6 +650,19 @@
 
         // Update breadcrumbs
         updateBreadcrumbs();
+
+        // Update drawer context label
+        var drawerScope = document.getElementById('drawerScopeLabel');
+        if (drawerScope) {
+            var pageLabels = { overview: 'All Pages', routing: 'Routing', requests: 'Requests', system: 'Diagnostics' };
+            drawerScope.textContent = pageLabels[pageName] || 'All Pages';
+        }
+
+        // Restore saved scroll position for the new page (or scroll to top)
+        var savedScroll = window._pageScrollPositions && window._pageScrollPositions[pageName];
+        requestAnimationFrame(function() {
+            window.scrollTo(0, savedScroll || 0);
+        });
     }
 
     function loadActivePage() {
@@ -703,6 +749,7 @@
         if (e.target.id === 'shortcutsModal' || e.key === 'Escape') {
             var modal = document.getElementById('shortcutsModal');
             if (modal) {
+                removeFocusTrap(modal);
                 modal.classList.remove('visible');
                 // Return focus to the element that opened the modal
                 if (modal._previousActiveElement) {
@@ -919,6 +966,12 @@
         }
 
         switch(key) {
+            case 'b':
+                e.preventDefault();
+                var drawerB = document.querySelector('.bottom-drawer');
+                if (drawerB) drawerB.classList.toggle('collapsed');
+                try { localStorage.setItem('glm_drawer_collapsed', drawerB?.classList.contains('collapsed') ? '1' : '0'); } catch(_e){}
+                break;
             case 'j': e.preventDefault(); if (window.DashboardFilters) window.DashboardFilters.navigateRequestList(1); break;
             case 'k': e.preventDefault(); if (window.DashboardFilters) window.DashboardFilters.navigateRequestList(-1); break;
             case 'enter':
@@ -935,8 +988,9 @@
             case '?': e.preventDefault(); showShortcutsModal(); break;
             case 'escape':
                 if (STATE.selectedRequestId) { closeSidePanel(); return; }
-                // Close any open modals
+                // Close any open modals and clean up their focus traps
                 document.querySelectorAll('.modal-overlay.visible, #shortcutsModal.visible').forEach(function(modal) {
+                    removeFocusTrap(modal);
                     modal.classList.remove('visible');
                 });
                 // Close fullscreen charts
@@ -944,6 +998,12 @@
                 // Close side panel
                 closeSidePanel();
                 closeShortcutsModal({ target: { id: 'shortcutsModal' }, key: 'Escape' });
+                // Collapse bottom drawer on Escape
+                var drawerEsc = document.querySelector('.bottom-drawer');
+                if (drawerEsc && !drawerEsc.classList.contains('collapsed')) {
+                    drawerEsc.classList.add('collapsed');
+                    try { localStorage.setItem('glm_drawer_collapsed', '1'); } catch(_e){}
+                }
                 break;
         }
     }
@@ -1180,6 +1240,75 @@
             var contentHtml = renderMessageContentSection(request);
             var payloadHtml = renderRawPayloadSection(request);
             body.innerHTML = detailsHtml + contentHtml + payloadHtml;
+
+            // Fetch trace data and render timing waterfall
+            var traceSection = document.getElementById('detailTraceSection');
+            var waterfallEl = document.getElementById('detailTraceWaterfall');
+            if (traceSection && waterfallEl) {
+                var lookupId = request.traceId || request.requestId || targetId;
+                traceSection.style.display = 'none';
+                waterfallEl.innerHTML = '';
+                var authHeaders = getAuthHeaders();
+                fetch('/traces/' + encodeURIComponent(lookupId), { headers: authHeaders })
+                    .then(function(res) { return res.ok ? res.json() : null; })
+                    .then(function(data) {
+                        if (!data || !data.trace) return;
+                        var trace = data.trace;
+                        var totalMs = trace.totalDuration || request.latency || request.latencyMs || 1;
+                        var phases = [
+                            { key: 'queued', label: 'Queue', color: 'var(--text-secondary)' },
+                            { key: 'key_acquired', label: 'Key', color: 'var(--accent)' },
+                            { key: 'upstream_start', label: 'Connect', color: 'var(--warning)' },
+                            { key: 'first_byte', label: 'TTFB', color: 'var(--accent-secondary, #8b5cf6)' },
+                            { key: 'streaming', label: 'Stream', color: 'var(--success)' }
+                        ];
+                        // Collect span durations from phaseSummary or attempt spans
+                        var phaseData = [];
+                        var summary = trace.phaseSummary && trace.phaseSummary.phases ? trace.phaseSummary.phases : {};
+                        // Also check attempt-level spans as fallback
+                        if (Object.keys(summary).length === 0 && trace.attempts) {
+                            for (var ai = 0; ai < trace.attempts.length; ai++) {
+                                var att = trace.attempts[ai];
+                                if (att.phaseTiming) {
+                                    for (var pk in att.phaseTiming) {
+                                        summary[pk] = (summary[pk] || 0) + att.phaseTiming[pk];
+                                    }
+                                } else if (att.spans) {
+                                    for (var si = 0; si < att.spans.length; si++) {
+                                        var sp = att.spans[si];
+                                        if (sp.duration > 0) {
+                                            summary[sp.type] = (summary[sp.type] || 0) + sp.duration;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // Add queue duration from top-level if present
+                        if (trace.queueDuration > 0 && !summary.queued) {
+                            summary.queued = trace.queueDuration;
+                        }
+                        phases.forEach(function(phase) {
+                            var dur = summary[phase.key];
+                            if (dur && dur > 0) {
+                                phaseData.push({ label: phase.label, color: phase.color, durationMs: Math.round(dur) });
+                            }
+                        });
+                        if (phaseData.length === 0) return;
+                        traceSection.style.display = 'block';
+                        var html = '<div class="trace-waterfall">';
+                        phaseData.forEach(function(p) {
+                            var pct = Math.max(2, Math.round((p.durationMs / totalMs) * 100));
+                            html += '<div class="trace-phase">' +
+                                '<span class="trace-phase-label">' + p.label + '</span>' +
+                                '<div class="trace-phase-bar" style="width:' + pct + '%;background:' + p.color + ';" title="' + p.durationMs + 'ms"></div>' +
+                                '<span class="trace-phase-time">' + p.durationMs + 'ms</span>' +
+                                '</div>';
+                        });
+                        html += '</div>';
+                        waterfallEl.innerHTML = html;
+                    })
+                    .catch(function() { /* trace not available, keep section hidden */ });
+            }
         } catch (err) {
             console.error('Failed to render request details', { requestId: targetId, error: err });
             body.innerHTML = '<div style="color: var(--error);">Failed to render request details. Check browser console for details.</div>';
@@ -1232,37 +1361,39 @@
         var token = prompt('Enter admin token:');
         if (token === null) return;
         if (!token || token.length < 1) { showToast('Token cannot be empty', 'error'); return; }
-        fetch('/auth-status', { headers: { 'x-admin-token': token } })
+        authFetch('/auth/login', { method: 'POST', headers: { 'x-admin-token': token } })
             .then(function(res) { return res.json(); })
             .then(function(data) {
                 if (data.authenticated) {
-                    AUTH_STATE.token = token; AUTH_STATE.authenticated = true;
-                    sessionStorage.setItem('adminToken', token);
-                    updateAuthUI(); showToast('Admin access granted', 'success');
+                    AUTH_STATE.token = null;
+                    AUTH_STATE.authenticated = true;
+                    clearAdminToken();
+                    updateAuthUI();
+                    if (window.DashboardSSE?.cleanup) window.DashboardSSE.cleanup();
+                    if (window.DashboardSSE?.connectRequestStream) window.DashboardSSE.connectRequestStream();
+                    showToast('Admin access granted', 'success');
                 } else { showToast('Invalid admin token', 'error'); }
             }).catch(function() { showToast('Authentication failed', 'error'); });
     }
 
     function logout() {
-        AUTH_STATE.token = null; AUTH_STATE.authenticated = false;
-        sessionStorage.removeItem('adminToken'); localStorage.removeItem('adminToken');
-        updateAuthUI(); showToast('Logged out', 'info');
+        authFetch('/auth/logout', { method: 'POST' })
+            .catch(function() { /* best-effort logout */ })
+            .then(function() {
+                AUTH_STATE.token = null;
+                AUTH_STATE.authenticated = false;
+                clearAdminToken();
+                updateAuthUI();
+                if (STATE.sse.eventSource) {
+                    STATE.sse.eventSource.close();
+                    STATE.sse.eventSource = null;
+                }
+                showToast('Logged out', 'info');
+            });
     }
 
     function loadStoredToken() {
-        var token = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
-        if (token) {
-            fetch('/auth-status', { headers: { 'x-admin-token': token } })
-                .then(function(res) { return res.json(); })
-                .then(function(data) {
-                    if (data.authenticated) { AUTH_STATE.token = token; AUTH_STATE.authenticated = true; updateAuthUI(); }
-                    else { sessionStorage.removeItem('adminToken'); localStorage.removeItem('adminToken'); }
-                }).catch(function() {
-                    // Server unreachable — clear stale tokens
-                    sessionStorage.removeItem('adminToken');
-                    localStorage.removeItem('adminToken');
-                });
-        }
+        clearAdminToken();
     }
 
     // ========== DATA FETCHING (stubs delegating to original dashboard.js functions) ==========
@@ -1438,15 +1569,7 @@
             // ---- Top bar controls ----
             case 'set-time-range':
                 setTimeRange(element.dataset.range);
-                // Update mobile dropdown label if exists
-                var dropdownLabel = document.getElementById('timeRangeDropdownLabel');
-                if (dropdownLabel) dropdownLabel.textContent = element.dataset.range;
-                // Update dropdown active state
-                document.querySelectorAll('.time-range-dropdown-item').forEach(function(item) {
-                    item.classList.toggle('active', item.dataset.range === element.dataset.range);
-                    item.setAttribute('aria-selected', String(item.dataset.range === element.dataset.range));
-                });
-                // Close dropdown if open
+                // Close dropdown if open (setTimeRange handles all sync)
                 var timeDropdown = document.getElementById('timeRangeDropdown');
                 var timeToggle = document.getElementById('timeRangeDropdownToggle');
                 if (timeDropdown) timeDropdown.classList.remove('open');
@@ -1509,6 +1632,15 @@
                 break;
             case 'control-resume':
                 if (DD && DD.controlAction) DD.controlAction('resume');
+                break;
+            case 'control-restart':
+                if (window.DashboardActions && window.DashboardActions.showRestartModal) window.DashboardActions.showRestartModal();
+                break;
+            case 'close-restart-modal':
+                if (window.DashboardActions && window.DashboardActions.closeRestartModal) window.DashboardActions.closeRestartModal();
+                break;
+            case 'confirm-restart':
+                if (window.DashboardActions && window.DashboardActions.executeRestart) window.DashboardActions.executeRestart();
                 break;
 
             // ---- Key management ----
@@ -1582,7 +1714,7 @@
                 var issueAction = element.dataset.issueAction;
                 var issueData = parseInt(element.dataset.issueData, 10);
                 if (issueAction === 'resetCircuit' && DD && DD.forceCircuitState) {
-                    fetch('/api/circuit/' + issueData, {
+                    authFetch('/api/circuit/' + issueData, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ state: 'CLOSED' })
@@ -1601,6 +1733,7 @@
             case 'close-modal':
                 if (element.dataset.modal === 'shortcuts') closeShortcutsModal(event);
                 if (element.dataset.modal === 'key-override' && DD && DD.closeKeyOverrideModal) DD.closeKeyOverrideModal(event);
+                if (element.dataset.modal === 'restart' && window.DashboardActions && window.DashboardActions.closeRestartModal) window.DashboardActions.closeRestartModal();
                 break;
             case 'close-toast':
                 if (event.target.parentElement) event.target.parentElement.remove();
@@ -1693,7 +1826,7 @@
                         b.classList.toggle('active', b.dataset.range === range);
                     });
                     var minutes = (DT && DT.ROUTING_TIME_MINUTES && DT.ROUTING_TIME_MINUTES[range]) || 5;
-                    fetch('/history?minutes=' + minutes).then(function(r) {
+                    authFetch('/history?minutes=' + minutes).then(function(r) {
                         if (!r.ok) throw new Error('History fetch failed: ' + r.status);
                         return r.json();
                     }).then(function(h) {
@@ -1805,9 +1938,7 @@
                 element.textContent = 'Loading...';
                 (async function() {
                     try {
-                        var token = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
-                        var headers = token ? { 'x-admin-token': token } : {};
-                        var response = await fetch('/requests/' + encodeURIComponent(requestIdToLoad) + '/payload', { headers: headers });
+                        var response = await authFetch('/requests/' + encodeURIComponent(requestIdToLoad) + '/payload');
                         if (!response.ok) {
                             throw new Error('payload fetch failed: ' + response.status);
                         }
@@ -1891,7 +2022,7 @@
                 if (element.disabled) break;
                 element.disabled = true;
                 element.textContent = 'Enabling...';
-                fetch('/model-routing/enable-safe', {
+                authFetch('/model-routing/enable-safe', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ addDefaultRules: true })
@@ -1921,7 +2052,7 @@
                 var isCurrentlyEnabled = element.textContent.trim() === 'Disable';
                 element.disabled = true;
                 element.textContent = isCurrentlyEnabled ? 'Disabling...' : 'Enabling...';
-                fetch(isCurrentlyEnabled ? '/model-routing' : '/model-routing/enable-safe', {
+                authFetch(isCurrentlyEnabled ? '/model-routing' : '/model-routing/enable-safe', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(isCurrentlyEnabled ? { enabled: false } : { addDefaultRules: true })
@@ -1956,6 +2087,11 @@
             switch (action) {
                 case 'sort-models':
                     if (window._tierBuilder) window._tierBuilder.sortBank(element.value);
+                    break;
+                case 'refresh-models':
+                    if (window.DashboardTierBuilder && window.DashboardTierBuilder.refreshModels) {
+                        window.DashboardTierBuilder.refreshModels();
+                    }
                     break;
                 case 'select-tenant':
                     selectTenant(element.value);
@@ -2148,7 +2284,15 @@
 
         function isHeaderOverflowing(header) {
             if (!header) return false;
-            return header.scrollWidth > (header.clientWidth + 2);
+            // Check if any child row wraps beyond expected single-line height
+            // or if total content width exceeds container
+            var firstRowItems = header.querySelectorAll('.header-section');
+            var totalMinWidth = 0;
+            for (var i = 0; i < firstRowItems.length; i++) {
+                totalMinWidth += firstRowItems[i].scrollWidth;
+            }
+            var gaps = Math.max(0, firstRowItems.length - 1) * 12; // approximate gap
+            return (totalMinWidth + gaps) > header.clientWidth;
         }
 
         function applyAdaptiveCompaction(header, width) {
@@ -2156,8 +2300,13 @@
 
             header.classList.remove('is-cramped', 'is-tight', 'is-ultra-tight');
 
-            // On small/mobile breakpoints, CSS media queries own the layout.
-            if (width < HEADER_BREAKPOINTS.tablet) return;
+            // At very small mobile widths, CSS media queries fully own the layout.
+            // But we still allow compaction at mobileLarge+ range where header has
+            // more visible items and can genuinely overflow.
+            if (width < HEADER_BREAKPOINTS.mobileSmall) {
+                restoreUsagePillText();
+                return;
+            }
 
             var scaledUp = getRootFontSize() > 16.5;
             if (scaledUp && width < HEADER_BREAKPOINTS.desktop) {
@@ -2165,19 +2314,63 @@
             }
 
             if (!header.classList.contains('is-cramped') && !isHeaderOverflowing(header)) {
+                restoreUsagePillText();
                 return;
             }
 
+            // Apply compaction levels synchronously with forced reflows
+            // to prevent visible overflow flash (previously used nested rAF).
             if (!header.classList.contains('is-cramped')) {
                 header.classList.add('is-cramped');
             }
+            void header.offsetWidth; // force reflow
 
             if (isHeaderOverflowing(header)) {
                 header.classList.add('is-tight');
-            }
+                void header.offsetWidth; // force reflow
 
-            if (isHeaderOverflowing(header)) {
-                header.classList.add('is-ultra-tight');
+                if (isHeaderOverflowing(header)) {
+                    header.classList.add('is-ultra-tight');
+                    condenseUsagePillText();
+                } else {
+                    restoreUsagePillText();
+                }
+            } else {
+                restoreUsagePillText();
+            }
+        }
+
+        /**
+         * Condense account-usage pill text to minimal format at ultra-tight.
+         * Normal: "42%T" / "18%U"  →  Condensed: "42t" / "18U"
+         * The pill stays visible (CSS no longer hides it); we just shorten text.
+         */
+        function condenseUsagePillText() {
+            var tokenEl = document.getElementById('headerAccountTokenPct');
+            var toolEl = document.getElementById('headerAccountToolPct');
+            if (tokenEl && tokenEl.textContent.indexOf('%') !== -1) {
+                tokenEl.dataset.fullText = tokenEl.textContent;
+                tokenEl.textContent = tokenEl.textContent.replace('%', '');
+            }
+            if (toolEl && toolEl.textContent.indexOf('%') !== -1) {
+                toolEl.dataset.fullText = toolEl.textContent;
+                toolEl.textContent = toolEl.textContent.replace('%', '');
+            }
+        }
+
+        /**
+         * Restore account-usage pill text from condensed back to full format.
+         */
+        function restoreUsagePillText() {
+            var tokenEl = document.getElementById('headerAccountTokenPct');
+            var toolEl = document.getElementById('headerAccountToolPct');
+            if (tokenEl && tokenEl.dataset.fullText) {
+                tokenEl.textContent = tokenEl.dataset.fullText;
+                delete tokenEl.dataset.fullText;
+            }
+            if (toolEl && toolEl.dataset.fullText) {
+                toolEl.textContent = toolEl.dataset.fullText;
+                delete toolEl.dataset.fullText;
             }
         }
 
@@ -2388,6 +2581,60 @@
     // Initialize responsive header after module is defined
     if (window.HeaderResponsive && window.HeaderResponsive.init) {
         window.HeaderResponsive.init();
+    }
+
+    // ========== GRID RESPONSIVE (viewport-aware layout) ==========
+    (function() {
+        var grid = document.querySelector('.dashboard-grid');
+        if (!grid) return;
+
+        function updateGridLayout() {
+            var width = grid.clientWidth;
+            grid.classList.remove('grid-1col', 'grid-2col', 'grid-3col');
+            if (width < 840) {
+                grid.classList.add('grid-1col');
+            } else if (width < 1100) {
+                grid.classList.add('grid-2col');
+            } else {
+                grid.classList.add('grid-3col');
+            }
+        }
+
+        // Dynamic chart height based on viewport
+        function updateChartHeights() {
+            var vh = window.innerHeight;
+            var chartHeight = Math.max(120, Math.min(220, Math.round(vh * 0.18)));
+            document.documentElement.style.setProperty('--chart-dynamic-h', chartHeight + 'px');
+        }
+
+        if (typeof ResizeObserver !== 'undefined') {
+            new ResizeObserver(function() {
+                updateGridLayout();
+            }).observe(grid);
+        } else {
+            window.addEventListener('resize', updateGridLayout);
+        }
+
+        window.addEventListener('resize', updateChartHeights);
+        updateGridLayout();
+        updateChartHeights();
+    })();
+
+    // First-visit discovery hint (show once, remember in localStorage)
+    try {
+        if (!localStorage.getItem('glm_shortcut_hint_shown')) {
+            setTimeout(function() {
+                if (typeof showToast === 'function') {
+                    showToast('Pro tip: Press ? for keyboard shortcuts, right-click requests for actions', 'info');
+                }
+                localStorage.setItem('glm_shortcut_hint_shown', '1');
+            }, 3000); // Show after 3s so it doesn't compete with initial toasts
+        }
+    } catch(_e) { /* localStorage unavailable */ }
+
+    // Respect prefers-reduced-motion for SMIL animations (CSS media query does not affect SMIL)
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.querySelectorAll('animateMotion, animate').forEach(function(el) { el.remove(); });
     }
 
 })(window);

@@ -270,31 +270,31 @@ describe('Config', () => {
         test('should have all convenience getters', () => {
             const config = new Config();
 
-            expect(config.port).toBeDefined();
-            expect(config.host).toBeDefined();
-            expect(config.targetHost).toBeDefined();
-            expect(config.targetBasePath).toBeDefined();
-            expect(config.maxWorkers).toBeDefined();
-            expect(config.useCluster).toBeDefined();
-            expect(config.maxRetries).toBeDefined();
-            expect(config.circuitBreaker).toBeDefined();
-            expect(config.maxConcurrencyPerKey).toBeDefined();
-            expect(config.maxTotalConcurrency).toBeDefined();
-            expect(config.queueSize).toBeDefined();
-            expect(config.queueTimeout).toBeDefined();
-            expect(config.rateLimitPerMinute).toBeDefined();
-            expect(config.rateLimitBurst).toBeDefined();
-            expect(config.requestTimeout).toBeDefined();
-            expect(config.keepAliveTimeout).toBeDefined();
-            expect(config.freeSocketTimeout).toBeDefined();
-            expect(config.maxBodySize).toBeDefined();
-            expect(config.shutdownTimeout).toBeDefined();
-            expect(config.statsSaveInterval).toBeDefined();
-            expect(config.logLevel).toBeDefined();
-            expect(config.logFormat).toBeDefined();
-            expect(config.apiKeys).toBeDefined();
-            expect(config.configDir).toBeDefined();
-            expect(config.statsFile).toBeDefined();
+            expect(config.port).toBe(DEFAULT_CONFIG.port);
+            expect(config.host).toBe(DEFAULT_CONFIG.host);
+            expect(config.targetHost).toBe(DEFAULT_CONFIG.targetHost);
+            expect(config.targetBasePath).toBe(DEFAULT_CONFIG.targetBasePath);
+            expect(config.maxWorkers).toBe(DEFAULT_CONFIG.maxWorkers);
+            expect(config.useCluster).toBe(DEFAULT_CONFIG.useCluster);
+            expect(config.maxRetries).toBe(DEFAULT_CONFIG.maxRetries);
+            expect(config.circuitBreaker).toEqual(DEFAULT_CONFIG.circuitBreaker);
+            expect(config.maxConcurrencyPerKey).toBe(DEFAULT_CONFIG.maxConcurrencyPerKey);
+            expect(config.maxTotalConcurrency).toBe(DEFAULT_CONFIG.maxTotalConcurrency);
+            expect(config.queueSize).toBe(DEFAULT_CONFIG.queueSize);
+            expect(config.queueTimeout).toBe(DEFAULT_CONFIG.queueTimeout);
+            expect(config.rateLimitPerMinute).toBe(DEFAULT_CONFIG.rateLimitPerMinute);
+            expect(config.rateLimitBurst).toBe(DEFAULT_CONFIG.rateLimitBurst);
+            expect(config.requestTimeout).toBe(DEFAULT_CONFIG.requestTimeout);
+            expect(config.keepAliveTimeout).toBe(DEFAULT_CONFIG.keepAliveTimeout);
+            expect(config.freeSocketTimeout).toBe(DEFAULT_CONFIG.freeSocketTimeout);
+            expect(config.maxBodySize).toBe(DEFAULT_CONFIG.maxBodySize);
+            expect(config.shutdownTimeout).toBe(DEFAULT_CONFIG.shutdownTimeout);
+            expect(config.statsSaveInterval).toBe(DEFAULT_CONFIG.statsSaveInterval);
+            expect(config.logLevel).toBe(DEFAULT_CONFIG.logLevel);
+            expect(config.logFormat).toBe(DEFAULT_CONFIG.logFormat);
+            expect(config.apiKeys).toBeInstanceOf(Array);
+            expect(config.configDir).toBe(DEFAULT_CONFIG.configDir);
+            expect(config.statsFile).toBe(DEFAULT_CONFIG.statsFile);
         });
 
         test('should have default queue config values', () => {
@@ -442,7 +442,7 @@ describe('Config', () => {
             const errors = config.flushLoadErrors();
             expect(errors).toHaveLength(1);
             expect(errors[0].type).toBe('api_keys');
-            expect(errors[0].message).toBeDefined();
+            expect(errors[0].message).toEqual(expect.any(String));
 
             // After flush, should be empty
             expect(config.hasLoadErrors()).toBe(false);
@@ -842,7 +842,7 @@ describe('Config with ModelMappingManager', () => {
             }
         });
 
-        expect(config.modelMappingManager).toBeDefined();
+        expect(config.modelMappingManager).toBeInstanceOf(ModelMappingManager);
         expect(config.modelMappingManager.enabled).toBe(true);
         expect(config.modelMappingManager.getMappedModel('claude-opus')).toBe('glm-4.7');
     });
@@ -863,7 +863,7 @@ describe('Config with ModelMappingManager', () => {
     test('should use default modelMapping when not specified', () => {
         const config = new Config();
 
-        expect(config.modelMappingManager).toBeDefined();
+        expect(config.modelMappingManager).toBeInstanceOf(ModelMappingManager);
         // Default config should have enabled: true with model mappings
         expect(config.modelMapping.enabled).toBe(true);
     });

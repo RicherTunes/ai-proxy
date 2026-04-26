@@ -38,7 +38,7 @@
             var time = formatTimestamp(t.timestamp);
             var statusClass = t.status === 'success' ? 'success' : t.status === 'error' ? 'error' : 'pending';
             var statusIcon = t.status === 'success' ? 'OK' : t.status === 'error' ? 'ERR' : '...';
-            return '<tr data-trace-id="' + escapeHtml(t.traceId || '') + '" data-action="show-trace" style="cursor:pointer;">' +
+            return '<tr data-trace-id="' + escapeHtml(t.traceId || '') + '" data-action="show-trace" style="cursor:pointer;" tabindex="0">' +
                 '<td class="monospace">' + time + '</td>' +
                 '<td class="monospace" title="' + escapeHtml(t.traceId || '') + '">' + (t.traceId ? t.traceId.substring(0, 12) + '...' : '-') + '</td>' +
                 '<td>' + escapeHtml(t.path || '/v1/messages') + '</td>' +
@@ -106,7 +106,7 @@
             var shortId = t.traceId ? t.traceId.substring(0, 12) + '...' : '-';
             var model = t.model ? escapeHtml(t.model.split('/').pop().substring(0, 12)) : '-';
             var attempts = t.attempts || 1;
-            return '<tr data-trace-id="' + escapeHtml(t.traceId) + '" data-action="show-trace" style="cursor:pointer;">' +
+            return '<tr data-trace-id="' + escapeHtml(t.traceId) + '" data-action="show-trace" style="cursor:pointer;" tabindex="0">' +
                 '<td class="monospace">' + time + '</td>' +
                 '<td class="monospace" title="' + escapeHtml(t.traceId) + '">' + shortId + '</td>' +
                 '<td title="' + safePath + '">' + (safePath.length > 25 ? safePath.substring(0, 25) + '...' : safePath) + '</td>' +
@@ -124,7 +124,8 @@
         var panel = document.getElementById('traceDetailPanel');
         if (panel) panel.style.display = 'block';
 
-        document.getElementById('traceDetailId').textContent = traceId;
+        var el = document.getElementById('traceDetailId');
+        if (el) el.textContent = traceId;
         var fields = ['traceDetailStatus', 'traceDetailModel', 'traceDetailDuration', 'traceDetailAttempts', 'traceDetailQueue', 'traceDetailKey', 'traceDetailCost'];
         var defaults = ['Loading...', '-', '-', '-', '-', '-', '-'];
         for (var i = 0; i < fields.length; i++) {
@@ -312,6 +313,17 @@
             navigator.clipboard.writeText(JSON.stringify(currentTraceData, null, 2)).then(function() { showToast('Trace JSON copied', 'success'); }).catch(function() { showToast('Failed to copy', 'error'); });
         }
     }
+
+    // ========== KEYBOARD ACCESSIBILITY ==========
+    // Delegated keydown handler: Enter/Space on trace rows triggers click
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        var el = e.target;
+        if (el && el.getAttribute('data-action') === 'show-trace') {
+            e.preventDefault();
+            el.click();
+        }
+    });
 
     // ========== EXPORT ==========
     window.DashboardTraces = {

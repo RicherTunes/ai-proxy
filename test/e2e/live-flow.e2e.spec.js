@@ -1,8 +1,8 @@
 /**
- * E2E Tests: Live Flow Visualization + Pool-Status SSE Events
+ * E2E Tests: Runway Per-Request Flow Visualization + Pool-Status SSE Events
  *
  * Tests both the backend SSE pool-status events and the frontend
- * D3.js swim-lane visualization.
+ * Runway HTML-based per-request flow visualization.
  *
  * Uses liveFlowTest fixture which creates a server with explicit
  * modelRouting tiers (heavy/medium/light) for predictable pool-status data.
@@ -119,7 +119,7 @@ test.describe('Pool-Status SSE Events', () => {
   });
 });
 
-// ======== D3 Live Flow Visualization (Browser side) ========
+// ======== Runway Per-Request Flow Visualization (Browser side) ========
 
 // Helper: navigate to routing page via page-nav button click
 async function goToRoutingPage(page, proxyServer) {
@@ -133,96 +133,82 @@ async function goToRoutingPage(page, proxyServer) {
   }, { timeout: 5000 });
 }
 
-test.describe('Live Flow Visualization', () => {
+test.describe('Runway Flow Visualization', () => {
 
   test('liveFlowContainer renders on routing page', async ({ proxyServer, page }) => {
     await goToRoutingPage(page, proxyServer);
 
-    // D3-01: Verify the container exists and is visible (not page-hidden)
     const container = page.locator('#liveFlowContainer');
     await expect(container).toBeVisible();
   });
 
-  test('D3 SVG renders inside liveFlowCanvas', async ({ proxyServer, page }) => {
+  test('runway-viz container exists inside liveFlowContainer', async ({ proxyServer, page }) => {
     await goToRoutingPage(page, proxyServer);
 
-    // Wait for LiveFlowViz to initialize and receive at least one pool-status event
-    // The SSE pool-status fires every 3s, and LiveFlowViz needs Plan 03 to be in place
-    await page.waitForTimeout(5000);
-
-    // D3-01: Check SVG element was created by D3 (requires Plan 03 LiveFlowViz)
-    const svgCount = await page.locator('#liveFlowCanvas svg').count();
-    expect(svgCount).toBeGreaterThanOrEqual(1);
+    const runway = page.locator('#runwayViz');
+    await expect(runway).toHaveCount(1);
   });
 
-  test('swim lanes render for configured tiers', async ({ proxyServer, page }) => {
+  test('runway sections exist for in-flight and completed', async ({ proxyServer, page }) => {
     await goToRoutingPage(page, proxyServer);
-    await page.waitForTimeout(5000);
 
-    // D3-01: Check swim lane labels exist (requires Plan 03 LiveFlowViz)
-    const laneLabels = await page.evaluate(() => {
-      const labels = document.querySelectorAll('#liveFlowCanvas .swim-lane-label');
-      return Array.from(labels).map(l => l.textContent);
+    const inflightSection = page.locator('.runway-inflight');
+    const completedSection = page.locator('.runway-completed');
+    await expect(inflightSection).toHaveCount(1);
+    await expect(completedSection).toHaveCount(1);
+  });
+
+  test('empty state shown when no active requests', async ({ proxyServer, page }) => {
+    await goToRoutingPage(page, proxyServer);
+
+    // RunwayViz should show empty state with no requests
+    const isEmpty = await page.evaluate(() => {
+      const viz = document.getElementById('runwayViz');
+      return viz?.classList.contains('empty');
     });
-
-    // Should have labels for configured tiers
-    expect(laneLabels.length).toBeGreaterThan(0);
-  });
-
-  test('legend shows tier colors', async ({ proxyServer, page }) => {
-    await goToRoutingPage(page, proxyServer);
-
-    const legend = page.locator('#liveFlowLegend');
-    await expect(legend).toBeVisible();
-
-    // Check legend items are present in the legend HTML
-    const legendText = await legend.textContent();
-    expect(legendText).toContain('Heavy');
-    expect(legendText).toContain('Medium');
-    expect(legendText).toContain('Light');
+    expect(isEmpty).toBe(true);
   });
 
   test('connection status indicator exists', async ({ proxyServer, page }) => {
     await goToRoutingPage(page, proxyServer);
 
-    // Check status element exists and has text content
     const statusEl = page.locator('#liveFlowStatus');
     await expect(statusEl).toBeVisible();
     const statusText = await statusEl.textContent();
-    // Should show one of the valid states (initial text is "Connecting...")
     expect(statusText.length).toBeGreaterThan(0);
   });
 });
 
-// ======== Reduced Motion (D3-03) ========
+// ======== Reduced Motion ========
 
 test.describe('Reduced Motion', () => {
 
-  test('no particles rendered with prefers-reduced-motion', async ({ proxyServer, page }) => {
+  test('reduced motion detected by RunwayViz', async ({ proxyServer, page }) => {
     // Emulate reduced motion preference BEFORE navigating
     await page.emulateMedia({ reducedMotion: 'reduce' });
 
     await goToRoutingPage(page, proxyServer);
 
-    // Wait for pool-status data to arrive and D3 to render
-    await page.waitForTimeout(5000);
-
-    // D3-03: Particles should not be visible
-    // CSS hides .flow-particle with display:none, and JS skips spawning
-    const particleCount = await page.evaluate(() => {
-      const particles = document.querySelectorAll('#liveFlowCanvas .flow-particle');
-      // Check computed visibility - only count non-hidden particles
-      return Array.from(particles).filter(p => {
-        const style = window.getComputedStyle(p);
-        return style.display !== 'none';
-      }).length;
-    });
-    expect(particleCount).toBe(0);
-
-    // Verify LiveFlowViz detected reduced motion
     const reducedMotion = await page.evaluate(() => {
       return window._liveFlowViz?.reducedMotion;
     });
     expect(reducedMotion).toBe(true);
+  });
+
+  test('no pulse animations with prefers-reduced-motion', async ({ proxyServer, page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await goToRoutingPage(page, proxyServer);
+
+    // Verify CSS disables animations via media query
+    const animationDisabled = await page.evaluate(() => {
+      const el = document.createElement('div');
+      el.className = 'runway-segment routing';
+      document.body.appendChild(el);
+      const style = window.getComputedStyle(el);
+      const result = style.animationName === 'none' || style.animation === 'none';
+      el.remove();
+      return result;
+    });
+    expect(animationDisabled).toBe(true);
   });
 });

@@ -1292,4 +1292,56 @@ describe('KeyManager', () => {
             expect(stats['glm-4.5']).toEqual({ inFlight: 1, maxConcurrency: 10 });
         });
     });
+
+    describe('updateStaticModelLimit()', () => {
+        let km;
+        beforeEach(() => {
+            km = new KeyManager(['key1'], {});
+            km.setModelConcurrencyLimits({ 'glm-test': 5 });
+        });
+
+        test('raises static and effective when at ceiling', () => {
+            // Effective is at ceiling (5 === static 5)
+            const result = km.updateStaticModelLimit('glm-test', 8);
+            expect(result.oldStatic).toBe(5);
+            expect(result.newStatic).toBe(8);
+            expect(result.effective).toBe(8);
+            expect(km.getStaticModelLimit('glm-test')).toBe(8);
+            expect(km.getEffectiveModelLimit('glm-test')).toBe(8);
+        });
+
+        test('raises static only when effective was AIMD-reduced', () => {
+            // Simulate AIMD reducing effective below static
+            km.setEffectiveModelLimit('glm-test', 3);
+            const result = km.updateStaticModelLimit('glm-test', 8);
+            expect(result.oldStatic).toBe(5);
+            expect(result.newStatic).toBe(8);
+            expect(result.effective).toBe(3);  // Unchanged — AIMD still in control
+            expect(km.getStaticModelLimit('glm-test')).toBe(8);
+            expect(km.getEffectiveModelLimit('glm-test')).toBe(3);
+        });
+
+        test('handles decrease correctly', () => {
+            const result = km.updateStaticModelLimit('glm-test', 2);
+            expect(result.oldStatic).toBe(5);
+            expect(result.newStatic).toBe(2);
+            // Effective was at ceiling (5), so it follows the decrease
+            expect(result.effective).toBe(2);
+        });
+
+        test('rejects invalid inputs', () => {
+            const result = km.updateStaticModelLimit(null, 5);
+            expect(result.effective).toBeUndefined();
+            const result2 = km.updateStaticModelLimit('glm-test', 0);
+            // 0 < 1, so rejected
+            expect(km.getStaticModelLimit('glm-test')).toBe(5); // Unchanged
+        });
+
+        test('handles unknown model gracefully', () => {
+            const result = km.updateStaticModelLimit('unknown-model', 5);
+            expect(result.oldStatic).toBeUndefined();
+            expect(result.newStatic).toBe(5);
+            expect(km.getStaticModelLimit('unknown-model')).toBe(5);
+        });
+    });
 });

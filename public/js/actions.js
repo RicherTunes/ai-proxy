@@ -16,6 +16,7 @@
     var escapeHtml = DS.escapeHtml;
     var renderEmptyState = DS.renderEmptyState;
     var TIME_RANGES = DS.TIME_RANGES;
+    var authFetch = DS.authFetch;
     var showToast = window.showToast || function() {};
 
     // Injected dependencies (set via init())
@@ -42,7 +43,7 @@
 
     // ========== CONTROL ACTIONS ==========
     function controlAction(action) {
-        return fetch('/control/' + action, { method: 'POST' }).then(function(res) {
+        return authFetch('/control/' + action, { method: 'POST' }).then(function(res) {
             if (!res.ok) console.error('Control action ' + action + ' failed:', res.status);
             if (action === 'pause' && deps.pausePolling) { deps.pausePolling(); }
             if (action === 'resume') {
@@ -54,7 +55,7 @@
     }
 
     function forceCircuitStateOnKey(keyIndex, state) {
-        return fetch('/api/circuit/' + keyIndex, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: state }) })
+        return authFetch('/api/circuit/' + keyIndex, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: state }) })
             .then(function(res) {
                 if (res.ok) { showToast('Key ' + (keyIndex + 1) + ' circuit set to ' + state, 'success'); if (deps.fetchStats) deps.fetchStats(); }
                 else { showToast('Failed to update circuit state', 'error'); }
@@ -63,14 +64,35 @@
 
     // ========== DATA EXPORT ==========
     function exportData() {
-        Promise.all([fetch('/stats').then(function(r) { return r.json(); }), fetch('/history?minutes=' + TIME_RANGES[STATE.settings.timeRange].minutes, { cache: 'no-store' }).then(function(r) { return r.json(); })])
+        Promise.all([authFetch('/stats').then(function(r) { return r.json(); }), authFetch('/history?minutes=' + TIME_RANGES[STATE.settings.timeRange].minutes, { cache: 'no-store' }).then(function(r) { return r.json(); })])
             .then(function(results) {
                 var stats = results[0];
                 var history = results[1];
+                var exportPayload = { stats: stats, history: history };
+
+                // Add human-readable summary
+                exportPayload.summary = {
+                    generatedAt: new Date().toISOString(),
+                    uptime: (stats && stats.uptimeFormatted) || '?',
+                    totalRequests: (stats && stats.clientRequests && stats.clientRequests.total) || 0,
+                    successRate: (stats && stats.clientRequests && stats.clientRequests.successRate) || '?',
+                    activeKeys: (stats && stats.keys || []).filter(function(k) { return k.totalRequests > 0 || k.total > 0; }).length,
+                    totalKeys: (stats && stats.keys || []).length,
+                    errorBreakdown: (stats && stats.errors) || {},
+                    topModels: {}
+                };
+                // Top models by request count
+                var modelCounts = {};
+                (stats && stats.keys || []).forEach(function(k) {
+                    if (k.model) modelCounts[k.model] = (modelCounts[k.model] || 0) + (k.totalRequests || k.total || 0);
+                });
+                exportPayload.summary.topModels = modelCounts;
+
                 var csvContent = generateCSV(stats, history);
-                var jsonContent = JSON.stringify({ stats: stats, history: history }, null, 2);
-                downloadFile(csvContent, 'glm-proxy-stats.csv', 'text/csv');
-                setTimeout(function() { downloadFile(jsonContent, 'glm-proxy-stats.json', 'application/json'); }, 100);
+                var jsonContent = JSON.stringify(exportPayload, null, 2);
+                var filename = 'glm-proxy-' + new Date().toISOString().slice(0, 10) + '.json';
+                downloadFile(csvContent, 'glm-proxy-' + new Date().toISOString().slice(0, 10) + '.csv', 'text/csv');
+                setTimeout(function() { downloadFile(jsonContent, filename, 'application/json'); }, 100);
                 showToast('Data exported successfully', 'success');
             }).catch(function(err) { console.error('Export failed:', err); showToast('Export failed: ' + err.message, 'error'); });
     }
@@ -136,6 +158,8 @@
     function dismissIssues() {
         var panel = document.getElementById('issuesPanel');
         if (panel) panel.classList.remove('has-issues');
+        // Note: 'issues-dismissed' key lacks the 'glm_' prefix used by other keys.
+        // Kept as-is to avoid breaking dismissed state for existing users.
         localStorage.setItem('issues-dismissed', JSON.stringify({ hash: previousIssuesHash, dismissedAt: Date.now() }));
         var reopenBadge = document.getElementById('issuesReopenBadge');
         if (reopenBadge) reopenBadge.style.display = 'inline-flex';
@@ -147,11 +171,11 @@
     }
 
     function resetAllCircuits() {
-        fetch('/stats').then(function(res) { return res.json(); }).then(function(stats) {
+        authFetch('/stats').then(function(res) { return res.json(); }).then(function(stats) {
             if (!stats.keys) return;
             var promises = [];
             for (var i = 0; i < stats.keys.length; i++) {
-                promises.push(fetch('/api/circuit/' + i, {
+                promises.push(authFetch('/api/circuit/' + i, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ state: 'CLOSED' })
@@ -172,7 +196,7 @@
     }
 
     function exportDiagnostics() {
-        fetch('/stats').then(function(res) { return res.json(); }).then(function(stats) {
+        authFetch('/stats').then(function(res) { return res.json(); }).then(function(stats) {
             var diagnostics = {
                 timestamp: new Date().toISOString(),
                 uptime: stats.uptime,
@@ -201,35 +225,35 @@
 
     function forceCircuitState(state) {
         if (STATE.selectedKeyIndex === null) return;
-        fetch('/control/circuit/' + STATE.selectedKeyIndex + '/' + state, { method: 'POST' })
+        authFetch('/control/circuit/' + STATE.selectedKeyIndex + '/' + state, { method: 'POST' })
             .then(function() { if (deps.fetchStats) deps.fetchStats(); })
             .catch(function(err) { console.error('Force circuit state failed:', err); });
     }
 
     function forceCircuit(state) {
         if (STATE.selectedKeyIndex !== null && state) {
-            fetch('/control/circuit/' + STATE.selectedKeyIndex + '/' + state, { method: 'POST' })
+            authFetch('/control/circuit/' + STATE.selectedKeyIndex + '/' + state, { method: 'POST' })
                 .then(function() { if (deps.fetchStats) deps.fetchStats(); })
                 .catch(function(err) { console.error('Force circuit state failed:', err); });
         }
     }
 
     function reloadKeys() {
-        fetch('/reload', { method: 'POST' }).then(function(res) {
+        authFetch('/reload', { method: 'POST' }).then(function(res) {
             if (!res.ok) console.error('Reload failed:', res.status);
             return deps.fetchStats ? deps.fetchStats() : null;
         }).catch(function(err) { console.error('Reload failed:', err); });
     }
 
     function resetStats() {
-        fetch('/control/reset-stats', { method: 'POST' }).then(function(res) {
+        authFetch('/control/reset-stats', { method: 'POST' }).then(function(res) {
             if (!res.ok) console.error('Reset stats failed:', res.status);
             return deps.fetchStats ? deps.fetchStats() : null;
         }).catch(function(err) { console.error('Reset stats failed:', err); });
     }
 
     function clearLogs() {
-        fetch('/control/clear-logs', { method: 'POST' }).then(function(res) {
+        authFetch('/control/clear-logs', { method: 'POST' }).then(function(res) {
             if (!res.ok) console.error('Clear logs failed:', res.status);
             return deps.fetchLogs ? deps.fetchLogs() : null;
         }).catch(function(err) { console.error('Clear logs failed:', err); });
@@ -332,7 +356,7 @@
         var configKeys = Object.keys(config);
         for (var j = 0; j < configKeys.length; j++) payload[configKeys[j]] = config[configKeys[j]];
         payload.overrides = updatedOverrides;
-        fetch('/model-routing', {
+        authFetch('/model-routing', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -348,6 +372,123 @@
                 if (deps.fetchStats) deps.fetchStats();
             });
         }).catch(function(err) { showToast('Failed to save overrides: ' + err.message, 'error'); });
+    }
+
+    // ========== RESTART PROXY ==========
+    function showRestartModal() {
+        var modal = document.getElementById('restartModal');
+        var status = document.getElementById('restartStatus');
+        var footer = document.getElementById('restartModalFooter');
+        var desc = document.getElementById('restartModalDesc');
+        var confirmBtn = document.getElementById('restartConfirmBtn');
+
+        if (status) status.style.display = 'none';
+        if (footer) footer.style.display = '';
+        if (desc) desc.style.display = '';
+        if (confirmBtn) confirmBtn.disabled = false;
+        if (modal) modal.classList.add('visible');
+    }
+
+    function closeRestartModal(force) {
+        var status = document.getElementById('restartStatus');
+        if (!force && status && status.style.display !== 'none') return;
+        var modal = document.getElementById('restartModal');
+        if (modal) modal.classList.remove('visible');
+    }
+
+    function executeRestart() {
+        var confirmBtn = document.getElementById('restartConfirmBtn');
+        var status = document.getElementById('restartStatus');
+        var statusText = document.getElementById('restartStatusText');
+        var footer = document.getElementById('restartModalFooter');
+        var desc = document.getElementById('restartModalDesc');
+
+        if (confirmBtn) confirmBtn.disabled = true;
+
+        authFetch('/control/restart', { method: 'POST' }).then(function(res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+        }).then(function(data) {
+            if (footer) footer.style.display = 'none';
+            if (desc) desc.style.display = 'none';
+            if (status) status.style.display = 'block';
+            if (statusText) statusText.textContent = data.mode === 'rolling'
+                ? 'Rolling restart in progress...'
+                : 'Restarting proxy...';
+
+            if (window.DashboardSSE && window.DashboardSSE.updateConnectionStatus) {
+                window.DashboardSSE.updateConnectionStatus('error');
+            }
+            pollForRecovery(data.mode);
+        }).catch(function(err) {
+            console.error('Restart failed:', err);
+            showToast('Restart failed: ' + err.message, 'error');
+            closeRestartModal(true);
+        });
+    }
+
+    function pollForRecovery(mode) {
+        var statusText = document.getElementById('restartStatusText');
+        var startTime = Date.now();
+        var TIMEOUT_MS = 30000;
+
+        var pollTimer = setInterval(function() {
+            var elapsed = Date.now() - startTime;
+
+            if (elapsed > TIMEOUT_MS) {
+                clearInterval(pollTimer);
+                var statusEl = document.getElementById('restartStatus');
+                if (statusEl) {
+                    statusEl.innerHTML =
+                        '<div style="text-align:center">' +
+                        '<p style="color:var(--error);margin:0 0 12px">Proxy did not respond within 30 seconds.</p>' +
+                        '<button class="btn btn-primary" data-action="reload-page">Reload Dashboard</button>' +
+                        '</div>';
+                }
+                return;
+            }
+
+            var controller = new AbortController();
+            var tid = setTimeout(function() { controller.abort(); }, 3000);
+            fetch('/health', { signal: controller.signal }).then(function(res) {
+                clearTimeout(tid);
+                if (!res.ok) return;
+                return res.json();
+            }).then(function(health) {
+                if (!health) return;
+
+                if (mode === 'rolling' && elapsed > 5000) {
+                    clearInterval(pollTimer);
+                    onRestartComplete();
+                    return;
+                }
+
+                if (mode !== 'rolling' && health.uptime !== undefined && health.uptime < 10) {
+                    clearInterval(pollTimer);
+                    onRestartComplete();
+                    return;
+                }
+            }).catch(function() {
+                clearTimeout(tid);
+                // Connection failed — proxy is down (expected)
+            });
+
+            if (statusText) {
+                statusText.textContent = mode === 'rolling'
+                    ? 'Rolling restart in progress... (' + Math.round(elapsed / 1000) + 's)'
+                    : 'Waiting for proxy... (' + Math.round(elapsed / 1000) + 's)';
+            }
+        }, 1000);
+    }
+
+    function onRestartComplete() {
+        if (window.DashboardSSE) {
+            if (window.DashboardSSE.updateConnectionStatus) window.DashboardSSE.updateConnectionStatus('connected');
+            if (window.DashboardSSE.connectRequestStream) window.DashboardSSE.connectRequestStream();
+        }
+        showToast('Proxy restarted successfully', 'success');
+        closeRestartModal(true);
+        if (deps.fetchStats) deps.fetchStats();
     }
 
     // ========== EXPORT ==========
@@ -374,7 +515,10 @@
         removeOverride: removeOverride,
         saveKeyOverrides: saveKeyOverrides,
         renderOverrideList: renderOverrideList,
-        toggleGlobalMapping: toggleGlobalMapping
+        toggleGlobalMapping: toggleGlobalMapping,
+        showRestartModal: showRestartModal,
+        closeRestartModal: closeRestartModal,
+        executeRestart: executeRestart
     };
 
 })(window);

@@ -10,45 +10,13 @@
  * - Graceful shutdown
  */
 
-const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { ProxyServer } = require('../lib/proxy-server');
 const { Config, resetConfig } = require('../lib/config');
 const { resetLogger } = require('../lib/logger');
-
-// Helper to make HTTP requests
-function request(url, options = {}) {
-    return new Promise((resolve, reject) => {
-        const req = http.request(url, options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                try {
-                    resolve({
-                        statusCode: res.statusCode,
-                        headers: res.headers,
-                        body: data,
-                        json: () => JSON.parse(data)
-                    });
-                } catch (e) {
-                    resolve({
-                        statusCode: res.statusCode,
-                        headers: res.headers,
-                        body: data,
-                        json: () => null
-                    });
-                }
-            });
-        });
-        req.on('error', reject);
-        if (options.body) {
-            req.write(options.body);
-        }
-        req.end();
-    });
-}
+const { request } = require('./helpers/http-request');
 
 // Mock upstream API server
 function createMockUpstream(options = {}) {
@@ -197,8 +165,8 @@ describe('E2E Smoke Tests', () => {
             expect(data.healthyKeys).toBe(3);
             expect(data.totalKeys).toBe(3);
             expect(data.uptime).toBeGreaterThanOrEqual(0);
-            expect(data.backpressure).toBeDefined();
-            expect(data.backpressure.queue).toBeDefined();
+            expect(data.backpressure).toBeInstanceOf(Object);
+            expect(data.backpressure.queue).toBeInstanceOf(Object);
         });
 
         test('GET /stats returns detailed statistics', async () => {
@@ -207,13 +175,13 @@ describe('E2E Smoke Tests', () => {
             expect(res.statusCode).toBe(200);
             const data = res.json();
             expect(data.uptime).toBeGreaterThanOrEqual(0);
-            expect(data.totalRequests).toBeDefined();
-            expect(data.activeConnections).toBeDefined();
+            expect(data.totalRequests).toBeGreaterThanOrEqual(0);
+            expect(data.activeConnections).toBeGreaterThanOrEqual(0);
             expect(data.keys).toBeInstanceOf(Array);
             expect(data.keys.length).toBe(3);
-            expect(data.errors).toBeDefined();
-            expect(data.backpressure).toBeDefined();
-            expect(data.backpressure.queue).toBeDefined();
+            expect(data.errors).toBeInstanceOf(Object);
+            expect(data.backpressure).toBeInstanceOf(Object);
+            expect(data.backpressure.queue).toBeInstanceOf(Object);
         });
 
         test('GET /persistent-stats returns historical data', async () => {
@@ -221,9 +189,9 @@ describe('E2E Smoke Tests', () => {
 
             expect(res.statusCode).toBe(200);
             const data = res.json();
-            expect(data.tracking).toBeDefined();
-            expect(data.tracking.totalConfiguredKeys).toBeDefined();
-            expect(data.totals).toBeDefined();
+            expect(data.tracking).toBeInstanceOf(Object);
+            expect(data.tracking.totalConfiguredKeys).toBe(3);
+            expect(data.totals).toBeInstanceOf(Object);
         });
 
         test('GET /backpressure returns load info with queue stats', async () => {
@@ -231,14 +199,14 @@ describe('E2E Smoke Tests', () => {
 
             expect(res.statusCode).toBe(200);
             const data = res.json();
-            expect(data.current).toBeDefined();
-            expect(data.max).toBeDefined();
-            expect(data.available).toBeDefined();
-            expect(data.percentUsed).toBeDefined();
-            expect(data.queue).toBeDefined();
+            expect(data.current).toBe(0);
+            expect(data.max).toBeGreaterThan(0);
+            expect(data.available).toBeGreaterThan(0);
+            expect(data.percentUsed).toBe(0);
+            expect(data.queue).toBeInstanceOf(Object);
             expect(data.queue.current).toBe(0);
             expect(data.queue.max).toBe(100);
-            expect(data.queue.metrics).toBeDefined();
+            expect(data.queue.metrics).toBeInstanceOf(Object);
         });
     });
 
@@ -428,7 +396,7 @@ describe('E2E Smoke Tests', () => {
             });
 
             expect(res.statusCode).toBe(503);
-            expect(res.headers['retry-after']).toBeDefined();
+            expect(typeof res.headers['retry-after']).toBe('string');
         });
     });
 
@@ -454,7 +422,6 @@ describe('E2E Smoke Tests', () => {
             const data = res.json();
 
             data.keys.forEach(key => {
-                expect(key.state).toBeDefined();
                 expect(key.state).toBe('CLOSED');
                 expect(key.recentFailures).toBe(0);
             });
@@ -465,8 +432,8 @@ describe('E2E Smoke Tests', () => {
             const data = res.json();
 
             data.keys.forEach(key => {
-                expect(key.rateLimit).toBeDefined();
-                expect(key.rateLimit.tokens).toBeDefined();
+                expect(key.rateLimit).toBeInstanceOf(Object);
+                expect(typeof key.rateLimit.tokens).toBe('number');
             });
         });
     });

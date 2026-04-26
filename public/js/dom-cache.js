@@ -90,10 +90,9 @@
     }
 
     function getAuthHeaders() {
-        var headers = {};
-        var token = localStorage.getItem('adminToken');
-        if (token) headers['x-admin-token'] = token;
-        return headers;
+        return window.DashboardStore && window.DashboardStore.getAuthHeaders
+            ? window.DashboardStore.getAuthHeaders()
+            : {};
     }
 
     // ========== ANIMATED NUMBERS ==========

@@ -398,3 +398,95 @@ describe('Key header isolation', () => {
         expect(stub.stats.requestHeaders).toHaveLength(0);
     }, 10000);
 });
+
+// ═══════════════════════════════════════════════════════════════════════
+// Group 5: Stable errorType contract (regression test)
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('Stable errorType contract', () => {
+    let stub;
+    let proxy;
+
+    beforeEach(async () => {
+        stub = new StubServer();
+        await stub.start();
+    });
+
+    afterEach(async () => {
+        if (proxy) { await proxy.shutdown(); proxy = null; }
+        if (stub) { await stub.stop(); stub = null; }
+        resetConfig();
+        resetLogger();
+    });
+
+    test('provider_no_keys_configured: full error body contract', async () => {
+        proxy = await createProxyWithStub(stub.url, { _keys: [] });
+        injectProvider(proxy, 'anthropic', stub.url);
+        proxy.proxyServer.config.config.modelMapping = ANTHROPIC_MODEL_MAPPING;
+
+        const res = await request(`${proxy.proxyUrl}/v1/messages`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: llmBody('claude-opus-4')
+        });
+
+        expect(res.statusCode).toBe(503);
+        const body = res.json();
+        // Full contract: these fields MUST be present and stable
+        expect(body.errorType).toBe('provider_no_keys_configured');
+        expect(body.retryable).toBe(false);
+        expect(body.provider).toBe('anthropic');
+        expect(body.requestId).toBeDefined();
+        expect(typeof body.error).toBe('string');
+        // Non-retryable: no retry-after header
+        expect(res.headers['retry-after']).toBeUndefined();
+        // Upstream never contacted
+        expect(stub.stats.requests).toBe(0);
+    }, 10000);
+
+    test('provider_all_keys_busy: full error body contract', async () => {
+        // Strategy: exhaust the sole anthropic key, let the request enter the queue,
+        // then signal slot-available while the key remains held.  The queue dequeues
+        // successfully but acquireKey still returns null → provider_all_keys_busy.
+        proxy = await createProxyWithStub(stub.url, { _keys: [] });
+        injectProvider(proxy, 'anthropic', stub.url);
+        proxy.proxyServer.config.config.modelMapping = ANTHROPIC_MODEL_MAPPING;
+
+        // Load anthropic key with concurrency 1
+        proxy.proxyServer.keyManager.loadKeys({ 'anthropic': ['antkey.secret1'] });
+        proxy.proxyServer.keyManager.maxConcurrencyPerKey = 1;
+
+        // Exhaust the key (acquire without release)
+        const exhaustedKey = proxy.proxyServer.keyManager.acquireKey([], 'anthropic');
+        expect(exhaustedKey).not.toBeNull();
+
+        // After a short delay, fire signalSlotAvailable so the queued request wakes up.
+        // The key is still held → acquireKey returns null again → provider_all_keys_busy.
+        const wakeTimer = setTimeout(() => {
+            proxy.proxyServer.requestHandler.requestQueue.signalSlotAvailable();
+        }, 150);
+
+        // Now request — key is busy, enters queue, woken up, still no key
+        const res = await request(`${proxy.proxyUrl}/v1/messages`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: llmBody('claude-opus-4')
+        });
+
+        clearTimeout(wakeTimer);
+
+        expect(res.statusCode).toBe(503);
+        const body = res.json();
+        // Full contract: these fields MUST be present and stable
+        expect(body.errorType).toBe('provider_all_keys_busy');
+        expect(body.retryable).toBe(true);
+        expect(body.retryAfter).toBe(2);
+        expect(body.requestId).toBeDefined();
+        expect(typeof body.error).toBe('string');
+        // Retryable: retry-after header present
+        expect(res.headers['retry-after']).toBe('2');
+
+        // Clean up
+        proxy.proxyServer.keyManager.recordSuccess(exhaustedKey, 100);
+    }, 10000);
+});

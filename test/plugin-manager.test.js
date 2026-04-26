@@ -261,11 +261,12 @@ describe('PluginManager', () => {
             manager.register('context-test', plugin);
 
             const context = plugin.init.mock.calls[0][0];
-            expect(context).toHaveProperty('config');
-            expect(context).toHaveProperty('logger');
-            expect(context).toHaveProperty('keyManager');
-            expect(context).toHaveProperty('events');
-            expect(context).toHaveProperty('state');
+            expect(context.config).toEqual({});
+            expect(typeof context.logger.info).toBe('function');
+            expect(typeof context.logger.warn).toBe('function');
+            expect(context.keyManager).toBeNull();
+            expect(context.events).toBe(manager);
+            expect(context.state).toEqual({});
         });
     });
 

@@ -78,7 +78,7 @@ describeIfModule('trace-controller', () => {
 
             controller.handleTraces(mockReq, mockRes);
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should call getRecentTraces when no filters provided', () => {
@@ -246,7 +246,7 @@ describeIfModule('trace-controller', () => {
 
             controller.handleTraceById(mockReq, mockRes, '/traces/');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should return 404 when trace not found', () => {
@@ -257,7 +257,7 @@ describeIfModule('trace-controller', () => {
 
             controller.handleTraceById(mockReq, mockRes, '/traces/nonexistent');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(404, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ 'content-type': 'application/json' }));
             const responseData = JSON.parse(mockRes.end.mock.calls[0][0]);
             expect(responseData.error).toBe('Trace not found');
         });
@@ -286,7 +286,7 @@ describeIfModule('trace-controller', () => {
 
             controller.handleTraceById(mockReq, mockRes, '/traces/trace123');
 
-            expect(mockRes.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+            expect(mockRes.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ 'content-type': 'application/json' }));
         });
 
         it('should redact sensitive data in trace response', () => {

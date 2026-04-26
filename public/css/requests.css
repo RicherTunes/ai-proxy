@@ -1,20 +1,5 @@
         /* ========== NEW FEATURES STYLES ========== */
 
-        /* Provider Badge */
-        .provider-badge {
-            display: inline-block;
-            font-size: 0.65rem;
-            padding: 1px 5px;
-            border-radius: 4px;
-            background: var(--surface-overlay);
-            color: var(--text-secondary);
-            vertical-align: middle;
-            margin-left: 4px;
-        }
-        .provider-free { color: var(--success); border: 1px solid var(--success); }
-        .provider-metered { color: var(--warning); border: 1px solid var(--warning); }
-        .provider-premium { color: var(--error); border: 1px solid var(--error); }
-
         /* Time Range Selector */
         .time-range-selector {
             display: flex;
@@ -43,12 +28,12 @@
 
         .time-range-btn.active {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         [data-theme="light"] .time-range-btn.active {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
 
@@ -81,6 +66,19 @@
             font-size: var(--font-sm);
             color: var(--text-secondary);
             margin-top: 4px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* Token panel responsive */
+        @media (max-width: 480px) {
+            .token-panel {
+                padding: var(--spacing-sm);
+            }
+            .token-panel h3 {
+                flex-wrap: wrap;
+                gap: 4px;
+            }
         }
 
         .account-usage-status {
@@ -260,8 +258,8 @@
             opacity: 0.92;
             cursor: help;
         }
-        .request-token-part.in { color: #93c5fd; }
-        .request-token-part.out { color: #f9a8d4; }
+        .request-token-part.in { color: var(--token-color-in); }
+        .request-token-part.out { color: var(--token-color-out); }
         .request-token-sep {
             color: var(--text-secondary);
             opacity: 0.5;
@@ -291,7 +289,7 @@
         }
         .routing-chip .chip-src {
             padding: 1px 6px 1px 8px;
-            color: #c4b5fd;
+            color: var(--chip-source);
         }
         .routing-chip .chip-arrow {
             padding: var(--spacing-xs, 4px);
@@ -301,21 +299,21 @@
         }
         .routing-chip .chip-dst {
             padding: 1px 8px 1px 6px;
-            color: #67e8f9;
+            color: var(--chip-target);
         }
         /* Source color by chip type */
-        .routing-chip--classifier .chip-src { color: #a5b4fc; }
-        .routing-chip--rule .chip-src { color: #a5b4fc; }
-        .routing-chip--pool .chip-src { color: #a5b4fc; }
-        .routing-chip--override .chip-src, .routing-chip--saved-override .chip-src { color: #fcd34d; }
-        .routing-chip--failover .chip-src { color: #fca5a5; }
+        .routing-chip--classifier .chip-src { color: var(--chip-src-default); }
+        .routing-chip--rule .chip-src { color: var(--chip-src-default); }
+        .routing-chip--pool .chip-src { color: var(--chip-src-default); }
+        .routing-chip--override .chip-src, .routing-chip--saved-override .chip-src { color: var(--chip-override); }
+        .routing-chip--failover .chip-src { color: var(--chip-failover); }
         .routing-chip--legacy .chip-src { color: var(--text-secondary); font-style: italic; }
         /* Target color by chip type */
-        .routing-chip--classifier .chip-dst { color: #67e8f9; }
-        .routing-chip--rule .chip-dst { color: #67e8f9; }
-        .routing-chip--pool .chip-dst { color: #86efac; }
-        .routing-chip--override .chip-dst, .routing-chip--saved-override .chip-dst { color: #67e8f9; }
-        .routing-chip--failover .chip-dst { color: #fca5a5; }
+        .routing-chip--classifier .chip-dst { color: var(--chip-target); }
+        .routing-chip--rule .chip-dst { color: var(--chip-target); }
+        .routing-chip--pool .chip-dst { color: var(--chip-dst-pool); }
+        .routing-chip--override .chip-dst, .routing-chip--saved-override .chip-dst { color: var(--chip-target); }
+        .routing-chip--failover .chip-dst { color: var(--chip-failover); }
         .routing-chip--legacy .chip-dst { color: var(--text-secondary); }
         .routing-chip--default .chip-src, .routing-chip--default .chip-dst { color: var(--text-secondary); }
 
@@ -331,9 +329,9 @@
             vertical-align: middle;
             margin-left: 4px;
         }
-        .provider-free { background: rgba(134, 239, 172, 0.15); color: #86efac; }
-        .provider-metered { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
-        .provider-premium { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+        .provider-free { background: rgba(134, 239, 172, 0.15); color: var(--chip-dst-pool); }
+        .provider-metered { background: rgba(251, 191, 36, 0.15); color: var(--provider-metered); }
+        .provider-premium { background: rgba(248, 113, 113, 0.15); color: var(--provider-premium); }
 
         /* Config Badges (Live / Restart Required) */
         .config-badge {
@@ -347,8 +345,8 @@
             vertical-align: middle;
             margin-left: 6px;
         }
-        .config-badge-live { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-        .config-badge-restart { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .config-badge-live { background: rgba(16, 185, 129, 0.2); color: var(--color-emerald); }
+        .config-badge-restart { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
 
         /* Stream Toolbar (Week 2 UX) */
         .stream-toolbar {
@@ -404,12 +402,12 @@
 
         .btn-icon:hover {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         .btn-icon.active {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         .stream-footer {
@@ -475,13 +473,13 @@
 
         .ordering-indicator.ordering-newest-top {
             background: rgba(99, 102, 241, 0.1);
-            color: #818cf8;
+            color: var(--color-indigo);
             border-color: rgba(99, 102, 241, 0.3);
         }
 
         .ordering-indicator.ordering-newest-bottom {
             background: rgba(34, 197, 94, 0.1);
-            color: #4ade80;
+            color: var(--color-lime);
             border-color: rgba(34, 197, 94, 0.3);
         }
 
@@ -493,14 +491,12 @@
             animation: pulse 2s infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
         /* Request row hover + selection */
         .request-row:hover {
-            background: var(--surface-overlay);
+            background: var(--surface-overlay-hover);
+        }
+        .request-row:active {
+            background: var(--surface-overlay-active);
         }
 
         .request-row.selected {
@@ -533,13 +529,13 @@
 
         .copy-btn:hover {
             background: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
             border-color: var(--accent);
         }
 
         .copy-btn.copied {
             background: var(--success);
-            color: #000;
+            color: var(--text-on-bright);
             border-color: var(--success);
         }
 
@@ -583,9 +579,9 @@
             flex-shrink: 0;
         }
 
-        .retry-step-marker.success { background: var(--success); color: #000; }
-        .retry-step-marker.error { background: var(--error); color: #fff; }
-        .retry-step-marker.pending { background: var(--warning); color: #000; }
+        .retry-step-marker.success { background: var(--success); color: var(--text-on-bright); }
+        .retry-step-marker.error { background: var(--error); color: var(--text-on-accent); }
+        .retry-step-marker.pending { background: var(--warning); color: var(--text-on-bright); }
 
         .retry-step-content {
             flex: 1;
@@ -656,6 +652,15 @@
                 margin-left: 0;
                 max-width: 100%;
             }
+
+            .request-row {
+                grid-template-columns: auto auto 1fr auto;
+            }
+            .request-row .request-cost,
+            .request-row .request-tokens,
+            .request-row .request-key {
+                display: none;
+            }
         }
 
         /* Export Button */
@@ -676,7 +681,7 @@
         .export-btn:hover {
             background: var(--accent);
             border-color: var(--accent);
-            color: #fff;
+            color: var(--text-on-accent);
         }
 
         /* Responsive */
@@ -899,7 +904,7 @@
             align-items: center;
             justify-content: center;
             font-size: var(--font-xs);
-            color: white;
+            color: var(--text-on-accent);
             min-width: 2px;
         }
         .trace-timeline-bar.queue { background: var(--warning); }

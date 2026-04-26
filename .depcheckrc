@@ -1,0 +1,6 @@
+{
+  "ignoreMatches": [
+    "semantic-release",
+    "@semantic-release/*"
+  ]
+}
