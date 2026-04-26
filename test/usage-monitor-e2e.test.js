@@ -31,10 +31,18 @@ const MOCK_QUOTA = {
     }
 };
 
+// Generate timestamps within the last 24h so they survive the default 30-day lookback prune
+function recentTimestamp(hoursAgo) {
+    const d = new Date(Date.now() - hoursAgo * 3600000);
+    return d.toISOString().replace('T', ' ').slice(0, 16);
+}
+const TS_1 = recentTimestamp(2);
+const TS_2 = recentTimestamp(1);
+
 const MOCK_MODEL_USAGE = {
     code: 200, msg: 'Operation successful', success: true,
     data: {
-        x_time: ['2026-02-20 10:00', '2026-02-20 11:00'],
+        x_time: [TS_1, TS_2],
         modelCallCount: [100, 200],
         tokensUsage: [5000000, 10000000],
         totalUsage: { totalModelCallCount: 300, totalTokensUsage: 15000000 }
@@ -44,7 +52,7 @@ const MOCK_MODEL_USAGE = {
 const MOCK_TOOL_USAGE = {
     code: 200, msg: 'Operation successful', success: true,
     data: {
-        x_time: ['2026-02-20 10:00', '2026-02-20 11:00'],
+        x_time: [TS_1, TS_2],
         networkSearchCount: [null, null],
         totalUsage: {
             totalNetworkSearchCount: 10, totalWebReadMcpCount: 5,
@@ -204,7 +212,7 @@ describe('Usage Monitor E2E', () => {
         const stats = await fetchJson(`${proxyUrl}/stats`);
         const ts = stats.accountUsage.modelUsage.timeSeries;
         expect(ts).toBeDefined();
-        expect(ts.times).toEqual(['2026-02-20 10:00', '2026-02-20 11:00']);
+        expect(ts.times).toEqual([TS_1, TS_2]);
         expect(ts.callCounts).toEqual([100, 200]);
         expect(ts.tokenCounts).toEqual([5000000, 10000000]);
     });
