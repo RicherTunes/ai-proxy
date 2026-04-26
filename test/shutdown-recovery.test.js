@@ -377,6 +377,9 @@ describe('Error recovery', () => {
             baseUrl: 'https://api.anthropic.com'
         }));
 
+        // Wait for the watcher to detect the re-created keys file and reload
+        await new Promise(r => setTimeout(r, 300));
+
         // Server should still respond
         const res = await request(port, '/health');
         expect(res.status).toBe(200);
